@@ -3,14 +3,25 @@
   "version": "1.0.0",
   "description": "An MCP server for DHIS2 development and management",
   "main": "dist/index.js",
+  "bin": {
+    "dhis2-mcp": "dist/index.js"
+  },
   "type": "module",
+  "files": [
+    "dist",
+    "README.md",
+    "CLAUDE.md"
+  ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && node -e \"require('fs').chmodSync('dist/index.js', '755')\"",
     "dev": "tsc --watch",
     "start": "node dist/index.js",
     "test": "jest",
     "lint": "eslint src/**/*.ts",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm run build",
+    "inspector": "npx @modelcontextprotocol/inspector dist/index.js"
   },
   "keywords": [
     "mcp",
@@ -20,6 +31,14 @@
   ],
   "author": "Dradebo",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yourusername/dhis2-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/dhis2-mcp/issues"
+  },
+  "homepage": "https://github.com/yourusername/dhis2-mcp#readme",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^0.5.0",
     "axios": "^1.6.0",

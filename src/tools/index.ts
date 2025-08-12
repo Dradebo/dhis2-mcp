@@ -1,10 +1,135 @@
 import { Tool } from '@modelcontextprotocol/sdk/types.js';
 
+// Development tools that don't require DHIS2 connection - available immediately
+export function createDevelopmentTools(): Tool[] {
+  const allTools = createDHIS2Tools();
+  
+  // Filter out API-specific tools that require DHIS2 connection
+  const apiOnlyTools = [
+    'dhis2_configure',
+    'dhis2_get_system_info',
+    'dhis2_list_data_elements',
+    'dhis2_create_data_element',
+    'dhis2_update_data_element',
+    'dhis2_delete_data_element',
+    'dhis2_list_data_sets',
+    'dhis2_create_data_set',
+    'dhis2_list_categories',
+    'dhis2_create_category',
+    'dhis2_list_category_options',
+    'dhis2_create_category_option',
+    'dhis2_list_category_combos',
+    'dhis2_create_category_combo',
+    'dhis2_list_category_option_combos',
+    'dhis2_list_org_units',
+    'dhis2_list_org_unit_groups',
+    'dhis2_create_org_unit_group',
+    'dhis2_list_validation_rules',
+    'dhis2_create_validation_rule',
+    'dhis2_run_validation',
+    'dhis2_get_data_values',
+    'dhis2_bulk_import_data_values',
+    'dhis2_get_analytics',
+    'dhis2_list_programs',
+    'dhis2_create_program',
+    'dhis2_list_tracked_entity_types',
+    'dhis2_create_tracked_entity_type',
+    'dhis2_list_tracked_entity_attributes',
+    'dhis2_create_tracked_entity_attribute',
+    'dhis2_list_program_stages',
+    'dhis2_create_program_stage',
+    'dhis2_list_program_rules',
+    'dhis2_create_program_rule',
+    'dhis2_list_tracked_entity_instances',
+    'dhis2_create_tracked_entity_instance',
+    'dhis2_list_enrollments',
+    'dhis2_create_enrollment',
+    'dhis2_list_events',
+    'dhis2_create_event',
+    'dhis2_bulk_import_events',
+    'dhis2_get_event_analytics',
+    'dhis2_get_enrollment_analytics',
+    'dhis2_get_data_statistics',
+    'dhis2_list_dashboards',
+    'dhis2_create_dashboard',
+    'dhis2_list_visualizations',
+    'dhis2_create_visualization',
+    'dhis2_list_reports',
+    'dhis2_generate_report',
+    'dhis2_create_datastore_namespace',
+    'dhis2_manage_datastore_key'
+  ];
+  
+  return allTools.filter(tool => !apiOnlyTools.includes(tool.name));
+}
+
+// API tools that require DHIS2 connection
+export function createAPITools(): Tool[] {
+  const allTools = createDHIS2Tools();
+  
+  const apiOnlyTools = [
+    'dhis2_configure',
+    'dhis2_get_system_info',
+    'dhis2_list_data_elements',
+    'dhis2_create_data_element',
+    'dhis2_update_data_element',
+    'dhis2_delete_data_element',
+    'dhis2_list_data_sets',
+    'dhis2_create_data_set',
+    'dhis2_list_categories',
+    'dhis2_create_category',
+    'dhis2_list_category_options',
+    'dhis2_create_category_option',
+    'dhis2_list_category_combos',
+    'dhis2_create_category_combo',
+    'dhis2_list_category_option_combos',
+    'dhis2_list_org_units',
+    'dhis2_list_org_unit_groups',
+    'dhis2_create_org_unit_group',
+    'dhis2_list_validation_rules',
+    'dhis2_create_validation_rule',
+    'dhis2_run_validation',
+    'dhis2_get_data_values',
+    'dhis2_bulk_import_data_values',
+    'dhis2_get_analytics',
+    'dhis2_list_programs',
+    'dhis2_create_program',
+    'dhis2_list_tracked_entity_types',
+    'dhis2_create_tracked_entity_type',
+    'dhis2_list_tracked_entity_attributes',
+    'dhis2_create_tracked_entity_attribute',
+    'dhis2_list_program_stages',
+    'dhis2_create_program_stage',
+    'dhis2_list_program_rules',
+    'dhis2_create_program_rule',
+    'dhis2_list_tracked_entity_instances',
+    'dhis2_create_tracked_entity_instance',
+    'dhis2_list_enrollments',
+    'dhis2_create_enrollment',
+    'dhis2_list_events',
+    'dhis2_create_event',
+    'dhis2_bulk_import_events',
+    'dhis2_get_event_analytics',
+    'dhis2_get_enrollment_analytics',
+    'dhis2_get_data_statistics',
+    'dhis2_list_dashboards',
+    'dhis2_create_dashboard',
+    'dhis2_list_visualizations',
+    'dhis2_create_visualization',
+    'dhis2_list_reports',
+    'dhis2_generate_report',
+    'dhis2_create_datastore_namespace',
+    'dhis2_manage_datastore_key'
+  ];
+  
+  return allTools.filter(tool => apiOnlyTools.includes(tool.name));
+}
+
 export function createDHIS2Tools(): Tool[] {
   return [
     {
       name: 'dhis2_configure',
-      description: 'Configure connection to a DHIS2 instance',
+      description: 'Configure connection to a DHIS2 instance (required for API access)',
       inputSchema: {
         type: 'object',
         properties: {

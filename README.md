@@ -35,37 +35,318 @@
 
 ### Prerequisites
 - Node.js 18+
-- Access to a DHIS2 instance (demo, local, or production)
+- Access to a DHIS2 instance (optional for development-only workflows)
 
 ### Installation
 
+#### Option 1: NPM Registry (Recommended)
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/dhis2-mcp.git
-cd dhis2-mcp
-
-# Install dependencies
-npm install
-
-# Build the project
-npm run build
-
-# Run tests (optional)
-npm run test
-
-# Start the MCP server
-npm start
+# Install globally from npm registry
+npm install -g dhis2-mcp
 ```
 
-### First Connection
+#### Option 2: NPX (Zero Installation - Best for MCP Clients)
+```bash
+# Use directly without installation - perfect for MCP client configs
+npx dhis2-mcp
+```
 
-Once the MCP server is running, use the `dhis2_configure` tool to connect:
+#### Option 3: Development/Local Build
+```bash
+# Clone and install locally
+git clone https://github.com/yourusername/dhis2-mcp.git
+cd dhis2-mcp
+npm install
+npm run build
+npm install -g .
+```
 
+## ⚠️ **Critical: Understanding MCP Servers**
+
+**MCP servers are NOT web services** - they don't run in the background like traditional servers. Instead, they are **command-line tools that MCP clients launch on-demand**. This is crucial to understand for successful usage.
+
+### 🔑 **The MCP Server Reality Check**
+
+#### ❌ **Common Misconception:**
+*"I'll install the MCP server globally and then it'll be available everywhere automatically"*
+
+#### ✅ **How MCP Actually Works:**
+1. **Install or configure access** to the MCP server (npm, npx, etc.)
+2. **Configure your MCP client** to use the server (Claude Code, Claude Desktop, etc.)
+3. **Client launches server** when you interact with it
+4. **Communication via stdin/stdout**, not HTTP
+
+### 🛠️ **Why You Can't "Just Use It" After Installation**
+
+The most common issue: *"I installed dhis2-mcp but it's not working in [Cursor/Claude Desktop/other MCP client]"*
+
+**Root Cause:** MCP clients need explicit configuration to know about and use MCP servers. The server won't work until configured in your MCP client.
+
+## 🎯 **The DHIS2 Credentials Dilemma - SOLVED**
+
+### **The Problem We Solved**
+Traditional approach: *"Configure DHIS2 credentials first, then access tools"* ❌
+- **Developers** wanted to build apps before connecting to DHIS2
+- **Customizers** needed API access for data operations  
+- **One-size-fits-all** satisfied neither group
+
+### **Our Solution: Dual-Mode Architecture**
+
+#### **🛠️ Development Mode (Available Immediately)**
+**No DHIS2 connection required** - works out of the box:
+```
+✅ App scaffolding (dhis2_init_webapp)
+✅ Code generation tools  
+✅ UI component generators
+✅ Testing setup tools
+✅ Build configuration helpers
+✅ Documentation generators
+✅ Android development tools
+```
+
+#### **🔧 API Mode (Requires DHIS2 Connection)**
+**All development tools PLUS** data operations:
+```
+✅ All development tools (above)
+✅ Data management (CRUD operations)
+✅ Analytics and reporting  
+✅ System administration
+✅ Bulk data operations
+✅ User and permission management
+```
+
+### **Smart Error Messages**
+Instead of cryptic errors, you get actionable guidance:
+
+**❌ Old approach:**
+```
+Error: DHIS2 client not initialized. Please configure connection first.
+```
+
+**✅ Our approach:**
+```
+❌ Connection Required
+
+The tool `dhis2_list_data_elements` requires a DHIS2 instance.
+
+🚀 Quick Setup - Choose Your Option:
+
+Option 1: Public Demo (Fastest)
+Use dhis2_configure with: https://play.dhis2.org/2.40.4
+
+Option 2: Local Docker Instance  
+docker run -d --name dhis2 -p 8080:8080 dhis2/core:2.40.4
+
+💡 Meanwhile, try these tools without connection:
+   • dhis2_init_webapp - Create new DHIS2 apps
+   • dhis2_create_ui_components - UI code generation
+```
+
+### Usage Modes
+
+The DHIS2 MCP server supports two distinct workflows:
+
+#### 🛠️ **Development Mode** (No DHIS2 Connection Required)
+Perfect for developers building DHIS2 apps without needing live instance access.
+
+```bash
+# Start the MCP server
+dhis2-mcp
+```
+
+**Available immediately:**
+- ✅ App scaffolding (`dhis2_init_webapp`)
+- ✅ Code generation tools
+- ✅ Build configuration helpers
+- ✅ UI component generators
+- ✅ Testing setup tools
+- ✅ Documentation helpers
+- ✅ Debugging guides
+
+#### 🔧 **API Mode** (DHIS2 Connection Required)
+For customization work, data management, and API interactions.
+
+1. **Start the MCP server**: `dhis2-mcp`
+2. **Configure DHIS2 connection** using the `dhis2_configure` tool:
+
+```json
+{
+  "baseUrl": "https://play.dhis2.org/2.40.4",
+  "username": "admin", 
+  "password": "district"
+}
+```
+
+**Additional tools unlocked:**
+- ✅ All development tools (above)
+- ✅ Data management (CRUD operations)
+- ✅ Analytics and reporting
+- ✅ System administration
+- ✅ Bulk data operations
+
+### Getting DHIS2 Credentials
+
+#### Option 1: Public Demo Instances (Easiest)
 ```json
 {
   "baseUrl": "https://play.dhis2.org/2.40.4",
   "username": "admin",
   "password": "district"
+}
+```
+
+#### Option 2: Local DHIS2 Instance
+```bash
+# Using Docker
+docker run -d --name dhis2 -p 8080:8080 dhis2/core:2.40.4
+
+# Access at http://localhost:8080
+# Default: admin/district
+```
+
+#### Option 3: Organization Instance
+Contact your DHIS2 administrator for:
+- Instance URL (e.g., `https://yourorg.dhis2.org`)
+- Username and password
+- Required user authorities for your workflow
+
+## 🔧 **MCP Client Configuration** (REQUIRED)
+
+> **⚠️ CRITICAL:** The server will not work until configured in your MCP client. Installation alone is not sufficient.
+
+### **For Claude Code (Cursor) - Most Common Use Case**
+
+#### **Step 1: Choose Your Configuration Method**
+
+**Method A: NPX (Recommended - No Installation Required)**
+Create `.claude/config.json` in your project root:
+```json
+{
+  "mcpServers": {
+    "dhis2-mcp": {
+      "command": "npx",
+      "args": ["-y", "dhis2-mcp"],
+      "env": {}
+    }
+  }
+}
+```
+
+**Method B: Global NPM Installation**
+```json
+{
+  "mcpServers": {
+    "dhis2-mcp": {
+      "command": "dhis2-mcp",
+      "args": [],
+      "env": {}
+    }
+  }
+}
+```
+
+#### **Step 2: Alternative Configuration Locations**
+- **Project-specific**: `.claude/config.json` (in project root)
+- **Global**: `~/.config/claude/config.json` (affects all projects)
+
+#### **Step 3: Restart Cursor**
+Configuration changes require a complete restart of Cursor.
+
+### **Troubleshooting Claude Code Issues**
+
+#### **Problem: "Command not found" or "ENOENT" errors**
+**Solutions:**
+1. **Use NPX method** (most reliable):
+   ```json
+   {
+     "mcpServers": {
+       "dhis2-mcp": {
+         "command": "npx",
+         "args": ["-y", "dhis2-mcp"]
+       }
+     }
+   }
+   ```
+
+2. **Use full path** (if using nvm):
+   ```json
+   {
+     "mcpServers": {
+       "dhis2-mcp": {
+         "command": "/Users/your-username/.nvm/versions/node/v20.x.x/bin/dhis2-mcp"
+       }
+     }
+   }
+   ```
+
+3. **Check your PATH**:
+   ```bash
+   which dhis2-mcp  # Should return a path if globally installed
+   echo $PATH       # Check if node/npm paths are included
+   ```
+
+#### **Problem: Server starts but no tools available**
+**Solutions:**
+1. **Check Cursor logs** for MCP-related errors
+2. **Verify configuration syntax** - JSON must be valid
+3. **Try the npx method** if using local installation
+4. **Test server directly**:
+   ```bash
+   dhis2-mcp  # Should show welcome message
+   # or
+   npx dhis2-mcp
+   ```
+
+### **For Other MCP Clients**
+
+#### For Claude Desktop
+**Option A: NPM-installed package**
+```json
+{
+  "mcpServers": {
+    "dhis2-mcp": {
+      "command": "dhis2-mcp",
+      "args": []
+    }
+  }
+}
+```
+
+**Option B: NPX (no installation)**
+```json
+{
+  "mcpServers": {
+    "dhis2-mcp": {
+      "command": "npx",
+      "args": ["-y", "dhis2-mcp"]
+    }
+  }
+}
+```
+
+#### For Continue (VS Code)
+**Option A: NPM-installed package**
+```json
+{
+  "mcpServers": [
+    {
+      "name": "dhis2-mcp",
+      "command": "dhis2-mcp"
+    }
+  ]
+}
+```
+
+**Option B: NPX (no installation)**
+```json
+{
+  "mcpServers": [
+    {
+      "name": "dhis2-mcp",
+      "command": "npx",
+      "args": ["-y", "dhis2-mcp"]
+    }
+  ]
 }
 ```
 
@@ -550,4 +831,82 @@ MIT License - see [LICENSE](./LICENSE) file for details.
 - **DHIS2 Community**: [community.dhis2.org](https://community.dhis2.org)
 - **Documentation**: [docs.dhis2.org](https://docs.dhis2.org)
 
-**Made with ❤️ for the global health community**
+## 📚 **MCP Server Development Lessons Learned**
+
+*These insights apply to any MCP server development project*
+
+### **🎯 Key Principles for MCP Success**
+
+#### **1. Think CLI Tool, Not Web Service**
+- **MCP servers are launched on-demand** by clients, not background services
+- **Communication is stdin/stdout**, not HTTP endpoints  
+- **Design for client integration**, not direct user interaction
+
+#### **2. Client Configuration Is Everything**
+- **Installation ≠ Availability** - clients need explicit configuration
+- **Provide multiple configuration examples** for different clients
+- **NPX is often superior** to global installation (no PATH issues)
+
+#### **3. User Experience Matters More Than Architecture**
+- **Helpful error messages** with actionable solutions beat generic errors
+- **Dual-mode operation** serves different user needs elegantly
+- **Progressive disclosure** - simple tools first, complex ones after setup
+
+#### **4. Package.json Must Be Production-Ready**
+```json
+{
+  "bin": { "tool-name": "dist/index.js" },           // Enable global install
+  "files": ["dist", "README.md"],                    // Control what's packaged  
+  "scripts": {
+    "build": "tsc && chmod +x dist/index.js",        // Set executable permissions
+    "prepare": "npm run build",                       // Auto-build on install
+    "prepublishOnly": "npm run build",                // Ensure latest build
+    "inspector": "npx @modelcontextprotocol/inspector dist/index.js"  // Debug tool
+  }
+}
+```
+
+#### **5. Installation Method Hierarchy**
+1. **NPX** (best for most users - zero installation, always latest)
+2. **npm registry** (good for frequent users)  
+3. **Local/dev builds** (only for contributors)
+
+### **🚨 Common MCP Server Pitfalls to Avoid**
+
+1. **❌ Requiring credentials before any functionality** 
+   - **✅ Provide useful tools without authentication**
+
+2. **❌ Cryptic error messages**
+   - **✅ Guide users to solutions with specific steps**
+
+3. **❌ Assuming global installation works everywhere**
+   - **✅ Support NPX and full paths for reliability** 
+
+4. **❌ Missing executable permissions in build**
+   - **✅ Use `chmod +x` in build scripts**
+
+5. **❌ No client configuration examples**
+   - **✅ Provide copy-paste configs for all major clients**
+
+### **🏆 MCP Development Checklist**
+
+**Before Publishing:**
+- [ ] ✅ Shebang line in entry point (`#!/usr/bin/env node`)
+- [ ] ✅ Executable permissions set in build script  
+- [ ] ✅ `bin` field in package.json pointing to built file
+- [ ] ✅ `files` array controlling what gets published
+- [ ] ✅ `prepare` script for auto-building
+- [ ] ✅ NPX compatibility tested
+- [ ] ✅ Multiple client configuration examples provided
+- [ ] ✅ Helpful error messages for common issues
+- [ ] ✅ Some functionality works without complex setup
+
+**After Publishing:**
+- [ ] ✅ Test installation from npm registry  
+- [ ] ✅ Test NPX usage
+- [ ] ✅ Verify client configuration examples work
+- [ ] ✅ Document troubleshooting for common issues
+
+---
+
+**Made with ❤️ for the global health community and MCP developers everywhere**

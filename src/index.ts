@@ -9,7 +9,7 @@ import {
   Tool,
 } from '@modelcontextprotocol/sdk/types.js';
 import { DHIS2Client } from './dhis2-client.js';
-import { createDHIS2Tools } from './tools/index.js';
+import { createDevelopmentTools, createAPITools } from './tools/index.js';
 import { auditLogger } from './audit-logger.js';
 import { ConfirmationSystem } from './confirmation-system.js';
 import { PermissionSystem, UserPermissions } from './permission-system.js';
@@ -95,7 +95,7 @@ const server = new Server(
 );
 
 let dhis2Client: DHIS2Client | null = null;
-let tools: Tool[] = [];
+let tools: Tool[] = createDevelopmentTools(); // Initialize with development tools immediately
 let userPermissions: UserPermissions = PermissionSystem.createDefaultPermissions();
 let currentUser: any = null;
 let parameterCompletion: ParameterCompletion = new ParameterCompletion(null);
@@ -192,21 +192,21 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         };
         
         dhis2Client = new DHIS2Client(baseUrl, username, password);
-        await dhis2Client.testConnection();
+        await dhis2Client!.testConnection();
         
         // Update parameter completion with the new client
         parameterCompletion = new ParameterCompletion(dhis2Client);
         
         // Fetch user information and permissions
         try {
-          currentUser = await dhis2Client.getCurrentUser();
+          currentUser = await dhis2Client!.getCurrentUser();
           userPermissions = PermissionSystem.extractPermissionsFromDHIS2User(currentUser);
         } catch (error) {
           console.warn('Could not fetch user permissions, using defaults:', error);
           userPermissions = PermissionSystem.createDefaultPermissions();
         }
         
-        tools = createDHIS2Tools();
+        tools = [...createDevelopmentTools(), ...createAPITools()];
         
         // Log successful connection
         auditLogger.log({
@@ -231,6 +231,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 📝 ${permissionSummary.description}
 
 🛠️ Available Tools: ${PermissionSystem.filterToolsByPermissions(tools, userPermissions).length} of ${tools.length} total tools
+   • Development tools: Available without connection ✅
+   • API tools: Now available with connection ✅
 
 ✅ Allowed Operations:
 ${permissionSummary.allowedOperations.map(op => `  • ${op}`).join('\n')}
@@ -238,21 +240,74 @@ ${permissionSummary.allowedOperations.map(op => `  • ${op}`).join('\n')}
 ${permissionSummary.restrictedOperations.length > 0 ? `⛔ Restricted Operations:
 ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` : ''}
 
-🔍 Use tools starting with 'dhis2_' to interact with your DHIS2 instance.`,
+🔍 All tools starting with 'dhis2_' are now available for development and API access.`,
             },
           ],
         };
 
       default:
-        if (!dhis2Client) {
-          throw new Error('DHIS2 client not initialized. Please configure connection first.');
+        // Check if this tool requires DHIS2 connection
+        const apiTools = createAPITools().map(t => t.name);
+        if (apiTools.includes(name) && !dhis2Client) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `❌ **Connection Required**
+
+The tool \`${name}\` requires a DHIS2 instance connection to function.
+
+🚀 **Quick Setup - Choose Your Option:**
+
+**Option 1: Public Demo (Fastest)**
+Use the \`dhis2_configure\` tool with these demo credentials:
+\`\`\`json
+{
+  "baseUrl": "https://play.dhis2.org/2.40.4",
+  "username": "admin",
+  "password": "district"
+}
+\`\`\`
+
+**Option 2: Local Docker Instance**
+\`\`\`bash
+# Run DHIS2 locally
+docker run -d --name dhis2 -p 8080:8080 dhis2/core:2.40.4
+
+# Then configure with:
+{
+  "baseUrl": "http://localhost:8080",
+  "username": "admin", 
+  "password": "district"
+}
+\`\`\`
+
+**Option 3: Organization Instance**
+Contact your DHIS2 administrator for:
+- Instance URL (e.g., https://yourorg.dhis2.org)
+- Username and password
+- Required authorities for your workflow
+
+💡 **Meanwhile, try these tools without connection:**
+   • \`dhis2_init_webapp\` - Create new DHIS2 apps
+   • \`dhis2_configure_build_system\` - Setup build tools
+   • \`dhis2_generate_test_setup\` - Testing configuration
+   • \`dhis2_create_ui_components\` - UI code generation
+
+🔄 **After connecting, you'll have access to ${name} and all API tools!**`,
+              },
+            ],
+            isError: true,
+          };
         }
         break;
     }
 
+    // At this point, if we reach here for API tools, dhis2Client must be initialized
+    // because the earlier check would have returned an error
     switch (name) {
       case 'dhis2_get_system_info':
-        const systemInfo = await dhis2Client.getSystemInfo();
+        const systemInfo = await dhis2Client!.getSystemInfo();
         logSuccessfulOperation(name, {}, systemInfo, startTime);
         return {
           content: [
@@ -268,7 +323,7 @@ ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` :
           filter?: string;
           pageSize?: number;
         };
-        const dataElements = await dhis2Client.getDataElements(filterUndefinedValues({ filter: deFilter, pageSize: dePageSize }));
+        const dataElements = await dhis2Client!.getDataElements(filterUndefinedValues({ filter: deFilter, pageSize: dePageSize }));
         logSuccessfulOperation(name, { filter: deFilter, pageSize: dePageSize }, dataElements, startTime);
         return {
           content: [
@@ -281,7 +336,7 @@ ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` :
 
       case 'dhis2_create_data_element':
         const newDataElement = args as any;
-        const createdDE = await dhis2Client.createDataElement(newDataElement);
+        const createdDE = await dhis2Client!.createDataElement(newDataElement);
         logSuccessfulOperation(name, newDataElement, createdDE, startTime, [createdDE.response?.uid || 'unknown']);
         return {
           content: [
@@ -294,7 +349,7 @@ ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` :
 
       case 'dhis2_update_data_element':
         const { id: deId, ...deUpdateData } = args as any;
-        const updatedDE = await dhis2Client.updateDataElement(deId, deUpdateData);
+        const updatedDE = await dhis2Client!.updateDataElement(deId, deUpdateData);
         return {
           content: [
             {
@@ -306,7 +361,7 @@ ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` :
 
       case 'dhis2_delete_data_element':
         const { id: deDeleteId } = args as { id: string };
-        const deletedDE = await dhis2Client.deleteDataElement(deDeleteId);
+        const deletedDE = await dhis2Client!.deleteDataElement(deDeleteId);
         return {
           content: [
             {
@@ -321,7 +376,7 @@ ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` :
           filter?: string;
           pageSize?: number;
         };
-        const dataSets = await dhis2Client.getDataSets(filterUndefinedValues({ filter: dsFilter, pageSize: dsPageSize }));
+        const dataSets = await dhis2Client!.getDataSets(filterUndefinedValues({ filter: dsFilter, pageSize: dsPageSize }));
         return {
           content: [
             {
@@ -333,7 +388,7 @@ ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` :
 
       case 'dhis2_create_data_set':
         const newDataSet = args as any;
-        const createdDS = await dhis2Client.createDataSet(newDataSet);
+        const createdDS = await dhis2Client!.createDataSet(newDataSet);
         return {
           content: [
             {
@@ -348,7 +403,7 @@ ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` :
           filter?: string;
           pageSize?: number;
         };
-        const categories = await dhis2Client.getCategories(filterUndefinedValues({ filter: catFilter, pageSize: catPageSize }));
+        const categories = await dhis2Client!.getCategories(filterUndefinedValues({ filter: catFilter, pageSize: catPageSize }));
         return {
           content: [
             {
@@ -360,7 +415,7 @@ ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` :
 
       case 'dhis2_create_category':
         const newCategory = args as any;
-        const createdCat = await dhis2Client.createCategory(newCategory);
+        const createdCat = await dhis2Client!.createCategory(newCategory);
         return {
           content: [
             {
@@ -375,7 +430,7 @@ ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` :
           filter?: string;
           pageSize?: number;
         };
-        const categoryOptions = await dhis2Client.getCategoryOptions(filterUndefinedValues({ filter: coFilter, pageSize: coPageSize }));
+        const categoryOptions = await dhis2Client!.getCategoryOptions(filterUndefinedValues({ filter: coFilter, pageSize: coPageSize }));
         return {
           content: [
             {
@@ -387,7 +442,7 @@ ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` :
 
       case 'dhis2_create_category_option':
         const newCategoryOption = args as any;
-        const createdCO = await dhis2Client.createCategoryOption(newCategoryOption);
+        const createdCO = await dhis2Client!.createCategoryOption(newCategoryOption);
         return {
           content: [
             {
@@ -402,7 +457,7 @@ ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` :
           filter?: string;
           pageSize?: number;
         };
-        const categoryCombos = await dhis2Client.getCategoryCombos(filterUndefinedValues({ filter: ccFilter, pageSize: ccPageSize }));
+        const categoryCombos = await dhis2Client!.getCategoryCombos(filterUndefinedValues({ filter: ccFilter, pageSize: ccPageSize }));
         return {
           content: [
             {
@@ -414,7 +469,7 @@ ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` :
 
       case 'dhis2_create_category_combo':
         const newCategoryCombo = args as any;
-        const createdCC = await dhis2Client.createCategoryCombo(newCategoryCombo);
+        const createdCC = await dhis2Client!.createCategoryCombo(newCategoryCombo);
         return {
           content: [
             {
@@ -429,7 +484,7 @@ ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` :
           filter?: string;
           pageSize?: number;
         };
-        const categoryOptionCombos = await dhis2Client.getCategoryOptionCombos(filterUndefinedValues({ filter: cocFilter, pageSize: cocPageSize }));
+        const categoryOptionCombos = await dhis2Client!.getCategoryOptionCombos(filterUndefinedValues({ filter: cocFilter, pageSize: cocPageSize }));
         return {
           content: [
             {
@@ -444,7 +499,7 @@ ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` :
           filter?: string;
           pageSize?: number;
         };
-        const orgUnits = await dhis2Client.getOrganisationUnits(filterUndefinedValues({ filter: ouFilter, pageSize: ouPageSize }));
+        const orgUnits = await dhis2Client!.getOrganisationUnits(filterUndefinedValues({ filter: ouFilter, pageSize: ouPageSize }));
         return {
           content: [
             {
@@ -459,7 +514,7 @@ ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` :
           filter?: string;
           pageSize?: number;
         };
-        const orgUnitGroups = await dhis2Client.getOrganisationUnitGroups(filterUndefinedValues({ filter: ougFilter, pageSize: ougPageSize }));
+        const orgUnitGroups = await dhis2Client!.getOrganisationUnitGroups(filterUndefinedValues({ filter: ougFilter, pageSize: ougPageSize }));
         return {
           content: [
             {
@@ -471,7 +526,7 @@ ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` :
 
       case 'dhis2_create_org_unit_group':
         const newOrgUnitGroup = args as any;
-        const createdOUG = await dhis2Client.createOrganisationUnitGroup(newOrgUnitGroup);
+        const createdOUG = await dhis2Client!.createOrganisationUnitGroup(newOrgUnitGroup);
         return {
           content: [
             {
@@ -486,7 +541,7 @@ ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` :
           filter?: string;
           pageSize?: number;
         };
-        const validationRules = await dhis2Client.getValidationRules(filterUndefinedValues({ filter: vrFilter, pageSize: vrPageSize }));
+        const validationRules = await dhis2Client!.getValidationRules(filterUndefinedValues({ filter: vrFilter, pageSize: vrPageSize }));
         return {
           content: [
             {
@@ -509,7 +564,7 @@ ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` :
             missingValueStrategy: 'SKIP_IF_ANY_VALUE_MISSING',
           },
         };
-        const createdVR = await dhis2Client.createValidationRule(validationRule);
+        const createdVR = await dhis2Client!.createValidationRule(validationRule);
         return {
           content: [
             {
@@ -521,7 +576,7 @@ ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` :
 
       case 'dhis2_run_validation':
         const validationParams = args as any;
-        const validationResults = await dhis2Client.runValidation(validationParams);
+        const validationResults = await dhis2Client!.runValidation(validationParams);
         return {
           content: [
             {
@@ -533,7 +588,7 @@ ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` :
 
       case 'dhis2_get_data_values':
         const dataValueParams = args as any;
-        const dataValues = await dhis2Client.getDataValues(dataValueParams);
+        const dataValues = await dhis2Client!.getDataValues(dataValueParams);
         return {
           content: [
             {
@@ -545,7 +600,7 @@ ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` :
 
       case 'dhis2_bulk_import_data_values':
         const { dataValues: valuesToImport } = args as { dataValues: any[] };
-        const importResult = await dhis2Client.bulkImportDataValues(valuesToImport);
+        const importResult = await dhis2Client!.bulkImportDataValues(valuesToImport);
         return {
           content: [
             {
@@ -557,7 +612,7 @@ ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` :
 
       case 'dhis2_get_analytics':
         const analyticsParams = args as any;
-        const analytics = await dhis2Client.getAnalytics(analyticsParams);
+        const analytics = await dhis2Client!.getAnalytics(analyticsParams);
         return {
           content: [
             {
@@ -572,7 +627,7 @@ ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` :
           filter?: string;
           pageSize?: number;
         };
-        const programs = await dhis2Client.getPrograms(filterUndefinedValues({ filter: progFilter, pageSize: progPageSize }));
+        const programs = await dhis2Client!.getPrograms(filterUndefinedValues({ filter: progFilter, pageSize: progPageSize }));
         return {
           content: [
             {
@@ -584,7 +639,7 @@ ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` :
 
       case 'dhis2_create_program':
         const newProgram = args as any;
-        const createdProg = await dhis2Client.createProgram(newProgram);
+        const createdProg = await dhis2Client!.createProgram(newProgram);
         return {
           content: [
             {
@@ -599,7 +654,7 @@ ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` :
           filter?: string;
           pageSize?: number;
         };
-        const trackedEntityTypes = await dhis2Client.getTrackedEntityTypes(filterUndefinedValues({ filter: tetFilter, pageSize: tetPageSize }));
+        const trackedEntityTypes = await dhis2Client!.getTrackedEntityTypes(filterUndefinedValues({ filter: tetFilter, pageSize: tetPageSize }));
         return {
           content: [
             {
@@ -611,7 +666,7 @@ ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` :
 
       case 'dhis2_create_tracked_entity_type':
         const newTET = args as any;
-        const createdTET = await dhis2Client.createTrackedEntityType(newTET);
+        const createdTET = await dhis2Client!.createTrackedEntityType(newTET);
         return {
           content: [
             {
@@ -626,7 +681,7 @@ ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` :
           filter?: string;
           pageSize?: number;
         };
-        const trackedEntityAttributes = await dhis2Client.getTrackedEntityAttributes(filterUndefinedValues({ filter: teaFilter, pageSize: teaPageSize }));
+        const trackedEntityAttributes = await dhis2Client!.getTrackedEntityAttributes(filterUndefinedValues({ filter: teaFilter, pageSize: teaPageSize }));
         return {
           content: [
             {
@@ -638,7 +693,7 @@ ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` :
 
       case 'dhis2_create_tracked_entity_attribute':
         const newTEA = args as any;
-        const createdTEA = await dhis2Client.createTrackedEntityAttribute(newTEA);
+        const createdTEA = await dhis2Client!.createTrackedEntityAttribute(newTEA);
         return {
           content: [
             {
@@ -653,7 +708,7 @@ ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` :
           filter?: string;
           pageSize?: number;
         };
-        const programStages = await dhis2Client.getProgramStages(filterUndefinedValues({ filter: psFilter, pageSize: psPageSize }));
+        const programStages = await dhis2Client!.getProgramStages(filterUndefinedValues({ filter: psFilter, pageSize: psPageSize }));
         return {
           content: [
             {
@@ -665,7 +720,7 @@ ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` :
 
       case 'dhis2_create_program_stage':
         const newPS = args as any;
-        const createdPS = await dhis2Client.createProgramStage(newPS);
+        const createdPS = await dhis2Client!.createProgramStage(newPS);
         return {
           content: [
             {
@@ -680,7 +735,7 @@ ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` :
           filter?: string;
           pageSize?: number;
         };
-        const programRules = await dhis2Client.getProgramRules(filterUndefinedValues({ filter: prFilter, pageSize: prPageSize }));
+        const programRules = await dhis2Client!.getProgramRules(filterUndefinedValues({ filter: prFilter, pageSize: prPageSize }));
         return {
           content: [
             {
@@ -692,7 +747,7 @@ ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` :
 
       case 'dhis2_create_program_rule':
         const newPR = args as any;
-        const createdPR = await dhis2Client.createProgramRule(newPR);
+        const createdPR = await dhis2Client!.createProgramRule(newPR);
         return {
           content: [
             {
@@ -704,7 +759,7 @@ ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` :
 
       case 'dhis2_list_tracked_entity_instances':
         const teiParams = args as any;
-        const trackedEntityInstances = await dhis2Client.getTrackedEntityInstances(teiParams);
+        const trackedEntityInstances = await dhis2Client!.getTrackedEntityInstances(teiParams);
         return {
           content: [
             {
@@ -716,7 +771,7 @@ ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` :
 
       case 'dhis2_create_tracked_entity_instance':
         const newTEI = args as any;
-        const createdTEI = await dhis2Client.createTrackedEntityInstance(newTEI);
+        const createdTEI = await dhis2Client!.createTrackedEntityInstance(newTEI);
         return {
           content: [
             {
@@ -728,7 +783,7 @@ ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` :
 
       case 'dhis2_list_enrollments':
         const enrollmentParams = args as any;
-        const enrollments = await dhis2Client.getEnrollments(enrollmentParams);
+        const enrollments = await dhis2Client!.getEnrollments(enrollmentParams);
         return {
           content: [
             {
@@ -740,7 +795,7 @@ ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` :
 
       case 'dhis2_create_enrollment':
         const newEnrollment = args as any;
-        const createdEnrollment = await dhis2Client.createEnrollment(newEnrollment);
+        const createdEnrollment = await dhis2Client!.createEnrollment(newEnrollment);
         return {
           content: [
             {
@@ -752,7 +807,7 @@ ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` :
 
       case 'dhis2_list_events':
         const eventParams = args as any;
-        const events = await dhis2Client.getEvents(eventParams);
+        const events = await dhis2Client!.getEvents(eventParams);
         return {
           content: [
             {
@@ -764,7 +819,7 @@ ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` :
 
       case 'dhis2_create_event':
         const newEvent = args as any;
-        const createdEvent = await dhis2Client.createEvent(newEvent);
+        const createdEvent = await dhis2Client!.createEvent(newEvent);
         return {
           content: [
             {
@@ -776,7 +831,7 @@ ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` :
 
       case 'dhis2_bulk_import_events':
         const { events: eventsToImport } = args as { events: any[] };
-        const eventImportResult = await dhis2Client.bulkImportEvents(eventsToImport);
+        const eventImportResult = await dhis2Client!.bulkImportEvents(eventsToImport);
         return {
           content: [
             {
@@ -788,7 +843,7 @@ ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` :
 
       case 'dhis2_get_event_analytics':
         const eventAnalyticsParams = args as any;
-        const eventAnalytics = await dhis2Client.getEventAnalytics(eventAnalyticsParams);
+        const eventAnalytics = await dhis2Client!.getEventAnalytics(eventAnalyticsParams);
         return {
           content: [
             {
@@ -800,7 +855,7 @@ ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` :
 
       case 'dhis2_get_enrollment_analytics':
         const enrollmentAnalyticsParams = args as any;
-        const enrollmentAnalytics = await dhis2Client.getEnrollmentAnalytics(enrollmentAnalyticsParams);
+        const enrollmentAnalytics = await dhis2Client!.getEnrollmentAnalytics(enrollmentAnalyticsParams);
         return {
           content: [
             {
@@ -811,7 +866,7 @@ ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` :
         };
 
       case 'dhis2_get_data_statistics':
-        const dataStatistics = await dhis2Client.getDataStatistics();
+        const dataStatistics = await dhis2Client!.getDataStatistics();
         return {
           content: [
             {
@@ -826,7 +881,7 @@ ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` :
           filter?: string;
           pageSize?: number;
         };
-        const dashboards = await dhis2Client.getDashboards(filterUndefinedValues({ filter: dbFilter, pageSize: dbPageSize }));
+        const dashboards = await dhis2Client!.getDashboards(filterUndefinedValues({ filter: dbFilter, pageSize: dbPageSize }));
         return {
           content: [
             {
@@ -838,7 +893,7 @@ ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` :
 
       case 'dhis2_create_dashboard':
         const newDashboard = args as any;
-        const createdDashboard = await dhis2Client.createDashboard(newDashboard);
+        const createdDashboard = await dhis2Client!.createDashboard(newDashboard);
         return {
           content: [
             {
@@ -853,7 +908,7 @@ ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` :
           filter?: string;
           pageSize?: number;
         };
-        const visualizations = await dhis2Client.getVisualizations(filterUndefinedValues({ filter: vizFilter, pageSize: vizPageSize }));
+        const visualizations = await dhis2Client!.getVisualizations(filterUndefinedValues({ filter: vizFilter, pageSize: vizPageSize }));
         return {
           content: [
             {
@@ -865,7 +920,7 @@ ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` :
 
       case 'dhis2_create_visualization':
         const newVisualization = args as any;
-        const createdVisualization = await dhis2Client.createVisualization(newVisualization);
+        const createdVisualization = await dhis2Client!.createVisualization(newVisualization);
         return {
           content: [
             {
@@ -880,7 +935,7 @@ ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` :
           filter?: string;
           pageSize?: number;
         };
-        const reports = await dhis2Client.getReports(filterUndefinedValues({ filter: reportFilter, pageSize: reportPageSize }));
+        const reports = await dhis2Client!.getReports(filterUndefinedValues({ filter: reportFilter, pageSize: reportPageSize }));
         return {
           content: [
             {
@@ -892,7 +947,7 @@ ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` :
 
       case 'dhis2_generate_report':
         const { reportId, ...reportParams } = args as any;
-        const generatedReport = await dhis2Client.generateReport(reportId, reportParams);
+        const generatedReport = await dhis2Client!.generateReport(reportId, reportParams);
         return {
           content: [
             {
@@ -965,7 +1020,7 @@ ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` :
 
       case 'dhis2_create_datastore_namespace':
         const datastoreNsArgs = args as any;
-        const result = await dhis2Client.createDataStoreNamespace(datastoreNsArgs.namespace, datastoreNsArgs);
+        const result = await dhis2Client!.createDataStoreNamespace(datastoreNsArgs.namespace, datastoreNsArgs);
         return {
           content: [
             {
@@ -977,7 +1032,7 @@ ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` :
 
       case 'dhis2_manage_datastore_key':
         const datastoreKeyArgs = args as any;
-        const keyResult = await dhis2Client.manageDataStoreKey(datastoreKeyArgs);
+        const keyResult = await dhis2Client!.manageDataStoreKey(datastoreKeyArgs);
         return {
           content: [
             {
@@ -1712,7 +1767,14 @@ ${JSON.stringify(exportContext, null, 2)}
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error('DHIS2 MCP Server running on stdio');
+  
+  console.error('🚀 DHIS2 MCP Server running on stdio');
+  console.error('');
+  console.error('📋 Available Modes:');
+  console.error('  🛠️  Development Mode: Ready! (App building, code generation, testing)');
+  console.error('  🔧 API Mode: Use dhis2_configure to connect to DHIS2 instance');
+  console.error('');
+  console.error('💡 Start with development tools - no DHIS2 connection required!');
 }
 
 main().catch((error) => {
