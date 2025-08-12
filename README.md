@@ -7,6 +7,10 @@
 
 > **🚀 Production Ready**: A comprehensive Model Context Protocol (MCP) server for DHIS2 development and management, providing 40+ tools for complete DHIS2 Web API coverage.
 
+<a href="https://glama.ai/mcp/servers/@Dradebo/dhis2-mcp">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/@Dradebo/dhis2-mcp/badge" alt="DHIS2 Server MCP server" />
+</a>
+
 ## ✨ Features
 
 ### 🏗️ **Complete DHIS2 Web API Coverage**
