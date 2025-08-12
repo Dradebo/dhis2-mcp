@@ -187,13 +187,17 @@ export function createDHIS2Tools(): Tool[] {
     },
     {
       name: 'dhis2_delete_data_element',
-      description: 'Delete a data element from DHIS2',
+      description: 'Delete a data element from DHIS2 (requires confirmation)',
       inputSchema: {
         type: 'object',
         properties: {
           id: {
             type: 'string',
             description: 'ID of the data element to delete',
+          },
+          confirmed: {
+            type: 'boolean',
+            description: 'Set to true to confirm deletion after reviewing the confirmation message',
           },
         },
         required: ['id'],
@@ -641,7 +645,7 @@ export function createDHIS2Tools(): Tool[] {
     },
     {
       name: 'dhis2_bulk_import_data_values',
-      description: 'Bulk import data values into DHIS2',
+      description: 'Bulk import data values into DHIS2 (requires confirmation)',
       inputSchema: {
         type: 'object',
         properties: {
@@ -682,6 +686,10 @@ export function createDHIS2Tools(): Tool[] {
               required: ['dataElement', 'period', 'orgUnit', 'value'],
             },
             description: 'Array of data values to import',
+          },
+          confirmed: {
+            type: 'boolean',
+            description: 'Set to true to confirm bulk import after reviewing the confirmation message',
           },
         },
         required: ['dataValues'],
@@ -2242,6 +2250,149 @@ export function createDHIS2Tools(): Tool[] {
         required: ['componentType', 'componentName'],
       },
     },
+
+    // System Management and Audit Tools
+    {
+      name: 'dhis2_get_audit_log',
+      description: 'Retrieve audit log of all MCP operations performed',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          limit: {
+            type: 'number',
+            description: 'Number of recent entries to return (default: 50, max: 1000)',
+          },
+        },
+      },
+    },
+    {
+      name: 'dhis2_get_audit_summary',
+      description: 'Get summary statistics of audit log and system usage',
+      inputSchema: {
+        type: 'object',
+        properties: {},
+      },
+    },
+    {
+      name: 'dhis2_export_audit_log',
+      description: 'Export complete audit log as JSON for compliance reporting',
+      inputSchema: {
+        type: 'object',
+        properties: {},
+      },
+    },
+    {
+      name: 'dhis2_clear_audit_log',
+      description: 'Clear the audit log (requires confirmation)',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          confirmed: {
+            type: 'boolean',
+            description: 'Set to true to confirm clearing the audit log',
+          },
+        },
+      },
+    },
+    {
+      name: 'dhis2_get_permission_info',
+      description: 'Get detailed information about current user permissions and available tools',
+      inputSchema: {
+        type: 'object',
+        properties: {},
+      },
+    },
+    {
+      name: 'dhis2_get_server_info',
+      description: 'Get information about this MCP server and its composition capabilities',
+      inputSchema: {
+        type: 'object',
+        properties: {},
+      },
+    },
+    {
+      name: 'dhis2_get_composition_examples',
+      description: 'Get examples of how to integrate this DHIS2 MCP server with other MCP servers',
+      inputSchema: {
+        type: 'object',
+        properties: {},
+      },
+    },
+    {
+      name: 'dhis2_register_compatible_server',
+      description: 'Register information about a compatible MCP server for composition workflows',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          name: {
+            type: 'string',
+            description: 'Name of the MCP server',
+          },
+          version: {
+            type: 'string',
+            description: 'Version of the MCP server',
+          },
+          capabilities: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                domain: { type: 'string' },
+                operations: { type: 'array', items: { type: 'string' } },
+                version: { type: 'string' }
+              },
+              required: ['domain', 'operations', 'version']
+            },
+            description: 'Server capabilities',
+          },
+          description: {
+            type: 'string',
+            description: 'Description of the server',
+          },
+        },
+        required: ['name', 'version', 'capabilities', 'description'],
+      },
+    },
+    {
+      name: 'dhis2_get_composition_recommendations',
+      description: 'Get recommendations for integrating the result of the last operation with other MCP servers',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          lastTool: {
+            type: 'string',
+            description: 'Name of the last tool that was executed',
+          },
+        },
+      },
+    },
+    {
+      name: 'dhis2_export_for_composition',
+      description: 'Export the result of a DHIS2 operation in a format suitable for other MCP servers',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          toolName: {
+            type: 'string',
+            description: 'Name of the tool whose result should be exported',
+          },
+          data: {
+            type: 'object',
+            description: 'Data to export (usually the result of a previous tool call)',
+          },
+          targetServer: {
+            type: 'string',
+            description: 'Target MCP server name (optional)',
+          },
+          metadata: {
+            type: 'object',
+            description: 'Additional metadata to include (optional)',
+          },
+        },
+        required: ['toolName', 'data'],
+      },
+    },
+
     // Phase 4: UI Library Integration
     {
       name: 'dhis2_generate_ui_form_patterns',
@@ -2784,6 +2935,884 @@ export function createDHIS2Tools(): Tool[] {
           },
         },
         required: ['currentStack'],
+      },
+    },
+    // Phase 3: Android SDK Integration Tools
+    {
+      name: 'dhis2_android_init_project',
+      description: 'Initialize a new Android project with DHIS2 SDK integration',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          projectName: {
+            type: 'string',
+            description: 'Android project name (e.g., "dhis2-health-tracker")',
+          },
+          applicationId: {
+            type: 'string',
+            description: 'Android application ID (e.g., "org.dhis2.healthtracker")',
+          },
+          minSdkVersion: {
+            type: 'number',
+            description: 'Minimum Android SDK version (default: 21)',
+          },
+          targetSdkVersion: {
+            type: 'number',
+            description: 'Target Android SDK version (default: 34)',
+          },
+          language: {
+            type: 'string',
+            enum: ['kotlin', 'java'],
+            description: 'Programming language for Android app',
+          },
+          dhis2SdkVersion: {
+            type: 'string',
+            description: 'DHIS2 Android SDK version (e.g., "1.10.0")',
+          },
+          features: {
+            type: 'array',
+            items: {
+              type: 'string',
+              enum: ['offline_sync', 'gps_capture', 'camera_integration', 'biometric_auth', 'encrypted_storage'],
+            },
+            description: 'Features to include in the project setup',
+          },
+          architecture: {
+            type: 'string',
+            enum: ['mvvm', 'mvi', 'clean_architecture'],
+            description: 'Android architecture pattern to implement',
+          },
+        },
+        required: ['projectName', 'applicationId', 'language'],
+      },
+    },
+    {
+      name: 'dhis2_android_configure_gradle',
+      description: 'Generate Gradle build configuration for DHIS2 Android SDK integration',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          dhis2SdkVersion: {
+            type: 'string',
+            description: 'DHIS2 Android SDK version',
+          },
+          buildFeatures: {
+            type: 'object',
+            properties: {
+              compose: {
+                type: 'boolean',
+                description: 'Enable Jetpack Compose',
+              },
+              viewBinding: {
+                type: 'boolean',
+                description: 'Enable view binding',
+              },
+              dataBinding: {
+                type: 'boolean',
+                description: 'Enable data binding',
+              },
+            },
+          },
+          proguardRules: {
+            type: 'boolean',
+            description: 'Generate ProGuard rules for DHIS2 SDK',
+          },
+          buildVariants: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                name: {
+                  type: 'string',
+                  description: 'Build variant name (e.g., "dev", "staging", "production")',
+                },
+                dhis2Instance: {
+                  type: 'string',
+                  description: 'DHIS2 instance URL for this variant',
+                },
+              },
+              required: ['name', 'dhis2Instance'],
+            },
+            description: 'Build variants for different DHIS2 environments',
+          },
+          additionalLibraries: {
+            type: 'array',
+            items: {
+              type: 'string',
+              enum: ['room', 'retrofit', 'dagger_hilt', 'rxjava', 'coroutines', 'navigation'],
+            },
+            description: 'Additional Android libraries to include',
+          },
+        },
+        required: ['dhis2SdkVersion'],
+      },
+    },
+    {
+      name: 'dhis2_android_setup_sync',
+      description: 'Configure offline-first data synchronization patterns for DHIS2 Android app',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          syncStrategy: {
+            type: 'string',
+            enum: ['manual', 'automatic', 'scheduled', 'smart'],
+            description: 'Data synchronization strategy',
+          },
+          syncScope: {
+            type: 'object',
+            properties: {
+              metadata: {
+                type: 'boolean',
+                description: 'Sync metadata (programs, data elements, etc.)',
+              },
+              dataValues: {
+                type: 'boolean',
+                description: 'Sync aggregate data values',
+              },
+              events: {
+                type: 'boolean',
+                description: 'Sync tracker events',
+              },
+              enrollments: {
+                type: 'boolean',
+                description: 'Sync tracker enrollments',
+              },
+            },
+          },
+          conflictResolution: {
+            type: 'string',
+            enum: ['server_wins', 'client_wins', 'merge', 'user_prompt'],
+            description: 'Strategy for resolving sync conflicts',
+          },
+          networkConditions: {
+            type: 'object',
+            properties: {
+              wifiOnly: {
+                type: 'boolean',
+                description: 'Only sync on WiFi connections',
+              },
+              backgroundSync: {
+                type: 'boolean',
+                description: 'Allow background synchronization',
+              },
+              chunkSize: {
+                type: 'number',
+                description: 'Data chunk size for syncing (KB)',
+              },
+            },
+          },
+          progressTracking: {
+            type: 'boolean',
+            description: 'Include sync progress tracking UI',
+          },
+        },
+        required: ['syncStrategy'],
+      },
+    },
+    {
+      name: 'dhis2_android_configure_storage',
+      description: 'Set up local storage and database configuration for DHIS2 Android app',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          storageType: {
+            type: 'string',
+            enum: ['room', 'sqlite', 'realm'],
+            description: 'Local database technology',
+          },
+          encryptionLevel: {
+            type: 'string',
+            enum: ['none', 'basic', 'advanced'],
+            description: 'Database encryption level',
+          },
+          cacheStrategy: {
+            type: 'object',
+            properties: {
+              metadata: {
+                type: 'object',
+                properties: {
+                  ttl: {
+                    type: 'number',
+                    description: 'Time-to-live for metadata cache (hours)',
+                  },
+                  maxSize: {
+                    type: 'number',
+                    description: 'Maximum cache size (MB)',
+                  },
+                },
+              },
+              images: {
+                type: 'object',
+                properties: {
+                  compression: {
+                    type: 'boolean',
+                    description: 'Enable image compression',
+                  },
+                  maxResolution: {
+                    type: 'string',
+                    description: 'Maximum image resolution (e.g., "1920x1080")',
+                  },
+                },
+              },
+            },
+          },
+          purgePolicy: {
+            type: 'object',
+            properties: {
+              enabled: {
+                type: 'boolean',
+                description: 'Enable automatic data purging',
+              },
+              retentionDays: {
+                type: 'number',
+                description: 'Number of days to retain data',
+              },
+              conditions: {
+                type: 'array',
+                items: {
+                  type: 'string',
+                  enum: ['storage_full', 'data_old', 'user_logout'],
+                },
+                description: 'Conditions that trigger data purging',
+              },
+            },
+          },
+        },
+        required: ['storageType'],
+      },
+    },
+    {
+      name: 'dhis2_android_setup_location_services',
+      description: 'Configure GPS and location services for DHIS2 Android app',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          locationAccuracy: {
+            type: 'string',
+            enum: ['high', 'balanced', 'low_power', 'passive'],
+            description: 'Location accuracy requirements',
+          },
+          permissions: {
+            type: 'object',
+            properties: {
+              fineLocation: {
+                type: 'boolean',
+                description: 'Request fine location permission',
+              },
+              coarseLocation: {
+                type: 'boolean',
+                description: 'Request coarse location permission',
+              },
+              backgroundLocation: {
+                type: 'boolean',
+                description: 'Request background location permission',
+              },
+            },
+          },
+          geofencing: {
+            type: 'object',
+            properties: {
+              enabled: {
+                type: 'boolean',
+                description: 'Enable geofencing capabilities',
+              },
+              radius: {
+                type: 'number',
+                description: 'Default geofence radius (meters)',
+              },
+              triggers: {
+                type: 'array',
+                items: {
+                  type: 'string',
+                  enum: ['enter', 'exit', 'dwell'],
+                },
+                description: 'Geofence triggers to monitor',
+              },
+            },
+          },
+          coordinateCapture: {
+            type: 'object',
+            properties: {
+              validation: {
+                type: 'boolean',
+                description: 'Enable coordinate validation',
+              },
+              accuracyThreshold: {
+                type: 'number',
+                description: 'Minimum accuracy threshold (meters)',
+              },
+              timeoutSeconds: {
+                type: 'number',
+                description: 'Location capture timeout',
+              },
+            },
+          },
+          offlineMapping: {
+            type: 'boolean',
+            description: 'Include offline map support',
+          },
+        },
+        required: ['locationAccuracy'],
+      },
+    },
+    {
+      name: 'dhis2_android_configure_camera',
+      description: 'Set up camera and media capture capabilities for DHIS2 Android app',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          cameraFeatures: {
+            type: 'array',
+            items: {
+              type: 'string',
+              enum: ['photo_capture', 'video_recording', 'barcode_scanning', 'document_scanning'],
+            },
+            description: 'Camera features to enable',
+          },
+          imageSettings: {
+            type: 'object',
+            properties: {
+              maxResolution: {
+                type: 'string',
+                description: 'Maximum image resolution (e.g., "1920x1080")',
+              },
+              compression: {
+                type: 'object',
+                properties: {
+                  quality: {
+                    type: 'number',
+                    minimum: 1,
+                    maximum: 100,
+                    description: 'JPEG compression quality (1-100)',
+                  },
+                  format: {
+                    type: 'string',
+                    enum: ['jpeg', 'png', 'webp'],
+                    description: 'Image format',
+                  },
+                },
+              },
+              watermark: {
+                type: 'boolean',
+                description: 'Add timestamp/location watermark',
+              },
+            },
+          },
+          videoSettings: {
+            type: 'object',
+            properties: {
+              maxDuration: {
+                type: 'number',
+                description: 'Maximum video duration (seconds)',
+              },
+              quality: {
+                type: 'string',
+                enum: ['low', 'medium', 'high'],
+                description: 'Video recording quality',
+              },
+            },
+          },
+          barcodeTypes: {
+            type: 'array',
+            items: {
+              type: 'string',
+              enum: ['qr_code', 'barcode_128', 'data_matrix', 'pdf417'],
+            },
+            description: 'Supported barcode formats',
+          },
+          permissions: {
+            type: 'array',
+            items: {
+              type: 'string',
+              enum: ['camera', 'write_external_storage', 'record_audio'],
+            },
+            description: 'Required permissions for media capture',
+          },
+        },
+        required: ['cameraFeatures'],
+      },
+    },
+    {
+      name: 'dhis2_android_setup_authentication',
+      description: 'Configure authentication and security patterns for DHIS2 Android app',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          authMethods: {
+            type: 'array',
+            items: {
+              type: 'string',
+              enum: ['basic', 'oauth2', 'biometric', 'pin', 'pattern'],
+            },
+            description: 'Authentication methods to support',
+          },
+          biometricSettings: {
+            type: 'object',
+            properties: {
+              fingerprintAuth: {
+                type: 'boolean',
+                description: 'Enable fingerprint authentication',
+              },
+              faceAuth: {
+                type: 'boolean',
+                description: 'Enable face authentication',
+              },
+              fallbackToPin: {
+                type: 'boolean',
+                description: 'Allow PIN fallback for biometric auth',
+              },
+            },
+          },
+          sessionManagement: {
+            type: 'object',
+            properties: {
+              timeout: {
+                type: 'number',
+                description: 'Session timeout (minutes)',
+              },
+              backgroundTimeout: {
+                type: 'number',
+                description: 'Background session timeout (minutes)',
+              },
+              refreshTokens: {
+                type: 'boolean',
+                description: 'Enable automatic token refresh',
+              },
+            },
+          },
+          securityFeatures: {
+            type: 'object',
+            properties: {
+              screenShotPrevention: {
+                type: 'boolean',
+                description: 'Prevent screenshots in sensitive screens',
+              },
+              rootDetection: {
+                type: 'boolean',
+                description: 'Detect rooted devices',
+              },
+              certificatePinning: {
+                type: 'boolean',
+                description: 'Enable SSL certificate pinning',
+              },
+              obfuscation: {
+                type: 'boolean',
+                description: 'Enable code obfuscation',
+              },
+            },
+          },
+        },
+        required: ['authMethods'],
+      },
+    },
+    {
+      name: 'dhis2_android_generate_data_models',
+      description: 'Generate Android data model classes and repositories for DHIS2 entities',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          entities: {
+            type: 'array',
+            items: {
+              type: 'string',
+              enum: ['data_element', 'program', 'tracked_entity', 'event', 'enrollment', 'organisation_unit', 'user'],
+            },
+            description: 'DHIS2 entities to generate models for',
+          },
+          architecture: {
+            type: 'string',
+            enum: ['repository_pattern', 'use_cases', 'clean_architecture'],
+            description: 'Architecture pattern for data layer',
+          },
+          dataBinding: {
+            type: 'string',
+            enum: ['room', 'realm', 'manual_sqlite'],
+            description: 'Database binding approach',
+          },
+          validation: {
+            type: 'object',
+            properties: {
+              clientSide: {
+                type: 'boolean',
+                description: 'Include client-side validation',
+              },
+              customRules: {
+                type: 'boolean',
+                description: 'Support for custom validation rules',
+              },
+              programRules: {
+                type: 'boolean',
+                description: 'Implement DHIS2 program rules validation',
+              },
+            },
+          },
+          serialization: {
+            type: 'string',
+            enum: ['gson', 'moshi', 'kotlinx_serialization'],
+            description: 'JSON serialization library',
+          },
+        },
+        required: ['entities', 'architecture'],
+      },
+    },
+    {
+      name: 'dhis2_android_setup_testing',
+      description: 'Configure testing framework and generate test patterns for DHIS2 Android app',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          testingFrameworks: {
+            type: 'array',
+            items: {
+              type: 'string',
+              enum: ['junit', 'mockito', 'espresso', 'robolectric', 'compose_test'],
+            },
+            description: 'Testing frameworks to include',
+          },
+          testTypes: {
+            type: 'array',
+            items: {
+              type: 'string',
+              enum: ['unit', 'integration', 'ui', 'sync', 'offline'],
+            },
+            description: 'Types of tests to generate',
+          },
+          mockStrategies: {
+            type: 'object',
+            properties: {
+              dhis2Api: {
+                type: 'boolean',
+                description: 'Mock DHIS2 API responses',
+              },
+              database: {
+                type: 'boolean',
+                description: 'Mock database operations',
+              },
+              networkConditions: {
+                type: 'boolean',
+                description: 'Test different network conditions',
+              },
+            },
+          },
+          coverage: {
+            type: 'object',
+            properties: {
+              threshold: {
+                type: 'number',
+                description: 'Code coverage threshold percentage',
+              },
+              reports: {
+                type: 'array',
+                items: {
+                  type: 'string',
+                  enum: ['html', 'xml', 'jacoco'],
+                },
+                description: 'Coverage report formats',
+              },
+            },
+          },
+        },
+        required: ['testingFrameworks', 'testTypes'],
+      },
+    },
+    {
+      name: 'dhis2_android_configure_ui_patterns',
+      description: 'Generate Android UI patterns and components for DHIS2 apps',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          uiFramework: {
+            type: 'string',
+            enum: ['jetpack_compose', 'xml_layouts', 'hybrid'],
+            description: 'UI framework to use',
+          },
+          components: {
+            type: 'array',
+            items: {
+              type: 'string',
+              enum: ['data_entry_form', 'list_adapter', 'navigation_drawer', 'bottom_sheet', 'sync_indicator', 'offline_banner'],
+            },
+            description: 'UI components to generate',
+          },
+          designSystem: {
+            type: 'object',
+            properties: {
+              materialDesign: {
+                type: 'string',
+                enum: ['material2', 'material3'],
+                description: 'Material Design version',
+              },
+              dhis2Branding: {
+                type: 'boolean',
+                description: 'Include DHIS2 branding elements',
+              },
+              darkTheme: {
+                type: 'boolean',
+                description: 'Support dark theme',
+              },
+              customColors: {
+                type: 'object',
+                properties: {
+                  primary: {
+                    type: 'string',
+                    description: 'Primary color hex code',
+                  },
+                  secondary: {
+                    type: 'string',
+                    description: 'Secondary color hex code',
+                  },
+                },
+              },
+            },
+          },
+          accessibility: {
+            type: 'object',
+            properties: {
+              contentDescriptions: {
+                type: 'boolean',
+                description: 'Generate content descriptions',
+              },
+              talkback: {
+                type: 'boolean',
+                description: 'TalkBack support',
+              },
+              largeText: {
+                type: 'boolean',
+                description: 'Large text support',
+              },
+            },
+          },
+          localization: {
+            type: 'object',
+            properties: {
+              rtlSupport: {
+                type: 'boolean',
+                description: 'Right-to-left language support',
+              },
+              languages: {
+                type: 'array',
+                items: {
+                  type: 'string',
+                },
+                description: 'Supported language codes (e.g., ["en", "fr", "ar"])',
+              },
+            },
+          },
+        },
+        required: ['uiFramework', 'components'],
+      },
+    },
+    {
+      name: 'dhis2_android_setup_offline_analytics',
+      description: 'Configure offline analytics and reporting capabilities for DHIS2 Android app',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          analyticsFeatures: {
+            type: 'array',
+            items: {
+              type: 'string',
+              enum: ['charts', 'tables', 'maps', 'indicators', 'dashboards'],
+            },
+            description: 'Analytics features to include',
+          },
+          chartTypes: {
+            type: 'array',
+            items: {
+              type: 'string',
+              enum: ['line', 'bar', 'pie', 'column', 'area'],
+            },
+            description: 'Chart types to support',
+          },
+          dataAggregation: {
+            type: 'object',
+            properties: {
+              levels: {
+                type: 'array',
+                items: {
+                  type: 'string',
+                  enum: ['facility', 'district', 'region', 'national'],
+                },
+                description: 'Aggregation levels to support',
+              },
+              periods: {
+                type: 'array',
+                items: {
+                  type: 'string',
+                  enum: ['daily', 'weekly', 'monthly', 'quarterly', 'yearly'],
+                },
+                description: 'Period aggregations to support',
+              },
+            },
+          },
+          caching: {
+            type: 'object',
+            properties: {
+              precompute: {
+                type: 'boolean',
+                description: 'Pre-compute analytics during sync',
+              },
+              cacheDuration: {
+                type: 'number',
+                description: 'Analytics cache duration (hours)',
+              },
+            },
+          },
+          export: {
+            type: 'object',
+            properties: {
+              formats: {
+                type: 'array',
+                items: {
+                  type: 'string',
+                  enum: ['pdf', 'excel', 'csv', 'image'],
+                },
+                description: 'Export formats to support',
+              },
+              sharing: {
+                type: 'boolean',
+                description: 'Enable sharing analytics results',
+              },
+            },
+          },
+        },
+        required: ['analyticsFeatures'],
+      },
+    },
+    {
+      name: 'dhis2_android_configure_notifications',
+      description: 'Set up push notifications and local notifications for DHIS2 Android app',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          notificationTypes: {
+            type: 'array',
+            items: {
+              type: 'string',
+              enum: ['push', 'local', 'in_app'],
+            },
+            description: 'Types of notifications to implement',
+          },
+          pushProvider: {
+            type: 'string',
+            enum: ['fcm', 'hms', 'custom'],
+            description: 'Push notification provider',
+          },
+          triggers: {
+            type: 'array',
+            items: {
+              type: 'string',
+              enum: ['sync_complete', 'sync_failed', 'data_due', 'reminder', 'system_message'],
+            },
+            description: 'Notification triggers',
+          },
+          scheduling: {
+            type: 'object',
+            properties: {
+              reminders: {
+                type: 'boolean',
+                description: 'Enable scheduled reminders',
+              },
+              intervals: {
+                type: 'array',
+                items: {
+                  type: 'string',
+                  enum: ['daily', 'weekly', 'monthly', 'custom'],
+                },
+                description: 'Reminder intervals',
+              },
+            },
+          },
+          customization: {
+            type: 'object',
+            properties: {
+              sound: {
+                type: 'boolean',
+                description: 'Custom notification sounds',
+              },
+              vibration: {
+                type: 'boolean',
+                description: 'Vibration patterns',
+              },
+              led: {
+                type: 'boolean',
+                description: 'LED color customization',
+              },
+            },
+          },
+        },
+        required: ['notificationTypes'],
+      },
+    },
+    {
+      name: 'dhis2_android_performance_optimization',
+      description: 'Generate performance optimization patterns and monitoring for DHIS2 Android app',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          optimizationAreas: {
+            type: 'array',
+            items: {
+              type: 'string',
+              enum: ['database_queries', 'image_loading', 'network_requests', 'ui_rendering', 'memory_usage'],
+            },
+            description: 'Areas to optimize',
+          },
+          monitoring: {
+            type: 'object',
+            properties: {
+              crashReporting: {
+                type: 'string',
+                enum: ['crashlytics', 'bugsnag', 'custom'],
+                description: 'Crash reporting service',
+              },
+              analytics: {
+                type: 'string',
+                enum: ['firebase', 'google_analytics', 'custom'],
+                description: 'App analytics service',
+              },
+              performance: {
+                type: 'boolean',
+                description: 'Enable performance monitoring',
+              },
+            },
+          },
+          batterOptimization: {
+            type: 'object',
+            properties: {
+              dozeMode: {
+                type: 'boolean',
+                description: 'Handle Android Doze mode',
+              },
+              backgroundLimits: {
+                type: 'boolean',
+                description: 'Respect background execution limits',
+              },
+              jobScheduler: {
+                type: 'boolean',
+                description: 'Use JobScheduler for background tasks',
+              },
+            },
+          },
+          memoryManagement: {
+            type: 'object',
+            properties: {
+              imageCache: {
+                type: 'boolean',
+                description: 'Implement efficient image caching',
+              },
+              leakDetection: {
+                type: 'boolean',
+                description: 'Include memory leak detection',
+              },
+              proguard: {
+                type: 'boolean',
+                description: 'Configure ProGuard optimization',
+              },
+            },
+          },
+        },
+        required: ['optimizationAreas'],
       },
     },
   ];

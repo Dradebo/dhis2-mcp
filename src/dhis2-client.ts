@@ -689,6 +689,10 @@ export class DHIS2Client {
     });
   }
 
+  get baseURL(): string {
+    return this.baseUrl;
+  }
+
   async testConnection(): Promise<boolean> {
     try {
       const response = await this.client.get('/me');
@@ -696,6 +700,15 @@ export class DHIS2Client {
     } catch (error) {
       throw new Error(`Failed to connect to DHIS2: ${error}`);
     }
+  }
+
+  async getCurrentUser(): Promise<any> {
+    const response = await this.client.get('/me', {
+      params: {
+        fields: 'id,displayName,username,userCredentials[username,userRoles[id,name,authorities]],userGroups[id,name],organisationUnits[id,name,level],authorities'
+      }
+    });
+    return response.data;
   }
 
   async getSystemInfo(): Promise<SystemInfo> {

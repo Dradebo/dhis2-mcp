@@ -5,10 +5,16 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
+  CompleteRequestSchema,
   Tool,
 } from '@modelcontextprotocol/sdk/types.js';
 import { DHIS2Client } from './dhis2-client.js';
 import { createDHIS2Tools } from './tools/index.js';
+import { auditLogger } from './audit-logger.js';
+import { ConfirmationSystem } from './confirmation-system.js';
+import { PermissionSystem, UserPermissions } from './permission-system.js';
+import { ParameterCompletion } from './parameter-completion.js';
+import { MultiServerComposition } from './multi-server-composition.js';
 import {
   generateWebAppInitInstructions,
   generateManifestContent,
@@ -37,6 +43,21 @@ import {
   validateEnvironment,
   generateMigrationGuide
 } from './debugging-helpers.js';
+import {
+  generateAndroidProjectInit,
+  generateGradleBuildConfig,
+  generateSyncConfiguration,
+  generateLocationServicesConfig,
+  generateStorageConfiguration,
+  generateCameraConfiguration,
+  generateAndroidAuthenticationConfig,
+  generateDataModelsConfiguration,
+  generateAndroidTestingConfiguration,
+  generateAndroidUIConfiguration,
+  generateOfflineAnalyticsConfiguration,
+  generateNotificationsConfiguration,
+  generatePerformanceOptimizationConfiguration
+} from './android-generators.js';
 
 function filterUndefinedValues<T extends Record<string, any>>(obj: T): Partial<T> {
   const filtered: Partial<T> = {};
@@ -46,6 +67,19 @@ function filterUndefinedValues<T extends Record<string, any>>(obj: T): Partial<T
     }
   }
   return filtered;
+}
+
+// Helper function to add audit logging to successful operations
+function logSuccessfulOperation(toolName: string, params: Record<string, any>, result: any, startTime: number, resourcesAffected?: string[]) {
+  auditLogger.log({
+    toolName,
+    parameters: params,
+    outcome: 'success',
+    dhis2Instance: dhis2Client?.baseURL,
+    userId: currentUser?.username,
+    executionTime: Date.now() - startTime,
+    ...(resourcesAffected && { resourcesAffected })
+  });
 }
 
 const server = new Server(
@@ -62,15 +96,91 @@ const server = new Server(
 
 let dhis2Client: DHIS2Client | null = null;
 let tools: Tool[] = [];
+let userPermissions: UserPermissions = PermissionSystem.createDefaultPermissions();
+let currentUser: any = null;
+let parameterCompletion: ParameterCompletion = new ParameterCompletion(null);
+let multiServerComposition: MultiServerComposition = new MultiServerComposition();
 
 server.setRequestHandler(ListToolsRequestSchema, async () => {
+  // Filter tools based on user permissions
+  const filteredTools = PermissionSystem.filterToolsByPermissions(tools, userPermissions);
+  
   return {
-    tools,
+    tools: filteredTools,
   };
+});
+
+server.setRequestHandler(CompleteRequestSchema, async (request) => {
+  const { ref, argument } = request.params;
+  
+  try {
+    // Extract current argument values from context for tool-specific completions
+    const context = argument?.name ? { [argument.name]: argument.value } : {};
+    const toolName = typeof ref === 'object' && 'name' in ref ? (ref as any).name : '';
+    const argumentName = argument?.name || '';
+    const partialValue = typeof argument?.value === 'string' ? argument.value : undefined;
+    
+    const completion = await parameterCompletion.getCompletion(toolName, argumentName, partialValue);
+    
+    // Also try tool-specific completions
+    if (toolName && argumentName) {
+      const toolSpecific = await parameterCompletion.getToolSpecificCompletion(
+        toolName,
+        argumentName,
+        context
+      );
+      
+      if (toolSpecific.values.length > 0) {
+        completion.values = [...toolSpecific.values, ...completion.values];
+      }
+    }
+    
+    return {
+      completion: {
+        values: completion.values.slice(0, 50), // Limit to 50 suggestions
+        hasMore: completion.values.length > 50
+      }
+    };
+  } catch (error) {
+    console.error('Error in completion handler:', error);
+    return {
+      completion: {
+        values: [],
+        hasMore: false
+      }
+    };
+  }
 });
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
+  const startTime = Date.now();
+
+  // Check if tool requires confirmation and isn't already confirmed
+  const argsWithConfirmation = args as any;
+  if (ConfirmationSystem.requiresConfirmation(name) && !argsWithConfirmation.confirmed) {
+    const confirmationRequest = ConfirmationSystem.getConfirmationRequest(name, argsWithConfirmation);
+    if (confirmationRequest) {
+      const confirmationMessage = ConfirmationSystem.generateConfirmationMessage(confirmationRequest);
+      
+      // Log the confirmation request
+      auditLogger.log({
+        toolName: name,
+        parameters: args as Record<string, any>,
+        outcome: 'error',
+        error: 'Confirmation required',
+        dhis2Instance: dhis2Client?.baseURL
+      });
+      
+      return {
+        content: [{
+          type: 'text',
+          text: confirmationMessage
+        }],
+        isError: true
+      };
+    }
+  }
 
   try {
     switch (name) {
@@ -83,13 +193,52 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         
         dhis2Client = new DHIS2Client(baseUrl, username, password);
         await dhis2Client.testConnection();
+        
+        // Update parameter completion with the new client
+        parameterCompletion = new ParameterCompletion(dhis2Client);
+        
+        // Fetch user information and permissions
+        try {
+          currentUser = await dhis2Client.getCurrentUser();
+          userPermissions = PermissionSystem.extractPermissionsFromDHIS2User(currentUser);
+        } catch (error) {
+          console.warn('Could not fetch user permissions, using defaults:', error);
+          userPermissions = PermissionSystem.createDefaultPermissions();
+        }
+        
         tools = createDHIS2Tools();
+        
+        // Log successful connection
+        auditLogger.log({
+          toolName: name,
+          parameters: { baseUrl, username: '***REDACTED***' },
+          outcome: 'success',
+          dhis2Instance: baseUrl,
+          userId: currentUser?.username || username,
+          executionTime: Date.now() - startTime
+        });
+        
+        const permissionSummary = PermissionSystem.getPermissionSummary(userPermissions);
         
         return {
           content: [
             {
               type: 'text',
-              text: `Successfully connected to DHIS2 instance at ${baseUrl}`,
+              text: `✅ Successfully connected to DHIS2 instance at ${baseUrl}
+
+👤 User: ${currentUser?.displayName || username}
+🔐 Permission Level: ${permissionSummary.level} 
+📝 ${permissionSummary.description}
+
+🛠️ Available Tools: ${PermissionSystem.filterToolsByPermissions(tools, userPermissions).length} of ${tools.length} total tools
+
+✅ Allowed Operations:
+${permissionSummary.allowedOperations.map(op => `  • ${op}`).join('\n')}
+
+${permissionSummary.restrictedOperations.length > 0 ? `⛔ Restricted Operations:
+${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` : ''}
+
+🔍 Use tools starting with 'dhis2_' to interact with your DHIS2 instance.`,
             },
           ],
         };
@@ -104,6 +253,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     switch (name) {
       case 'dhis2_get_system_info':
         const systemInfo = await dhis2Client.getSystemInfo();
+        logSuccessfulOperation(name, {}, systemInfo, startTime);
         return {
           content: [
             {
@@ -119,6 +269,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           pageSize?: number;
         };
         const dataElements = await dhis2Client.getDataElements(filterUndefinedValues({ filter: deFilter, pageSize: dePageSize }));
+        logSuccessfulOperation(name, { filter: deFilter, pageSize: dePageSize }, dataElements, startTime);
         return {
           content: [
             {
@@ -131,6 +282,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case 'dhis2_create_data_element':
         const newDataElement = args as any;
         const createdDE = await dhis2Client.createDataElement(newDataElement);
+        logSuccessfulOperation(name, newDataElement, createdDE, startTime, [createdDE.response?.uid || 'unknown']);
         return {
           content: [
             {
@@ -1026,10 +1178,525 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           ],
         };
 
+      // Phase 3: Android SDK Integration Tools
+      case 'dhis2_android_init_project':
+        const androidProjectArgs = args as any;
+        const androidProjectInstructions = generateAndroidProjectInit(androidProjectArgs);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: androidProjectInstructions,
+            },
+          ],
+        };
+
+      case 'dhis2_android_configure_gradle':
+        const gradleArgs = args as any;
+        const gradleConfig = generateGradleBuildConfig(gradleArgs);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: gradleConfig,
+            },
+          ],
+        };
+
+      case 'dhis2_android_setup_sync':
+        const syncArgs = args as any;
+        const syncConfig = generateSyncConfiguration(syncArgs);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: syncConfig,
+            },
+          ],
+        };
+
+      case 'dhis2_android_configure_storage':
+        const storageArgs = args as any;
+        const storageConfig = generateStorageConfiguration(storageArgs);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: storageConfig,
+            },
+          ],
+        };
+
+      case 'dhis2_android_setup_location_services':
+        const locationArgs = args as any;
+        const locationConfig = generateLocationServicesConfig(locationArgs);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: locationConfig,
+            },
+          ],
+        };
+
+      case 'dhis2_android_configure_camera':
+        const cameraArgs = args as any;
+        const cameraConfig = generateCameraConfiguration(cameraArgs);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: cameraConfig,
+            },
+          ],
+        };
+
+      case 'dhis2_android_setup_authentication':
+        const androidAuthArgs = args as any;
+        const authConfig = generateAndroidAuthenticationConfig(androidAuthArgs);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: authConfig,
+            },
+          ],
+        };
+
+      case 'dhis2_android_generate_data_models':
+        const dataModelsArgs = args as any;
+        const dataModelsConfig = generateDataModelsConfiguration(dataModelsArgs);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: dataModelsConfig,
+            },
+          ],
+        };
+
+      case 'dhis2_android_setup_testing':
+        const testingArgs = args as any;
+        const testingConfig = generateAndroidTestingConfiguration(testingArgs);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: testingConfig,
+            },
+          ],
+        };
+
+      case 'dhis2_android_configure_ui_patterns':
+        const androidUIArgs = args as any;
+        const uiConfig = generateAndroidUIConfiguration(androidUIArgs);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: uiConfig,
+            },
+          ],
+        };
+
+      case 'dhis2_android_setup_offline_analytics':
+        const analyticsArgs = args as any;
+        const analyticsConfig = generateOfflineAnalyticsConfiguration(analyticsArgs);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: analyticsConfig,
+            },
+          ],
+        };
+
+      case 'dhis2_android_configure_notifications':
+        const notificationsArgs = args as any;
+        const notificationsConfig = generateNotificationsConfiguration(notificationsArgs);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: notificationsConfig,
+            },
+          ],
+        };
+
+      case 'dhis2_android_performance_optimization':
+        const androidPerfArgs = args as any;
+        const perfConfig = generatePerformanceOptimizationConfiguration(androidPerfArgs);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: perfConfig,
+            },
+          ],
+        };
+
+      // System Management and Audit Tools
+      case 'dhis2_get_audit_log':
+        const { limit = 50 } = args as { limit?: number };
+        const auditEntries = auditLogger.getAuditTrail(Math.min(limit, 1000));
+        
+        // Log successful audit retrieval
+        auditLogger.log({
+          toolName: name,
+          parameters: { limit },
+          outcome: 'success',
+          dhis2Instance: dhis2Client?.baseURL,
+          userId: currentUser?.username,
+          executionTime: Date.now() - startTime
+        });
+        
+        return {
+          content: [{
+            type: 'text',
+            text: `📋 Audit Log (${auditEntries.length} entries)\n\n` + 
+                  auditEntries.map(entry => 
+                    `🕐 ${entry.timestamp}\n` +
+                    `🛠️  Tool: ${entry.toolName}\n` +
+                    `👤 User: ${entry.userId || 'unknown'}\n` +
+                    `${entry.outcome === 'success' ? '✅' : '❌'} Result: ${entry.outcome}${entry.error ? ` - ${entry.error}` : ''}\n` +
+                    `⏱️  Duration: ${entry.executionTime || 0}ms\n` +
+                    `📍 Instance: ${entry.dhis2Instance || 'N/A'}\n`
+                  ).join('\n')
+          }]
+        };
+
+      case 'dhis2_get_audit_summary':
+        const summary = auditLogger.getAuditSummary();
+        const permissionSummary = PermissionSystem.getPermissionSummary(userPermissions);
+        
+        auditLogger.log({
+          toolName: name,
+          parameters: {},
+          outcome: 'success',
+          dhis2Instance: dhis2Client?.baseURL,
+          userId: currentUser?.username,
+          executionTime: Date.now() - startTime
+        });
+        
+        return {
+          content: [{
+            type: 'text',
+            text: `📊 DHIS2 MCP Server Audit Summary
+
+🔢 **Usage Statistics:**
+  • Total Operations: ${summary.totalOperations}
+  • Successful: ${summary.successCount} (${Math.round((summary.successCount / summary.totalOperations) * 100) || 0}%)
+  • Errors: ${summary.errorCount} (${Math.round((summary.errorCount / summary.totalOperations) * 100) || 0}%)
+
+👤 **Current Session:**
+  • User: ${currentUser?.displayName || 'Unknown'}
+  • Permission Level: ${permissionSummary.level}
+  • Available Tools: ${PermissionSystem.filterToolsByPermissions(tools, userPermissions).length} of ${tools.length}
+  • Connected to: ${dhis2Client?.baseURL || 'Not connected'}
+
+🛠️ **Most Used Tools:**
+${summary.mostUsedTools.slice(0, 5).map(tool => `  • ${tool.tool}: ${tool.count} times`).join('\n') || '  • No operations yet'}
+
+${summary.recentErrors.length > 0 ? `⚠️  **Recent Errors:**
+${summary.recentErrors.slice(0, 3).map(error => `  • ${error.toolName}: ${error.error}`).join('\n')}` : '✅ No recent errors'}`
+          }]
+        };
+
+      case 'dhis2_export_audit_log':
+        const exportData = auditLogger.exportAuditLog();
+        
+        auditLogger.log({
+          toolName: name,
+          parameters: {},
+          outcome: 'success',
+          dhis2Instance: dhis2Client?.baseURL,
+          userId: currentUser?.username,
+          executionTime: Date.now() - startTime
+        });
+        
+        return {
+          content: [{
+            type: 'text',
+            text: `📤 Audit Log Export\n\n${exportData}`
+          }]
+        };
+
+      case 'dhis2_clear_audit_log':
+        auditLogger.clear();
+        
+        return {
+          content: [{
+            type: 'text',
+            text: `🗑️ Audit log cleared successfully.`
+          }]
+        };
+
+      case 'dhis2_get_permission_info':
+        const filteredTools = PermissionSystem.filterToolsByPermissions(tools, userPermissions);
+        const permInfo = PermissionSystem.getPermissionSummary(userPermissions);
+        
+        auditLogger.log({
+          toolName: name,
+          parameters: {},
+          outcome: 'success',
+          dhis2Instance: dhis2Client?.baseURL,
+          userId: currentUser?.username,
+          executionTime: Date.now() - startTime
+        });
+        
+        return {
+          content: [{
+            type: 'text',
+            text: `🔐 Permission Information
+
+👤 **User Details:**
+  • Name: ${currentUser?.displayName || 'Unknown'}
+  • Username: ${currentUser?.username || 'Unknown'}
+  • User Groups: ${currentUser?.userGroups?.map((g: any) => g.name).join(', ') || 'None'}
+
+🎯 **Permission Level:** ${permInfo.level}
+📝 **Description:** ${permInfo.description}
+
+✅ **Allowed Operations:**
+${permInfo.allowedOperations.map(op => `  • ${op}`).join('\n')}
+
+${permInfo.restrictedOperations.length > 0 ? `⛔ **Restricted Operations:**
+${permInfo.restrictedOperations.map(op => `  • ${op}`).join('\n')}` : ''}
+
+🛠️ **Available Tools:** ${filteredTools.length} of ${tools.length} total
+  • Configuration: ${filteredTools.filter(t => t.name.includes('configure')).length}
+  • Data Management: ${filteredTools.filter(t => t.name.includes('list') || t.name.includes('get')).length}
+  • Creation Tools: ${filteredTools.filter(t => t.name.includes('create')).length}
+  • Analytics: ${filteredTools.filter(t => t.name.includes('analytics')).length}
+  • Development: ${filteredTools.filter(t => t.name.includes('init') || t.name.includes('generate')).length}
+
+🔑 **DHIS2 Authorities:** ${userPermissions.authorities.length} authorities assigned`
+          }]
+        };
+
+      // Multi-Server Composition Tools
+      case 'dhis2_get_server_info':
+        const serverInfo = multiServerComposition.getServerInfo();
+        
+        auditLogger.log({
+          toolName: name,
+          parameters: {},
+          outcome: 'success',
+          dhis2Instance: dhis2Client?.baseURL,
+          userId: currentUser?.username,
+          executionTime: Date.now() - startTime
+        });
+        
+        return {
+          content: [{
+            type: 'text',
+            text: `🖥️ DHIS2 MCP Server Information
+
+**Server Details:**
+  • Name: ${serverInfo.name}
+  • Version: ${serverInfo.version}
+  • Composition Mode: ${serverInfo.compositionMode ? 'Enabled' : 'Disabled'}
+  
+**Description:** ${serverInfo.description}
+
+**Capabilities:**
+${serverInfo.capabilities.map(cap => 
+  `  • **${cap.domain}** (v${cap.version}): ${cap.operations.join(', ')}`
+).join('\n')}
+
+**Compatible MCP Servers:**
+${serverInfo.compatibleWith.map(server => `  • ${server}`).join('\n')}
+
+**Currently Registered Servers:** ${multiServerComposition.getCompatibleServers().length}
+${multiServerComposition.getCompatibleServers().map(server => 
+  `  • ${server.name} v${server.version}: ${server.description}`
+).join('\n') || '  • No servers registered yet'}
+
+🔗 **Integration Status:** 
+${multiServerComposition.getCompatibleServers().length > 0 ? 
+  `✅ Ready for multi-server workflows with ${multiServerComposition.getCompatibleServers().length} registered server(s)` : 
+  '⚠️  No compatible servers registered. Use dhis2_register_compatible_server to enable workflows.'
+}`
+          }]
+        };
+
+      case 'dhis2_get_composition_examples':
+        const examples = multiServerComposition.generateIntegrationExamples();
+        
+        auditLogger.log({
+          toolName: name,
+          parameters: {},
+          outcome: 'success',
+          dhis2Instance: dhis2Client?.baseURL,
+          userId: currentUser?.username,
+          executionTime: Date.now() - startTime
+        });
+        
+        return {
+          content: [{
+            type: 'text',
+            text: examples
+          }]
+        };
+
+      case 'dhis2_register_compatible_server':
+        const serverRegistrationArgs = args as {
+          name: string;
+          version: string;
+          capabilities: Array<{ domain: string; operations: string[]; version: string }>;
+          description: string;
+        };
+        
+        multiServerComposition.registerCompatibleServer({
+          name: serverRegistrationArgs.name,
+          version: serverRegistrationArgs.version,
+          capabilities: serverRegistrationArgs.capabilities,
+          description: serverRegistrationArgs.description,
+          compatibleWith: ['dhis2-mcp'],
+          compositionMode: true
+        });
+        
+        auditLogger.log({
+          toolName: name,
+          parameters: serverRegistrationArgs,
+          outcome: 'success',
+          dhis2Instance: dhis2Client?.baseURL,
+          userId: currentUser?.username,
+          executionTime: Date.now() - startTime
+        });
+        
+        return {
+          content: [{
+            type: 'text',
+            text: `✅ Successfully registered MCP server: ${serverRegistrationArgs.name} v${serverRegistrationArgs.version}
+
+**Capabilities Added:**
+${serverRegistrationArgs.capabilities.map(cap => 
+  `  • ${cap.domain}: ${cap.operations.join(', ')}`
+).join('\n')}
+
+🔗 **Multi-Server Workflows:** Now enabled with ${multiServerComposition.getCompatibleServers().length} registered server(s)
+
+💡 **Next Steps:**
+  • Use dhis2_get_composition_recommendations to see integration suggestions
+  • Use dhis2_export_for_composition to share data with other servers
+  • Check dhis2_get_composition_examples for workflow ideas`
+          }]
+        };
+
+      case 'dhis2_get_composition_recommendations':
+        const { lastTool } = args as { lastTool?: string };
+        const recommendations = multiServerComposition.getCompositionRecommendations(
+          lastTool || 'dhis2_general', 
+          {}
+        );
+        
+        auditLogger.log({
+          toolName: name,
+          parameters: { lastTool },
+          outcome: 'success',
+          dhis2Instance: dhis2Client?.baseURL,
+          userId: currentUser?.username,
+          executionTime: Date.now() - startTime
+        });
+        
+        return {
+          content: [{
+            type: 'text',
+            text: `💡 Multi-Server Integration Recommendations
+
+${lastTool ? `**Based on your last operation:** ${lastTool}` : '**General Recommendations:**'}
+
+**Suggested Next Steps:**
+${recommendations.length > 0 ? 
+  recommendations.map(rec => `  • ${rec}`).join('\n') : 
+  '  • No specific recommendations for this operation'
+}
+
+**Available Compatible Servers:** ${multiServerComposition.getCompatibleServers().length}
+${multiServerComposition.getCompatibleServers().map(server => 
+  `  • **${server.name}**: ${server.capabilities.map(c => c.domain).join(', ')}`
+).join('\n') || '  • Register servers with dhis2_register_compatible_server'}
+
+**Common Integration Patterns:**
+  • **Data Quality**: DHIS2 validation → GitHub issues → Slack notifications
+  • **Development**: DHIS2 app generation → Git commits → Pull requests
+  • **Analytics**: DHIS2 reports → Database storage → Email distribution
+  • **Monitoring**: DHIS2 system info → Log aggregation → Alert systems
+
+🔗 Use **dhis2_export_for_composition** to prepare data for other servers.`
+          }]
+        };
+
+      case 'dhis2_export_for_composition':
+        const exportArgs = args as {
+          toolName: string;
+          data: any;
+          targetServer?: string;
+          metadata?: Record<string, any>;
+        };
+        
+        const exportContext = multiServerComposition.exportDataForComposition(
+          exportArgs.toolName,
+          exportArgs.data,
+          {
+            targetServer: exportArgs.targetServer,
+            ...exportArgs.metadata
+          }
+        );
+        
+        auditLogger.log({
+          toolName: name,
+          parameters: exportArgs,
+          outcome: 'success',
+          dhis2Instance: dhis2Client?.baseURL,
+          userId: currentUser?.username,
+          executionTime: Date.now() - startTime,
+          resourcesAffected: [exportArgs.toolName]
+        });
+        
+        return {
+          content: [{
+            type: 'text',
+            text: `📤 Data Exported for Multi-Server Composition
+
+**Export Details:**
+  • Source Tool: ${exportArgs.toolName}
+  • Timestamp: ${exportContext.timestamp}
+  • Target Server: ${exportArgs.targetServer || 'Any compatible server'}
+  • Operation Type: ${exportContext.operationType}
+
+**Standardized Export Format:**
+\`\`\`json
+${JSON.stringify(exportContext, null, 2)}
+\`\`\`
+
+**Compatible Servers:** ${multiServerComposition.getCompatibleServers().map(s => s.name).join(', ') || 'None registered'}
+
+**Next Steps:**
+  • Share this exported data with other MCP servers
+  • Use the standardized format for workflow automation
+  • Check server documentation for import procedures
+
+💡 **Integration Tip:** This format is designed to work seamlessly with GitHub, Slack, Database, and other MCP servers.`
+          }]
+        };
+
       default:
         throw new Error(`Unknown tool: ${name}`);
     }
   } catch (error) {
+    // Log the error
+    auditLogger.log({
+      toolName: name,
+      parameters: args as Record<string, any>,
+      outcome: 'error',
+      error: error instanceof Error ? error.message : String(error),
+      dhis2Instance: dhis2Client?.baseURL,
+      userId: currentUser?.username,
+      executionTime: Date.now() - startTime
+    });
+
     return {
       content: [
         {
