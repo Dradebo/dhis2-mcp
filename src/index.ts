@@ -9,6 +9,34 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import { DHIS2Client } from './dhis2-client.js';
 import { createDHIS2Tools } from './tools/index.js';
+import {
+  generateWebAppInitInstructions,
+  generateManifestContent,
+  generateBuildSystemConfig,
+  generateDevEnvironmentConfig,
+  generateAppRuntimeConfig,
+  generateAuthenticationPatterns,
+  generateUIComponents,
+  generateUIFormPatterns,
+  generateUIDataDisplayPatterns,
+  generateUINavigationLayout,
+  generateDesignSystemConfig,
+  generateAndroidMaterialForm,
+  generateAndroidListAdapter,
+  generateAndroidNavigationDrawer,
+  generateAndroidBottomSheet,
+  generateTestSetup
+} from './webapp-generators.js';
+import {
+  diagnoseCORSIssues,
+  generateCORSConfiguration,
+  debugAuthentication,
+  generateProxyConfiguration,
+  resolveBuildIssues,
+  generatePerformanceOptimizations,
+  validateEnvironment,
+  generateMigrationGuide
+} from './debugging-helpers.js';
 
 function filterUndefinedValues<T extends Record<string, any>>(obj: T): Partial<T> {
   const filtered: Partial<T> = {};
@@ -718,6 +746,282 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             {
               type: 'text',
               text: 'Report generated successfully (binary data)',
+            },
+          ],
+        };
+
+      // Web App Platform Integration Tools
+      case 'dhis2_init_webapp':
+        const { appName, appTitle, appDescription, namespace, appType, template, typescript, pwa, outputPath } = args as any;
+        const initInstructions = generateWebAppInitInstructions(appName, appTitle, appDescription, { namespace, appType, template, typescript, pwa, outputPath });
+        return {
+          content: [
+            {
+              type: 'text',
+              text: initInstructions,
+            },
+          ],
+        };
+
+      case 'dhis2_configure_app_manifest':
+        const manifestArgs = args as any;
+        const manifestContent = generateManifestContent(manifestArgs);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: manifestContent,
+            },
+          ],
+        };
+
+      case 'dhis2_configure_build_system':
+        const buildSystemArgs = args as any;
+        const buildConfig = generateBuildSystemConfig(buildSystemArgs);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: buildConfig,
+            },
+          ],
+        };
+
+      case 'dhis2_setup_dev_environment':
+        const devEnvArgs = args as any;
+        const devEnvConfig = generateDevEnvironmentConfig(devEnvArgs);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: devEnvConfig,
+            },
+          ],
+        };
+
+      case 'dhis2_generate_app_runtime_config':
+        const runtimeConfigArgs = args as any;
+        const runtimeConfig = generateAppRuntimeConfig(runtimeConfigArgs);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: runtimeConfig,
+            },
+          ],
+        };
+
+      case 'dhis2_create_datastore_namespace':
+        const datastoreNsArgs = args as any;
+        const result = await dhis2Client.createDataStoreNamespace(datastoreNsArgs.namespace, datastoreNsArgs);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `DataStore namespace '${datastoreNsArgs.namespace}' configured successfully`,
+            },
+          ],
+        };
+
+      case 'dhis2_manage_datastore_key':
+        const datastoreKeyArgs = args as any;
+        const keyResult = await dhis2Client.manageDataStoreKey(datastoreKeyArgs);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(keyResult, null, 2),
+            },
+          ],
+        };
+
+      case 'dhis2_setup_authentication_patterns':
+        const authArgs = args as any;
+        const authPatterns = generateAuthenticationPatterns(authArgs);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: authPatterns,
+            },
+          ],
+        };
+
+      case 'dhis2_create_ui_components':
+        const uiArgs = args as any;
+        const uiComponents = generateUIComponents(uiArgs);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: uiComponents,
+            },
+          ],
+        };
+
+      // Phase 4: UI Library Integration
+      case 'dhis2_generate_ui_form_patterns':
+        const formArgs = args as any;
+        const formCode = generateUIFormPatterns(formArgs);
+        return {
+          content: [
+            { type: 'text', text: formCode }
+          ]
+        };
+
+      case 'dhis2_generate_ui_data_display':
+        const displayArgs = args as any;
+        const displayCode = generateUIDataDisplayPatterns(displayArgs);
+        return {
+          content: [
+            { type: 'text', text: displayCode }
+          ]
+        };
+
+      case 'dhis2_generate_ui_navigation_layout':
+        const navArgs = args as any;
+        const navCode = generateUINavigationLayout(navArgs);
+        return {
+          content: [
+            { type: 'text', text: navCode }
+          ]
+        };
+
+      case 'dhis2_generate_design_system':
+        const dsArgs = args as any;
+        const dsConfig = generateDesignSystemConfig(dsArgs);
+        return {
+          content: [
+            { type: 'text', text: dsConfig }
+          ]
+        };
+
+      // Android UI pattern tools (Phase 4)
+      case 'android_generate_material_form':
+        const aFormArgs = args as any;
+        const aForm = generateAndroidMaterialForm(aFormArgs);
+        return { content: [{ type: 'text', text: aForm }] };
+
+      case 'android_generate_list_adapter':
+        const aListArgs = args as any;
+        const aList = generateAndroidListAdapter(aListArgs);
+        return { content: [{ type: 'text', text: aList }] };
+
+      case 'android_generate_navigation_drawer':
+        const aNavArgs = args as any;
+        const aNav = generateAndroidNavigationDrawer(aNavArgs);
+        return { content: [{ type: 'text', text: aNav }] };
+
+      case 'android_generate_bottom_sheet':
+        const aSheetArgs = args as any;
+        const aSheet = generateAndroidBottomSheet(aSheetArgs);
+        return { content: [{ type: 'text', text: aSheet }] };
+
+      case 'dhis2_generate_test_setup':
+        const testArgs = args as any;
+        const testSetup = generateTestSetup(testArgs);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: testSetup,
+            },
+          ],
+        };
+
+      // DHIS2 Debugging and Troubleshooting Tools
+      case 'dhis2_diagnose_cors_issues':
+        const corsArgs = args as any;
+        const corsAnalysis = diagnoseCORSIssues(corsArgs);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: corsAnalysis,
+            },
+          ],
+        };
+
+      case 'dhis2_configure_cors_allowlist':
+        const corsAllowlistArgs = args as any;
+        const corsConfig = generateCORSConfiguration(corsAllowlistArgs);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: corsConfig,
+            },
+          ],
+        };
+
+      case 'dhis2_debug_authentication':
+        const authDebugArgs = args as any;
+        const authAnalysis = debugAuthentication(authDebugArgs);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: authAnalysis,
+            },
+          ],
+        };
+
+      case 'dhis2_fix_proxy_configuration':
+        const proxyArgs = args as any;
+        const proxyConfig = generateProxyConfiguration(proxyArgs);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: proxyConfig,
+            },
+          ],
+        };
+
+      case 'dhis2_resolve_build_issues':
+        const buildIssueArgs = args as any;
+        const buildSolution = resolveBuildIssues(buildIssueArgs);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: buildSolution,
+            },
+          ],
+        };
+
+      case 'dhis2_optimize_performance':
+        const perfArgs = args as any;
+        const perfOptimizations = generatePerformanceOptimizations(perfArgs);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: perfOptimizations,
+            },
+          ],
+        };
+
+      case 'dhis2_validate_environment':
+        const envArgs = args as any;
+        const envValidation = validateEnvironment(envArgs);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: envValidation,
+            },
+          ],
+        };
+
+      case 'dhis2_migration_assistant':
+        const migrationArgs = args as any;
+        const migrationGuide = generateMigrationGuide(migrationArgs);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: migrationGuide,
             },
           ],
         };
