@@ -1,7 +1,7 @@
 {
-  "name": "dhis2-mcp",
+  "name": "dhis2-mcp-server",
   "version": "1.0.0",
-  "description": "An MCP server for DHIS2 development and management",
+  "description": "A Model Context Protocol server providing 108 tools for DHIS2 development, including code generators, debugging helpers, and documentation access for web and Android app development.",
   "main": "dist/index.js",
   "bin": {
     "dhis2-mcp": "dist/index.js"
@@ -27,7 +27,13 @@
     "mcp",
     "dhis2",
     "health-information-system",
-    "model-context-protocol"
+    "model-context-protocol",
+    "code-generator",
+    "android-development",
+    "web-development",
+    "debugging-tools",
+    "development-assistant",
+    "typescript"
   ],
   "author": "Dradebo",
   "license": "MIT",
