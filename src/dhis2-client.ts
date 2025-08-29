@@ -689,6 +689,10 @@ export class DHIS2Client {
     });
   }
 
+  get baseURL(): string {
+    return this.baseUrl;
+  }
+
   async testConnection(): Promise<boolean> {
     try {
       const response = await this.client.get('/me');
@@ -696,6 +700,15 @@ export class DHIS2Client {
     } catch (error) {
       throw new Error(`Failed to connect to DHIS2: ${error}`);
     }
+  }
+
+  async getCurrentUser(): Promise<any> {
+    const response = await this.client.get('/me', {
+      params: {
+        fields: 'id,displayName,username,userCredentials[username,userRoles[id,name,authorities]],userGroups[id,name],organisationUnits[id,name,level],authorities'
+      }
+    });
+    return response.data;
   }
 
   async getSystemInfo(): Promise<SystemInfo> {
@@ -1610,5 +1623,101 @@ export class DHIS2Client {
     } catch (error) {
       throw new Error(`Failed to generate report: ${error}`);
     }
+  }
+
+  // DataStore operations for Web App Platform integration
+  async createDataStoreNamespace(namespace: string, options?: {
+    description?: string;
+    sharing?: any;
+    initialKeys?: Array<{ key: string; value: any }>;
+  }): Promise<any> {
+    try {
+      // Create namespace metadata (if supported)
+      if (options?.description || options?.sharing) {
+        const namespaceConfig = {
+          description: options.description,
+          sharing: options.sharing
+        };
+        
+        try {
+          await this.client.put(`/dataStore/${namespace}/__metadata__`, namespaceConfig);
+        } catch (error) {
+          // Metadata creation is optional, continue with key creation
+          console.warn('Could not create namespace metadata:', error);
+        }
+      }
+
+      // Create initial keys if provided
+      if (options?.initialKeys) {
+        const results = [];
+        for (const { key, value } of options.initialKeys) {
+          try {
+            const response = await this.client.post(`/dataStore/${namespace}/${key}`, value);
+            results.push({ key, status: 'created', data: response.data });
+          } catch (error) {
+            results.push({ key, status: 'error', error: error });
+          }
+        }
+        return { namespace, results };
+      }
+
+      return { namespace, status: 'created' };
+    } catch (error) {
+      throw new Error(`Failed to create DataStore namespace: ${error}`);
+    }
+  }
+
+  async manageDataStoreKey(params: {
+    operation: 'create' | 'read' | 'update' | 'delete' | 'list';
+    namespace: string;
+    key?: string;
+    value?: any;
+    encrypt?: boolean;
+  }): Promise<any> {
+    try {
+      const { operation, namespace, key, value, encrypt } = params;
+
+      switch (operation) {
+        case 'list':
+          const response = await this.client.get(`/dataStore/${namespace}`);
+          return response.data;
+
+        case 'read':
+          if (!key) throw new Error('Key is required for read operation');
+          const readResponse = await this.client.get(`/dataStore/${namespace}/${key}`);
+          return readResponse.data;
+
+        case 'create':
+        case 'update':
+          if (!key || value === undefined) {
+            throw new Error('Key and value are required for create/update operations');
+          }
+          
+          const data = encrypt ? this.encryptValue(value) : value;
+          const method = operation === 'create' ? 'post' : 'put';
+          const writeResponse = await this.client[method](`/dataStore/${namespace}/${key}`, data);
+          return writeResponse.data;
+
+        case 'delete':
+          if (!key) throw new Error('Key is required for delete operation');
+          await this.client.delete(`/dataStore/${namespace}/${key}`);
+          return { status: 'deleted', namespace, key };
+
+        default:
+          throw new Error(`Unsupported operation: ${operation}`);
+      }
+    } catch (error) {
+      throw new Error(`Failed to manage DataStore key: ${error}`);
+    }
+  }
+
+  private encryptValue(value: any): any {
+    // Simple base64 encoding for demonstration
+    // In production, use proper encryption
+    const jsonString = JSON.stringify(value);
+    return {
+      __encrypted__: true,
+      data: Buffer.from(jsonString).toString('base64')
+    };
   }
 }

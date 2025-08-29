@@ -1,25 +1,50 @@
 {
-  "name": "dhis2-mcp",
+  "name": "dhis2-mcp-server",
   "version": "1.0.0",
-  "description": "An MCP server for DHIS2 development and management",
+  "description": "A Model Context Protocol server providing 108 tools for DHIS2 development, including code generators, debugging helpers, and documentation access for web and Android app development.",
   "main": "dist/index.js",
+  "bin": {
+    "dhis2-mcp": "dist/index.js"
+  },
   "type": "module",
+  "files": [
+    "dist",
+    "README.md",
+    "CLAUDE.md"
+  ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && node -e \"require('fs').chmodSync('dist/index.js', '755')\"",
     "dev": "tsc --watch",
     "start": "node dist/index.js",
     "test": "jest",
     "lint": "eslint src/**/*.ts",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm run build",
+    "inspector": "npx @modelcontextprotocol/inspector dist/index.js"
   },
   "keywords": [
     "mcp",
     "dhis2",
     "health-information-system",
-    "model-context-protocol"
+    "model-context-protocol",
+    "code-generator",
+    "android-development",
+    "web-development",
+    "debugging-tools",
+    "development-assistant",
+    "typescript"
   ],
   "author": "Dradebo",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yourusername/dhis2-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/dhis2-mcp/issues"
+  },
+  "homepage": "https://github.com/yourusername/dhis2-mcp#readme",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^0.5.0",
     "axios": "^1.6.0",
