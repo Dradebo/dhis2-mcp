@@ -5,6 +5,35 @@
 [![DHIS2](https://img.shields.io/badge/DHIS2-0080FF?style=for-the-badge&logo=dhis2&logoColor=white)](https://dhis2.org/)
 [![MCP](https://img.shields.io/badge/MCP-Model_Context_Protocol-purple?style=for-the-badge)](https://modelcontextprotocol.io/)
 
+
+> **🚀 Production Ready**: A comprehensive Model Context Protocol (MCP) server for DHIS2 development and management, providing 40+ tools for complete DHIS2 Web API coverage.
+
+<a href="https://glama.ai/mcp/servers/@Dradebo/dhis2-mcp">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/@Dradebo/dhis2-mcp/badge" alt="DHIS2 Server MCP server" />
+</a>
+
+## ✨ Features
+
+### 🏗️ **Complete DHIS2 Web API Coverage**
+- **Aggregate Data Model**: Data elements, data sets, categories, validation rules
+- **Event/Tracker Data Model**: Programs, tracked entities, events, enrollments  
+- **Analytics & Reporting**: Dashboards, visualizations, event analytics
+- **Bulk Operations**: Mass data import/export with validation
+- **System Management**: Connection handling, system info, statistics
+
+### 🛡️ **Production Grade**
+- **Type Safety**: Comprehensive TypeScript interfaces with strict mode
+- **Error Handling**: Robust error management with meaningful messages
+- **Testing**: 26 automated tests ensuring reliability
+- **Code Quality**: ESLint validation and best practices
+- **Build Pipeline**: Complete development workflow
+
+### 🔧 **Developer Experience**
+- **40+ MCP Tools**: Every major DHIS2 operation covered
+- **Detailed Schemas**: Rich input validation and documentation
+- **Easy Setup**: Simple npm commands for all operations
+- **Interactive**: Perfect for API exploration and learning
+=======
 > **🔧 Development Assistant**: A Model Context Protocol (MCP) server providing 108 tools for DHIS2 development, including code generators, debugging helpers, and documentation access for web and Android app development.
 
 ## ✨ What This Actually Is
@@ -48,6 +77,7 @@
 - **Code Generation**: Android and web app generators produce proper output
 - **DHIS2 Client**: Basic API operations work with real DHIS2 instances
 - **Integration**: All components work together without conflicts
+
 
 ## 🚀 Quick Start
 
