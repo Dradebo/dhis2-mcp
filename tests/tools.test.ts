@@ -150,6 +150,59 @@ describe('DHIS2 Tools', () => {
     });
   });
 
+  describe('tracker lifecycle tools', () => {
+    it('should include update and delete lifecycle tools for tracker entities', () => {
+      const toolNames = tools.map(tool => tool.name);
+
+      const lifecycleTools = [
+        'dhis2_update_program',
+        'dhis2_delete_program',
+        'dhis2_update_program_stage',
+        'dhis2_delete_program_stage',
+        'dhis2_update_program_rule',
+        'dhis2_delete_program_rule',
+        'dhis2_update_program_rule_variable',
+        'dhis2_delete_program_rule_variable',
+        'dhis2_update_program_indicator',
+        'dhis2_delete_program_indicator',
+        'dhis2_update_relationship_type',
+        'dhis2_delete_relationship_type',
+        'dhis2_update_tracked_entity_instance',
+        'dhis2_delete_tracked_entity_instance',
+        'dhis2_update_enrollment',
+        'dhis2_delete_enrollment',
+        'dhis2_update_event',
+        'dhis2_delete_event',
+      ];
+
+      lifecycleTools.forEach(toolName => {
+        expect(toolNames).toContain(toolName);
+      });
+    });
+
+    it('should require id for delete lifecycle tools and expose confirmation flag', () => {
+      const deleteTools = [
+        'dhis2_delete_program',
+        'dhis2_delete_program_stage',
+        'dhis2_delete_program_rule',
+        'dhis2_delete_program_rule_variable',
+        'dhis2_delete_program_indicator',
+        'dhis2_delete_relationship_type',
+        'dhis2_delete_tracked_entity_instance',
+        'dhis2_delete_enrollment',
+        'dhis2_delete_event',
+      ];
+
+      deleteTools.forEach(toolName => {
+        const tool = tools.find(t => t.name === toolName);
+        expect(tool).toBeDefined();
+        expect(tool.inputSchema.properties).toHaveProperty('id');
+        expect(tool.inputSchema.properties).toHaveProperty('confirmed');
+        expect(tool.inputSchema.required).toContain('id');
+      });
+    });
+  });
+
   describe('analytics tools', () => {
     let analyticsTool: any;
     let eventAnalyticsTool: any;

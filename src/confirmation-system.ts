@@ -26,6 +26,60 @@ export class ConfirmationSystem {
       warning: 'This will permanently delete the data set and all associated configuration.',
       severity: 'critical'
     }],
+    ['dhis2_delete_program', {
+      action: 'Delete Program',
+      target: '',
+      warning: 'This will permanently delete the program and may invalidate enrollments and events linked to it.',
+      severity: 'critical'
+    }],
+    ['dhis2_delete_program_stage', {
+      action: 'Delete Program Stage',
+      target: '',
+      warning: 'This will permanently delete the program stage and may affect existing tracker events.',
+      severity: 'critical'
+    }],
+    ['dhis2_delete_program_rule', {
+      action: 'Delete Program Rule',
+      target: '',
+      warning: 'This will permanently delete the program rule and alter tracker form logic.',
+      severity: 'high'
+    }],
+    ['dhis2_delete_program_rule_variable', {
+      action: 'Delete Program Rule Variable',
+      target: '',
+      warning: 'This will permanently delete the program rule variable and may break program rule expressions.',
+      severity: 'high'
+    }],
+    ['dhis2_delete_program_indicator', {
+      action: 'Delete Program Indicator',
+      target: '',
+      warning: 'This will permanently delete the program indicator and affect analytics outputs.',
+      severity: 'high'
+    }],
+    ['dhis2_delete_relationship_type', {
+      action: 'Delete Relationship Type',
+      target: '',
+      warning: 'This will permanently delete the relationship type and invalidate related tracker links.',
+      severity: 'high'
+    }],
+    ['dhis2_delete_tracked_entity_instance', {
+      action: 'Delete Tracked Entity Instance',
+      target: '',
+      warning: 'This will permanently delete the tracked entity instance and associated tracker history.',
+      severity: 'critical'
+    }],
+    ['dhis2_delete_enrollment', {
+      action: 'Delete Enrollment',
+      target: '',
+      warning: 'This will permanently delete the enrollment and may remove associated tracker events.',
+      severity: 'critical'
+    }],
+    ['dhis2_delete_event', {
+      action: 'Delete Event',
+      target: '',
+      warning: 'This will permanently delete the tracker event and its captured data values.',
+      severity: 'high'
+    }],
     ['dhis2_bulk_import_data_values', {
       action: 'Bulk Import Data Values',
       target: 'data values',

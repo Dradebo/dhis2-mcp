@@ -649,6 +649,30 @@ Contact your DHIS2 administrator for:
           ],
         };
 
+      case 'dhis2_update_program':
+        const { id: programId, ...programUpdateData } = args as any;
+        const updatedProgram = await dhis2Client!.updateProgram(programId, programUpdateData);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(updatedProgram, null, 2),
+            },
+          ],
+        };
+
+      case 'dhis2_delete_program':
+        const { id: deleteProgramId } = args as { id: string };
+        const deletedProgram = await dhis2Client!.deleteProgram(deleteProgramId);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(deletedProgram, null, 2),
+            },
+          ],
+        };
+
       case 'dhis2_list_tracked_entity_types':
         const { filter: tetFilter, pageSize: tetPageSize } = args as {
           filter?: string;
@@ -703,6 +727,60 @@ Contact your DHIS2 administrator for:
           ],
         };
 
+      case 'dhis2_list_option_sets':
+        const { filter: osFilter, pageSize: osPageSize } = args as {
+          filter?: string;
+          pageSize?: number;
+        };
+        const optionSets = await dhis2Client!.getOptionSets(filterUndefinedValues({ filter: osFilter, pageSize: osPageSize }));
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(optionSets, null, 2),
+            },
+          ],
+        };
+
+      case 'dhis2_create_option_set':
+        const newOptionSet = args as any;
+        const createdOptionSet = await dhis2Client!.createOptionSet(newOptionSet);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(createdOptionSet, null, 2),
+            },
+          ],
+        };
+
+      case 'dhis2_list_options':
+        const { filter: optionFilter, pageSize: optionPageSize } = args as {
+          filter?: string;
+          pageSize?: number;
+        };
+        const optionsResult = await dhis2Client!.getOptions(filterUndefinedValues({ filter: optionFilter, pageSize: optionPageSize }));
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(optionsResult, null, 2),
+            },
+          ],
+        };
+
+      case 'dhis2_create_option':
+        const newOption = args as any;
+        const createdOption = await dhis2Client!.createOption(newOption);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(createdOption, null, 2),
+            },
+          ],
+        };
+
       case 'dhis2_list_program_stages':
         const { filter: psFilter, pageSize: psPageSize } = args as {
           filter?: string;
@@ -726,6 +804,30 @@ Contact your DHIS2 administrator for:
             {
               type: 'text',
               text: JSON.stringify(createdPS, null, 2),
+            },
+          ],
+        };
+
+      case 'dhis2_update_program_stage':
+        const { id: programStageId, ...programStageUpdateData } = args as any;
+        const updatedProgramStage = await dhis2Client!.updateProgramStage(programStageId, programStageUpdateData);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(updatedProgramStage, null, 2),
+            },
+          ],
+        };
+
+      case 'dhis2_delete_program_stage':
+        const { id: deleteProgramStageId } = args as { id: string };
+        const deletedProgramStage = await dhis2Client!.deleteProgramStage(deleteProgramStageId);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(deletedProgramStage, null, 2),
             },
           ],
         };
@@ -757,6 +859,183 @@ Contact your DHIS2 administrator for:
           ],
         };
 
+      case 'dhis2_update_program_rule':
+        const { id: programRuleId, ...programRuleUpdateData } = args as any;
+        const updatedProgramRule = await dhis2Client!.updateProgramRule(programRuleId, programRuleUpdateData);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(updatedProgramRule, null, 2),
+            },
+          ],
+        };
+
+      case 'dhis2_delete_program_rule':
+        const { id: deleteProgramRuleId } = args as { id: string };
+        const deletedProgramRule = await dhis2Client!.deleteProgramRule(deleteProgramRuleId);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(deletedProgramRule, null, 2),
+            },
+          ],
+        };
+
+      case 'dhis2_list_program_rule_variables':
+        const { filter: prvFilter, pageSize: prvPageSize } = args as {
+          filter?: string;
+          pageSize?: number;
+        };
+        const programRuleVariables = await dhis2Client!.getProgramRuleVariables(filterUndefinedValues({ filter: prvFilter, pageSize: prvPageSize }));
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(programRuleVariables, null, 2),
+            },
+          ],
+        };
+
+      case 'dhis2_create_program_rule_variable':
+        const newProgramRuleVariable = args as any;
+        const createdProgramRuleVariable = await dhis2Client!.createProgramRuleVariable(newProgramRuleVariable);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(createdProgramRuleVariable, null, 2),
+            },
+          ],
+        };
+
+      case 'dhis2_update_program_rule_variable':
+        const { id: programRuleVariableId, ...programRuleVariableUpdateData } = args as any;
+        const updatedProgramRuleVariable = await dhis2Client!.updateProgramRuleVariable(programRuleVariableId, programRuleVariableUpdateData);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(updatedProgramRuleVariable, null, 2),
+            },
+          ],
+        };
+
+      case 'dhis2_delete_program_rule_variable':
+        const { id: deleteProgramRuleVariableId } = args as { id: string };
+        const deletedProgramRuleVariable = await dhis2Client!.deleteProgramRuleVariable(deleteProgramRuleVariableId);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(deletedProgramRuleVariable, null, 2),
+            },
+          ],
+        };
+
+      case 'dhis2_list_program_indicators':
+        const { filter: piFilter, pageSize: piPageSize } = args as {
+          filter?: string;
+          pageSize?: number;
+        };
+        const programIndicators = await dhis2Client!.getProgramIndicators(filterUndefinedValues({ filter: piFilter, pageSize: piPageSize }));
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(programIndicators, null, 2),
+            },
+          ],
+        };
+
+      case 'dhis2_create_program_indicator':
+        const newProgramIndicator = args as any;
+        const createdProgramIndicator = await dhis2Client!.createProgramIndicator(newProgramIndicator);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(createdProgramIndicator, null, 2),
+            },
+          ],
+        };
+
+      case 'dhis2_update_program_indicator':
+        const { id: programIndicatorId, ...programIndicatorUpdateData } = args as any;
+        const updatedProgramIndicator = await dhis2Client!.updateProgramIndicator(programIndicatorId, programIndicatorUpdateData);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(updatedProgramIndicator, null, 2),
+            },
+          ],
+        };
+
+      case 'dhis2_delete_program_indicator':
+        const { id: deleteProgramIndicatorId } = args as { id: string };
+        const deletedProgramIndicator = await dhis2Client!.deleteProgramIndicator(deleteProgramIndicatorId);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(deletedProgramIndicator, null, 2),
+            },
+          ],
+        };
+
+      case 'dhis2_list_relationship_types':
+        const { filter: relTypeFilter, pageSize: relTypePageSize } = args as {
+          filter?: string;
+          pageSize?: number;
+        };
+        const relationshipTypes = await dhis2Client!.getRelationshipTypes(filterUndefinedValues({ filter: relTypeFilter, pageSize: relTypePageSize }));
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(relationshipTypes, null, 2),
+            },
+          ],
+        };
+
+      case 'dhis2_create_relationship_type':
+        const newRelationshipType = args as any;
+        const createdRelationshipType = await dhis2Client!.createRelationshipType(newRelationshipType);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(createdRelationshipType, null, 2),
+            },
+          ],
+        };
+
+      case 'dhis2_update_relationship_type':
+        const { id: relationshipTypeId, ...relationshipTypeUpdateData } = args as any;
+        const updatedRelationshipType = await dhis2Client!.updateRelationshipType(relationshipTypeId, relationshipTypeUpdateData);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(updatedRelationshipType, null, 2),
+            },
+          ],
+        };
+
+      case 'dhis2_delete_relationship_type':
+        const { id: deleteRelationshipTypeId } = args as { id: string };
+        const deletedRelationshipType = await dhis2Client!.deleteRelationshipType(deleteRelationshipTypeId);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(deletedRelationshipType, null, 2),
+            },
+          ],
+        };
+
       case 'dhis2_list_tracked_entity_instances':
         const teiParams = args as any;
         const trackedEntityInstances = await dhis2Client!.getTrackedEntityInstances(teiParams);
@@ -777,6 +1056,30 @@ Contact your DHIS2 administrator for:
             {
               type: 'text',
               text: JSON.stringify(createdTEI, null, 2),
+            },
+          ],
+        };
+
+      case 'dhis2_update_tracked_entity_instance':
+        const { id: teiId, ...teiUpdateData } = args as any;
+        const updatedTEI = await dhis2Client!.updateTrackedEntityInstance(teiId, teiUpdateData);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(updatedTEI, null, 2),
+            },
+          ],
+        };
+
+      case 'dhis2_delete_tracked_entity_instance':
+        const { id: deleteTeiId } = args as { id: string };
+        const deletedTEI = await dhis2Client!.deleteTrackedEntityInstance(deleteTeiId);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(deletedTEI, null, 2),
             },
           ],
         };
@@ -805,6 +1108,30 @@ Contact your DHIS2 administrator for:
           ],
         };
 
+      case 'dhis2_update_enrollment':
+        const { id: enrollmentId, ...enrollmentUpdateData } = args as any;
+        const updatedEnrollment = await dhis2Client!.updateEnrollment(enrollmentId, enrollmentUpdateData);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(updatedEnrollment, null, 2),
+            },
+          ],
+        };
+
+      case 'dhis2_delete_enrollment':
+        const { id: deleteEnrollmentId } = args as { id: string };
+        const deletedEnrollment = await dhis2Client!.deleteEnrollment(deleteEnrollmentId);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(deletedEnrollment, null, 2),
+            },
+          ],
+        };
+
       case 'dhis2_list_events':
         const eventParams = args as any;
         const events = await dhis2Client!.getEvents(eventParams);
@@ -825,6 +1152,30 @@ Contact your DHIS2 administrator for:
             {
               type: 'text',
               text: JSON.stringify(createdEvent, null, 2),
+            },
+          ],
+        };
+
+      case 'dhis2_update_event':
+        const { id: eventId, ...eventUpdateData } = args as any;
+        const updatedEvent = await dhis2Client!.updateEvent(eventId, eventUpdateData);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(updatedEvent, null, 2),
+            },
+          ],
+        };
+
+      case 'dhis2_delete_event':
+        const { id: deleteEventId } = args as { id: string };
+        const deletedEvent = await dhis2Client!.deleteEvent(deleteEventId);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(deletedEvent, null, 2),
             },
           ],
         };

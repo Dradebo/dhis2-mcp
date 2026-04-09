@@ -1141,6 +1141,15 @@ export class DHIS2Client {
     }
   }
 
+  async deleteProgram(id: string): Promise<any> {
+    try {
+      const response = await this.client.delete(`/programs/${id}`);
+      return response.data;
+    } catch (error) {
+      throw new Error(`Failed to delete program: ${error}`);
+    }
+  }
+
   async getTrackedEntityTypes(params?: {
     fields?: string;
     filter?: string;
@@ -1201,6 +1210,66 @@ export class DHIS2Client {
     }
   }
 
+  async getOptionSets(params?: {
+    fields?: string;
+    filter?: string;
+    paging?: boolean;
+    pageSize?: number;
+  }): Promise<{ optionSets: OptionSet[] }> {
+    try {
+      const queryParams = {
+        fields: params?.fields || 'id,name,displayName,shortName,code,valueType,options[id,name,displayName,code,sortOrder]',
+        filter: params?.filter,
+        paging: params?.paging ?? false,
+        pageSize: params?.pageSize || 50,
+      };
+
+      const response = await this.client.get('/optionSets', { params: queryParams });
+      return response.data;
+    } catch (error) {
+      throw new Error(`Failed to get option sets: ${error}`);
+    }
+  }
+
+  async createOptionSet(optionSet: Partial<OptionSet>): Promise<any> {
+    try {
+      const response = await this.client.post('/optionSets', optionSet);
+      return response.data;
+    } catch (error) {
+      throw new Error(`Failed to create option set: ${error}`);
+    }
+  }
+
+  async getOptions(params?: {
+    fields?: string;
+    filter?: string;
+    paging?: boolean;
+    pageSize?: number;
+  }): Promise<{ options: Option[] }> {
+    try {
+      const queryParams = {
+        fields: params?.fields || 'id,name,displayName,code,sortOrder',
+        filter: params?.filter,
+        paging: params?.paging ?? false,
+        pageSize: params?.pageSize || 50,
+      };
+
+      const response = await this.client.get('/options', { params: queryParams });
+      return response.data;
+    } catch (error) {
+      throw new Error(`Failed to get options: ${error}`);
+    }
+  }
+
+  async createOption(option: Partial<Option>): Promise<any> {
+    try {
+      const response = await this.client.post('/options', option);
+      return response.data;
+    } catch (error) {
+      throw new Error(`Failed to create option: ${error}`);
+    }
+  }
+
   async getProgramStages(params?: {
     fields?: string;
     filter?: string;
@@ -1231,6 +1300,24 @@ export class DHIS2Client {
     }
   }
 
+  async updateProgramStage(id: string, programStage: Partial<ProgramStage>): Promise<any> {
+    try {
+      const response = await this.client.put(`/programStages/${id}`, programStage);
+      return response.data;
+    } catch (error) {
+      throw new Error(`Failed to update program stage: ${error}`);
+    }
+  }
+
+  async deleteProgramStage(id: string): Promise<any> {
+    try {
+      const response = await this.client.delete(`/programStages/${id}`);
+      return response.data;
+    } catch (error) {
+      throw new Error(`Failed to delete program stage: ${error}`);
+    }
+  }
+
   async getProgramRules(params?: {
     fields?: string;
     filter?: string;
@@ -1258,6 +1345,168 @@ export class DHIS2Client {
       return response.data;
     } catch (error) {
       throw new Error(`Failed to create program rule: ${error}`);
+    }
+  }
+
+  async updateProgramRule(id: string, programRule: Partial<ProgramRule>): Promise<any> {
+    try {
+      const response = await this.client.put(`/programRules/${id}`, programRule);
+      return response.data;
+    } catch (error) {
+      throw new Error(`Failed to update program rule: ${error}`);
+    }
+  }
+
+  async deleteProgramRule(id: string): Promise<any> {
+    try {
+      const response = await this.client.delete(`/programRules/${id}`);
+      return response.data;
+    } catch (error) {
+      throw new Error(`Failed to delete program rule: ${error}`);
+    }
+  }
+
+  async getProgramRuleVariables(params?: {
+    fields?: string;
+    filter?: string;
+    paging?: boolean;
+    pageSize?: number;
+  }): Promise<{ programRuleVariables: ProgramRuleVariable[] }> {
+    try {
+      const queryParams = {
+        fields: params?.fields || 'id,name,displayName,program[id,name],programStage[id,name],dataElement[id,name],trackedEntityAttribute[id,name],sourceType',
+        filter: params?.filter,
+        paging: params?.paging ?? false,
+        pageSize: params?.pageSize || 50,
+      };
+
+      const response = await this.client.get('/programRuleVariables', { params: queryParams });
+      return response.data;
+    } catch (error) {
+      throw new Error(`Failed to get program rule variables: ${error}`);
+    }
+  }
+
+  async createProgramRuleVariable(programRuleVariable: Partial<ProgramRuleVariable>): Promise<any> {
+    try {
+      const response = await this.client.post('/programRuleVariables', programRuleVariable);
+      return response.data;
+    } catch (error) {
+      throw new Error(`Failed to create program rule variable: ${error}`);
+    }
+  }
+
+  async updateProgramRuleVariable(id: string, programRuleVariable: Partial<ProgramRuleVariable>): Promise<any> {
+    try {
+      const response = await this.client.put(`/programRuleVariables/${id}`, programRuleVariable);
+      return response.data;
+    } catch (error) {
+      throw new Error(`Failed to update program rule variable: ${error}`);
+    }
+  }
+
+  async deleteProgramRuleVariable(id: string): Promise<any> {
+    try {
+      const response = await this.client.delete(`/programRuleVariables/${id}`);
+      return response.data;
+    } catch (error) {
+      throw new Error(`Failed to delete program rule variable: ${error}`);
+    }
+  }
+
+  async getProgramIndicators(params?: {
+    fields?: string;
+    filter?: string;
+    paging?: boolean;
+    pageSize?: number;
+  }): Promise<{ programIndicators: ProgramIndicator[] }> {
+    try {
+      const queryParams = {
+        fields: params?.fields || 'id,name,displayName,shortName,code,description,program[id,name],expression,filter,aggregationType,analyticsType,displayInForm',
+        filter: params?.filter,
+        paging: params?.paging ?? false,
+        pageSize: params?.pageSize || 50,
+      };
+
+      const response = await this.client.get('/programIndicators', { params: queryParams });
+      return response.data;
+    } catch (error) {
+      throw new Error(`Failed to get program indicators: ${error}`);
+    }
+  }
+
+  async createProgramIndicator(programIndicator: Partial<ProgramIndicator>): Promise<any> {
+    try {
+      const response = await this.client.post('/programIndicators', programIndicator);
+      return response.data;
+    } catch (error) {
+      throw new Error(`Failed to create program indicator: ${error}`);
+    }
+  }
+
+  async updateProgramIndicator(id: string, programIndicator: Partial<ProgramIndicator>): Promise<any> {
+    try {
+      const response = await this.client.put(`/programIndicators/${id}`, programIndicator);
+      return response.data;
+    } catch (error) {
+      throw new Error(`Failed to update program indicator: ${error}`);
+    }
+  }
+
+  async deleteProgramIndicator(id: string): Promise<any> {
+    try {
+      const response = await this.client.delete(`/programIndicators/${id}`);
+      return response.data;
+    } catch (error) {
+      throw new Error(`Failed to delete program indicator: ${error}`);
+    }
+  }
+
+  async getRelationshipTypes(params?: {
+    fields?: string;
+    filter?: string;
+    paging?: boolean;
+    pageSize?: number;
+  }): Promise<{ relationshipTypes: RelationshipType[] }> {
+    try {
+      const queryParams = {
+        fields: params?.fields || 'id,name,displayName,fromToName,toFromName,bidirectional',
+        filter: params?.filter,
+        paging: params?.paging ?? false,
+        pageSize: params?.pageSize || 50,
+      };
+
+      const response = await this.client.get('/relationshipTypes', { params: queryParams });
+      return response.data;
+    } catch (error) {
+      throw new Error(`Failed to get relationship types: ${error}`);
+    }
+  }
+
+  async createRelationshipType(relationshipType: Partial<RelationshipType>): Promise<any> {
+    try {
+      const response = await this.client.post('/relationshipTypes', relationshipType);
+      return response.data;
+    } catch (error) {
+      throw new Error(`Failed to create relationship type: ${error}`);
+    }
+  }
+
+  async updateRelationshipType(id: string, relationshipType: Partial<RelationshipType>): Promise<any> {
+    try {
+      const response = await this.client.put(`/relationshipTypes/${id}`, relationshipType);
+      return response.data;
+    } catch (error) {
+      throw new Error(`Failed to update relationship type: ${error}`);
+    }
+  }
+
+  async deleteRelationshipType(id: string): Promise<any> {
+    try {
+      const response = await this.client.delete(`/relationshipTypes/${id}`);
+      return response.data;
+    } catch (error) {
+      throw new Error(`Failed to delete relationship type: ${error}`);
     }
   }
 
@@ -1326,6 +1575,15 @@ export class DHIS2Client {
     }
   }
 
+  async deleteTrackedEntityInstance(id: string): Promise<any> {
+    try {
+      const response = await this.client.delete(`/trackedEntityInstances/${id}`);
+      return response.data;
+    } catch (error) {
+      throw new Error(`Failed to delete tracked entity instance: ${error}`);
+    }
+  }
+
   async getEnrollments(params: {
     program?: string;
     trackedEntityInstance?: string;
@@ -1375,6 +1633,15 @@ export class DHIS2Client {
       return response.data;
     } catch (error) {
       throw new Error(`Failed to update enrollment: ${error}`);
+    }
+  }
+
+  async deleteEnrollment(id: string): Promise<any> {
+    try {
+      const response = await this.client.delete(`/enrollments/${id}`);
+      return response.data;
+    } catch (error) {
+      throw new Error(`Failed to delete enrollment: ${error}`);
     }
   }
 
@@ -1430,6 +1697,15 @@ export class DHIS2Client {
       return response.data;
     } catch (error) {
       throw new Error(`Failed to update event: ${error}`);
+    }
+  }
+
+  async deleteEvent(id: string): Promise<any> {
+    try {
+      const response = await this.client.delete(`/events/${id}`);
+      return response.data;
+    } catch (error) {
+      throw new Error(`Failed to delete event: ${error}`);
     }
   }
 

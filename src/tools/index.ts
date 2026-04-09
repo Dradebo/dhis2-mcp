@@ -32,20 +32,48 @@ export function createDevelopmentTools(): Tool[] {
     'dhis2_get_analytics',
     'dhis2_list_programs',
     'dhis2_create_program',
+    'dhis2_update_program',
+    'dhis2_delete_program',
     'dhis2_list_tracked_entity_types',
     'dhis2_create_tracked_entity_type',
     'dhis2_list_tracked_entity_attributes',
     'dhis2_create_tracked_entity_attribute',
+    'dhis2_list_option_sets',
+    'dhis2_create_option_set',
+    'dhis2_list_options',
+    'dhis2_create_option',
     'dhis2_list_program_stages',
     'dhis2_create_program_stage',
+    'dhis2_update_program_stage',
+    'dhis2_delete_program_stage',
     'dhis2_list_program_rules',
     'dhis2_create_program_rule',
+    'dhis2_update_program_rule',
+    'dhis2_delete_program_rule',
+    'dhis2_list_program_rule_variables',
+    'dhis2_create_program_rule_variable',
+    'dhis2_update_program_rule_variable',
+    'dhis2_delete_program_rule_variable',
+    'dhis2_list_program_indicators',
+    'dhis2_create_program_indicator',
+    'dhis2_update_program_indicator',
+    'dhis2_delete_program_indicator',
+    'dhis2_list_relationship_types',
+    'dhis2_create_relationship_type',
+    'dhis2_update_relationship_type',
+    'dhis2_delete_relationship_type',
     'dhis2_list_tracked_entity_instances',
     'dhis2_create_tracked_entity_instance',
+    'dhis2_update_tracked_entity_instance',
+    'dhis2_delete_tracked_entity_instance',
     'dhis2_list_enrollments',
     'dhis2_create_enrollment',
+    'dhis2_update_enrollment',
+    'dhis2_delete_enrollment',
     'dhis2_list_events',
     'dhis2_create_event',
+    'dhis2_update_event',
+    'dhis2_delete_event',
     'dhis2_bulk_import_events',
     'dhis2_get_event_analytics',
     'dhis2_get_enrollment_analytics',
@@ -94,20 +122,48 @@ export function createAPITools(): Tool[] {
     'dhis2_get_analytics',
     'dhis2_list_programs',
     'dhis2_create_program',
+    'dhis2_update_program',
+    'dhis2_delete_program',
     'dhis2_list_tracked_entity_types',
     'dhis2_create_tracked_entity_type',
     'dhis2_list_tracked_entity_attributes',
     'dhis2_create_tracked_entity_attribute',
+    'dhis2_list_option_sets',
+    'dhis2_create_option_set',
+    'dhis2_list_options',
+    'dhis2_create_option',
     'dhis2_list_program_stages',
     'dhis2_create_program_stage',
+    'dhis2_update_program_stage',
+    'dhis2_delete_program_stage',
     'dhis2_list_program_rules',
     'dhis2_create_program_rule',
+    'dhis2_update_program_rule',
+    'dhis2_delete_program_rule',
+    'dhis2_list_program_rule_variables',
+    'dhis2_create_program_rule_variable',
+    'dhis2_update_program_rule_variable',
+    'dhis2_delete_program_rule_variable',
+    'dhis2_list_program_indicators',
+    'dhis2_create_program_indicator',
+    'dhis2_update_program_indicator',
+    'dhis2_delete_program_indicator',
+    'dhis2_list_relationship_types',
+    'dhis2_create_relationship_type',
+    'dhis2_update_relationship_type',
+    'dhis2_delete_relationship_type',
     'dhis2_list_tracked_entity_instances',
     'dhis2_create_tracked_entity_instance',
+    'dhis2_update_tracked_entity_instance',
+    'dhis2_delete_tracked_entity_instance',
     'dhis2_list_enrollments',
     'dhis2_create_enrollment',
+    'dhis2_update_enrollment',
+    'dhis2_delete_enrollment',
     'dhis2_list_events',
     'dhis2_create_event',
+    'dhis2_update_event',
+    'dhis2_delete_event',
     'dhis2_bulk_import_events',
     'dhis2_get_event_analytics',
     'dhis2_get_enrollment_analytics',
@@ -887,6 +943,76 @@ export function createDHIS2Tools(): Tool[] {
       },
     },
     {
+      name: 'dhis2_update_program',
+      description: 'Update an existing program in DHIS2',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+            description: 'ID of the program to update',
+          },
+          name: {
+            type: 'string',
+            description: 'Name of the program',
+          },
+          shortName: {
+            type: 'string',
+            description: 'Short name of the program',
+          },
+          code: {
+            type: 'string',
+            description: 'Code for the program',
+          },
+          description: {
+            type: 'string',
+            description: 'Description of the program',
+          },
+          programType: {
+            type: 'string',
+            enum: ['WITH_REGISTRATION', 'WITHOUT_REGISTRATION'],
+            description: 'Type of the program',
+          },
+          trackedEntityType: {
+            type: 'object',
+            properties: {
+              id: {
+                type: 'string',
+                description: 'ID of the tracked entity type',
+              },
+            },
+          },
+          onlyEnrollOnce: {
+            type: 'boolean',
+            description: 'Whether a tracked entity can only be enrolled once',
+          },
+          displayFrontPageList: {
+            type: 'boolean',
+            description: 'Whether to display this program on the front page list',
+          },
+        },
+        required: ['id'],
+      },
+    },
+    {
+      name: 'dhis2_delete_program',
+      description: 'Delete a program from DHIS2 (requires confirmation)',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+            description: 'ID of the program to delete',
+          },
+          confirmed: {
+            type: 'boolean',
+            description: 'Set to true to confirm deletion after reviewing the confirmation message',
+          },
+        },
+        required: ['id'],
+      },
+    },
+    {
       name: 'dhis2_list_tracked_entity_types',
       description: 'List tracked entity types from the DHIS2 instance',
       inputSchema: {
@@ -1006,6 +1132,125 @@ export function createDHIS2Tools(): Tool[] {
       },
     },
     {
+      name: 'dhis2_list_option_sets',
+      description: 'List option sets from the DHIS2 instance',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          filter: {
+            type: 'string',
+            description: 'Filter to apply (e.g., "name:ilike:status")',
+          },
+          pageSize: {
+            type: 'number',
+            description: 'Number of results to return (default: 50)',
+          },
+        },
+      },
+    },
+    {
+      name: 'dhis2_create_option_set',
+      description: 'Create a new option set in DHIS2',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          name: {
+            type: 'string',
+            description: 'Name of the option set',
+          },
+          shortName: {
+            type: 'string',
+            description: 'Short name of the option set',
+          },
+          code: {
+            type: 'string',
+            description: 'Code for the option set',
+          },
+          description: {
+            type: 'string',
+            description: 'Description of the option set',
+          },
+          valueType: {
+            type: 'string',
+            enum: ['TEXT', 'LONG_TEXT', 'LETTER', 'PHONE_NUMBER', 'EMAIL', 'BOOLEAN', 'TRUE_ONLY', 'DATE', 'DATETIME', 'TIME', 'URL', 'NUMBER', 'INTEGER', 'POSITIVE_INT', 'NEGATIVE_INT', 'ZERO_OR_POSITIVE_INT'],
+            description: 'Value type accepted by this option set',
+          },
+          options: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                name: {
+                  type: 'string',
+                  description: 'Option label',
+                },
+                code: {
+                  type: 'string',
+                  description: 'Option code',
+                },
+                sortOrder: {
+                  type: 'number',
+                  description: 'Sort order for the option',
+                },
+              },
+              required: ['name'],
+            },
+            description: 'Optional options to create along with the option set',
+          },
+        },
+        required: ['name', 'shortName', 'valueType'],
+      },
+    },
+    {
+      name: 'dhis2_list_options',
+      description: 'List options from the DHIS2 instance',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          filter: {
+            type: 'string',
+            description: 'Filter to apply (e.g., "optionSet.id:eq:optionSetId")',
+          },
+          pageSize: {
+            type: 'number',
+            description: 'Number of results to return (default: 50)',
+          },
+        },
+      },
+    },
+    {
+      name: 'dhis2_create_option',
+      description: 'Create a new option in DHIS2',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          name: {
+            type: 'string',
+            description: 'Name of the option',
+          },
+          code: {
+            type: 'string',
+            description: 'Code for the option',
+          },
+          sortOrder: {
+            type: 'number',
+            description: 'Sort order of the option',
+          },
+          optionSet: {
+            type: 'object',
+            properties: {
+              id: {
+                type: 'string',
+                description: 'ID of the option set this option belongs to',
+              },
+            },
+            required: ['id'],
+          },
+        },
+        required: ['name', 'optionSet'],
+      },
+    },
+    {
       name: 'dhis2_list_program_stages',
       description: 'List program stages from the DHIS2 instance',
       inputSchema: {
@@ -1076,6 +1321,83 @@ export function createDHIS2Tools(): Tool[] {
           },
         },
         required: ['name', 'shortName', 'program', 'sortOrder'],
+      },
+    },
+    {
+      name: 'dhis2_update_program_stage',
+      description: 'Update an existing program stage in DHIS2',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+            description: 'ID of the program stage to update',
+          },
+          name: {
+            type: 'string',
+            description: 'Name of the program stage',
+          },
+          shortName: {
+            type: 'string',
+            description: 'Short name of the program stage',
+          },
+          code: {
+            type: 'string',
+            description: 'Code for the program stage',
+          },
+          description: {
+            type: 'string',
+            description: 'Description of the program stage',
+          },
+          program: {
+            type: 'object',
+            properties: {
+              id: {
+                type: 'string',
+                description: 'ID of the program this stage belongs to',
+              },
+            },
+          },
+          sortOrder: {
+            type: 'number',
+            description: 'Sort order of this stage within the program',
+          },
+          repeatable: {
+            type: 'boolean',
+            description: 'Whether this stage can be repeated',
+          },
+          minDaysFromStart: {
+            type: 'number',
+            description: 'Minimum days from program start date',
+          },
+          openAfterEnrollment: {
+            type: 'boolean',
+            description: 'Whether this stage opens immediately after enrollment',
+          },
+          generatedByEnrollmentDate: {
+            type: 'boolean',
+            description: 'Whether due date is generated by enrollment date',
+          },
+        },
+        required: ['id'],
+      },
+    },
+    {
+      name: 'dhis2_delete_program_stage',
+      description: 'Delete a program stage from DHIS2 (requires confirmation)',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+            description: 'ID of the program stage to delete',
+          },
+          confirmed: {
+            type: 'boolean',
+            description: 'Set to true to confirm deletion after reviewing the confirmation message',
+          },
+        },
+        required: ['id'],
       },
     },
     {
@@ -1164,6 +1486,490 @@ export function createDHIS2Tools(): Tool[] {
       },
     },
     {
+      name: 'dhis2_update_program_rule',
+      description: 'Update an existing program rule in DHIS2',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+            description: 'ID of the program rule to update',
+          },
+          name: {
+            type: 'string',
+            description: 'Name of the program rule',
+          },
+          description: {
+            type: 'string',
+            description: 'Description of the program rule',
+          },
+          program: {
+            type: 'object',
+            properties: {
+              id: {
+                type: 'string',
+                description: 'ID of the program this rule belongs to',
+              },
+            },
+          },
+          programStage: {
+            type: 'object',
+            properties: {
+              id: {
+                type: 'string',
+                description: 'ID of the program stage (optional, for stage-specific rules)',
+              },
+            },
+          },
+          condition: {
+            type: 'string',
+            description: 'Condition expression for the rule',
+          },
+          priority: {
+            type: 'number',
+            description: 'Priority of the rule (optional)',
+          },
+          programRuleActions: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                programRuleActionType: {
+                  type: 'string',
+                  enum: ['DISPLAYTEXT', 'DISPLAYKEYVALUEPAIR', 'HIDEFIELD', 'HIDESECTION', 'HIDEPROGRAM', 'ASSIGN', 'SHOWWARNING', 'SHOWERROR', 'WARNINGONFIELDINTERACTION', 'ERRORONFIELDINTERACTION', 'CREATEEVENT', 'SETMANDATORYFIELD', 'SENDMESSAGE', 'SCHEDULEMESSAGE'],
+                  description: 'Type of action to perform',
+                },
+                data: {
+                  type: 'string',
+                  description: 'Data expression for the action',
+                },
+                content: {
+                  type: 'string',
+                  description: 'Content/message for the action',
+                },
+              },
+              required: ['programRuleActionType'],
+            },
+            description: 'Actions to perform when the rule condition is met',
+          },
+        },
+        required: ['id'],
+      },
+    },
+    {
+      name: 'dhis2_delete_program_rule',
+      description: 'Delete a program rule from DHIS2 (requires confirmation)',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+            description: 'ID of the program rule to delete',
+          },
+          confirmed: {
+            type: 'boolean',
+            description: 'Set to true to confirm deletion after reviewing the confirmation message',
+          },
+        },
+        required: ['id'],
+      },
+    },
+    {
+      name: 'dhis2_list_program_rule_variables',
+      description: 'List program rule variables from the DHIS2 instance',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          filter: {
+            type: 'string',
+            description: 'Filter to apply (e.g., "program.id:eq:programId")',
+          },
+          pageSize: {
+            type: 'number',
+            description: 'Number of results to return (default: 50)',
+          },
+        },
+      },
+    },
+    {
+      name: 'dhis2_create_program_rule_variable',
+      description: 'Create a new program rule variable in DHIS2',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          name: {
+            type: 'string',
+            description: 'Name of the program rule variable',
+          },
+          program: {
+            type: 'object',
+            properties: {
+              id: {
+                type: 'string',
+                description: 'ID of the program this variable belongs to',
+              },
+            },
+            required: ['id'],
+          },
+          programStage: {
+            type: 'object',
+            properties: {
+              id: {
+                type: 'string',
+                description: 'Optional stage ID for stage-scoped variables',
+              },
+            },
+          },
+          sourceType: {
+            type: 'string',
+            enum: ['DATAELEMENT_NEWEST_EVENT_PROGRAM_STAGE', 'DATAELEMENT_NEWEST_EVENT_PROGRAM', 'DATAELEMENT_CURRENT_EVENT', 'DATAELEMENT_PREVIOUS_EVENT', 'CALCULATED_VALUE', 'TEI_ATTRIBUTE'],
+            description: 'Source type used to resolve this variable',
+          },
+          dataElement: {
+            type: 'object',
+            properties: {
+              id: {
+                type: 'string',
+                description: 'Data element ID (required for data element source types)',
+              },
+            },
+          },
+          trackedEntityAttribute: {
+            type: 'object',
+            properties: {
+              id: {
+                type: 'string',
+                description: 'Tracked entity attribute ID (required for TEI_ATTRIBUTE)',
+              },
+            },
+          },
+        },
+        required: ['name', 'program', 'sourceType'],
+      },
+    },
+    {
+      name: 'dhis2_update_program_rule_variable',
+      description: 'Update an existing program rule variable in DHIS2',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+            description: 'ID of the program rule variable to update',
+          },
+          name: {
+            type: 'string',
+            description: 'Name of the program rule variable',
+          },
+          program: {
+            type: 'object',
+            properties: {
+              id: {
+                type: 'string',
+                description: 'ID of the program this variable belongs to',
+              },
+            },
+          },
+          programStage: {
+            type: 'object',
+            properties: {
+              id: {
+                type: 'string',
+                description: 'Optional stage ID for stage-scoped variables',
+              },
+            },
+          },
+          sourceType: {
+            type: 'string',
+            enum: ['DATAELEMENT_NEWEST_EVENT_PROGRAM_STAGE', 'DATAELEMENT_NEWEST_EVENT_PROGRAM', 'DATAELEMENT_CURRENT_EVENT', 'DATAELEMENT_PREVIOUS_EVENT', 'CALCULATED_VALUE', 'TEI_ATTRIBUTE'],
+            description: 'Source type used to resolve this variable',
+          },
+          dataElement: {
+            type: 'object',
+            properties: {
+              id: {
+                type: 'string',
+                description: 'Data element ID (required for data element source types)',
+              },
+            },
+          },
+          trackedEntityAttribute: {
+            type: 'object',
+            properties: {
+              id: {
+                type: 'string',
+                description: 'Tracked entity attribute ID (required for TEI_ATTRIBUTE)',
+              },
+            },
+          },
+        },
+        required: ['id'],
+      },
+    },
+    {
+      name: 'dhis2_delete_program_rule_variable',
+      description: 'Delete a program rule variable from DHIS2 (requires confirmation)',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+            description: 'ID of the program rule variable to delete',
+          },
+          confirmed: {
+            type: 'boolean',
+            description: 'Set to true to confirm deletion after reviewing the confirmation message',
+          },
+        },
+        required: ['id'],
+      },
+    },
+    {
+      name: 'dhis2_list_program_indicators',
+      description: 'List program indicators from the DHIS2 instance',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          filter: {
+            type: 'string',
+            description: 'Filter to apply (e.g., "program.id:eq:programId")',
+          },
+          pageSize: {
+            type: 'number',
+            description: 'Number of results to return (default: 50)',
+          },
+        },
+      },
+    },
+    {
+      name: 'dhis2_create_program_indicator',
+      description: 'Create a new program indicator in DHIS2',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          name: {
+            type: 'string',
+            description: 'Name of the program indicator',
+          },
+          shortName: {
+            type: 'string',
+            description: 'Short name of the program indicator',
+          },
+          code: {
+            type: 'string',
+            description: 'Code for the program indicator',
+          },
+          description: {
+            type: 'string',
+            description: 'Description of the program indicator',
+          },
+          program: {
+            type: 'object',
+            properties: {
+              id: {
+                type: 'string',
+                description: 'ID of the program this indicator belongs to',
+              },
+            },
+            required: ['id'],
+          },
+          expression: {
+            type: 'string',
+            description: 'Program indicator expression',
+          },
+          filter: {
+            type: 'string',
+            description: 'Optional expression filter',
+          },
+          aggregationType: {
+            type: 'string',
+            enum: ['SUM', 'AVERAGE', 'COUNT', 'MIN', 'MAX'],
+            description: 'Aggregation type used for the indicator',
+          },
+          analyticsType: {
+            type: 'string',
+            enum: ['EVENT', 'ENROLLMENT'],
+            description: 'Analytics type for this indicator',
+          },
+          displayInForm: {
+            type: 'boolean',
+            description: 'Whether to display this indicator in data entry forms',
+          },
+        },
+        required: ['name', 'shortName', 'program', 'expression', 'aggregationType', 'analyticsType'],
+      },
+    },
+    {
+      name: 'dhis2_update_program_indicator',
+      description: 'Update an existing program indicator in DHIS2',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+            description: 'ID of the program indicator to update',
+          },
+          name: {
+            type: 'string',
+            description: 'Name of the program indicator',
+          },
+          shortName: {
+            type: 'string',
+            description: 'Short name of the program indicator',
+          },
+          code: {
+            type: 'string',
+            description: 'Code for the program indicator',
+          },
+          description: {
+            type: 'string',
+            description: 'Description of the program indicator',
+          },
+          program: {
+            type: 'object',
+            properties: {
+              id: {
+                type: 'string',
+                description: 'ID of the program this indicator belongs to',
+              },
+            },
+          },
+          expression: {
+            type: 'string',
+            description: 'Program indicator expression',
+          },
+          filter: {
+            type: 'string',
+            description: 'Optional expression filter',
+          },
+          aggregationType: {
+            type: 'string',
+            enum: ['SUM', 'AVERAGE', 'COUNT', 'MIN', 'MAX'],
+            description: 'Aggregation type used for the indicator',
+          },
+          analyticsType: {
+            type: 'string',
+            enum: ['EVENT', 'ENROLLMENT'],
+            description: 'Analytics type for this indicator',
+          },
+          displayInForm: {
+            type: 'boolean',
+            description: 'Whether to display this indicator in data entry forms',
+          },
+        },
+        required: ['id'],
+      },
+    },
+    {
+      name: 'dhis2_delete_program_indicator',
+      description: 'Delete a program indicator from DHIS2 (requires confirmation)',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+            description: 'ID of the program indicator to delete',
+          },
+          confirmed: {
+            type: 'boolean',
+            description: 'Set to true to confirm deletion after reviewing the confirmation message',
+          },
+        },
+        required: ['id'],
+      },
+    },
+    {
+      name: 'dhis2_list_relationship_types',
+      description: 'List relationship types from the DHIS2 instance',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          filter: {
+            type: 'string',
+            description: 'Filter to apply (e.g., "name:ilike:household")',
+          },
+          pageSize: {
+            type: 'number',
+            description: 'Number of results to return (default: 50)',
+          },
+        },
+      },
+    },
+    {
+      name: 'dhis2_create_relationship_type',
+      description: 'Create a new relationship type in DHIS2',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          name: {
+            type: 'string',
+            description: 'Name of the relationship type',
+          },
+          fromToName: {
+            type: 'string',
+            description: 'Label from source to target',
+          },
+          toFromName: {
+            type: 'string',
+            description: 'Label from target to source',
+          },
+          bidirectional: {
+            type: 'boolean',
+            description: 'Whether the relationship can be created in both directions',
+          },
+        },
+        required: ['name', 'fromToName', 'toFromName', 'bidirectional'],
+      },
+    },
+    {
+      name: 'dhis2_update_relationship_type',
+      description: 'Update an existing relationship type in DHIS2',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+            description: 'ID of the relationship type to update',
+          },
+          name: {
+            type: 'string',
+            description: 'Name of the relationship type',
+          },
+          fromToName: {
+            type: 'string',
+            description: 'Label from source to target',
+          },
+          toFromName: {
+            type: 'string',
+            description: 'Label from target to source',
+          },
+          bidirectional: {
+            type: 'boolean',
+            description: 'Whether the relationship can be created in both directions',
+          },
+        },
+        required: ['id'],
+      },
+    },
+    {
+      name: 'dhis2_delete_relationship_type',
+      description: 'Delete a relationship type from DHIS2 (requires confirmation)',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+            description: 'ID of the relationship type to delete',
+          },
+          confirmed: {
+            type: 'boolean',
+            description: 'Set to true to confirm deletion after reviewing the confirmation message',
+          },
+        },
+        required: ['id'],
+      },
+    },
+    {
       name: 'dhis2_list_tracked_entity_instances',
       description: 'List tracked entity instances from the DHIS2 instance',
       inputSchema: {
@@ -1236,6 +2042,68 @@ export function createDHIS2Tools(): Tool[] {
           },
         },
         required: ['trackedEntityType', 'orgUnit'],
+      },
+    },
+    {
+      name: 'dhis2_update_tracked_entity_instance',
+      description: 'Update an existing tracked entity instance in DHIS2',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+            description: 'ID of the tracked entity instance to update',
+          },
+          trackedEntityType: {
+            type: 'string',
+            description: 'ID of the tracked entity type',
+          },
+          orgUnit: {
+            type: 'string',
+            description: 'ID of the organisation unit where the TEI is registered',
+          },
+          attributes: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                attribute: {
+                  type: 'string',
+                  description: 'ID of the tracked entity attribute',
+                },
+                value: {
+                  type: 'string',
+                  description: 'Value of the attribute',
+                },
+              },
+              required: ['attribute', 'value'],
+            },
+            description: 'Attribute values for the TEI',
+          },
+          inactive: {
+            type: 'boolean',
+            description: 'Whether the TEI should be marked inactive',
+          },
+        },
+        required: ['id'],
+      },
+    },
+    {
+      name: 'dhis2_delete_tracked_entity_instance',
+      description: 'Delete a tracked entity instance from DHIS2 (requires confirmation)',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+            description: 'ID of the tracked entity instance to delete',
+          },
+          confirmed: {
+            type: 'boolean',
+            description: 'Set to true to confirm deletion after reviewing the confirmation message',
+          },
+        },
+        required: ['id'],
       },
     },
     {
@@ -1331,6 +2199,87 @@ export function createDHIS2Tools(): Tool[] {
           },
         },
         required: ['trackedEntityInstance', 'program', 'orgUnit', 'enrollmentDate', 'incidentDate'],
+      },
+    },
+    {
+      name: 'dhis2_update_enrollment',
+      description: 'Update an existing enrollment in DHIS2',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+            description: 'ID of the enrollment to update',
+          },
+          trackedEntityInstance: {
+            type: 'string',
+            description: 'ID of the tracked entity instance',
+          },
+          program: {
+            type: 'string',
+            description: 'ID of the program',
+          },
+          orgUnit: {
+            type: 'string',
+            description: 'ID of the organisation unit',
+          },
+          enrollmentDate: {
+            type: 'string',
+            format: 'date',
+            description: 'Enrollment date (YYYY-MM-DD)',
+          },
+          incidentDate: {
+            type: 'string',
+            format: 'date',
+            description: 'Incident date (YYYY-MM-DD)',
+          },
+          status: {
+            type: 'string',
+            enum: ['ACTIVE', 'COMPLETED', 'CANCELLED'],
+            description: 'Enrollment status',
+          },
+          followup: {
+            type: 'boolean',
+            description: 'Whether follow-up is required',
+          },
+          attributes: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                attribute: {
+                  type: 'string',
+                  description: 'ID of the tracked entity attribute',
+                },
+                value: {
+                  type: 'string',
+                  description: 'Value of the attribute',
+                },
+              },
+              required: ['attribute', 'value'],
+            },
+            description: 'Attribute values for the enrollment',
+          },
+        },
+        required: ['id'],
+      },
+    },
+    {
+      name: 'dhis2_delete_enrollment',
+      description: 'Delete an enrollment from DHIS2 (requires confirmation)',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+            description: 'ID of the enrollment to delete',
+          },
+          confirmed: {
+            type: 'boolean',
+            description: 'Set to true to confirm deletion after reviewing the confirmation message',
+          },
+        },
+        required: ['id'],
       },
     },
     {
@@ -1451,6 +2400,104 @@ export function createDHIS2Tools(): Tool[] {
           },
         },
         required: ['program', 'programStage', 'orgUnit'],
+      },
+    },
+    {
+      name: 'dhis2_update_event',
+      description: 'Update an existing event in DHIS2',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+            description: 'ID of the event to update',
+          },
+          program: {
+            type: 'string',
+            description: 'ID of the program',
+          },
+          programStage: {
+            type: 'string',
+            description: 'ID of the program stage',
+          },
+          orgUnit: {
+            type: 'string',
+            description: 'ID of the organisation unit',
+          },
+          enrollment: {
+            type: 'string',
+            description: 'ID of the enrollment (for tracker programs)',
+          },
+          trackedEntityInstance: {
+            type: 'string',
+            description: 'ID of the tracked entity instance (for tracker programs)',
+          },
+          eventDate: {
+            type: 'string',
+            format: 'date',
+            description: 'Event date (YYYY-MM-DD)',
+          },
+          dueDate: {
+            type: 'string',
+            format: 'date',
+            description: 'Due date (YYYY-MM-DD)',
+          },
+          status: {
+            type: 'string',
+            enum: ['ACTIVE', 'COMPLETED', 'VISITED', 'SCHEDULE', 'OVERDUE', 'SKIPPED'],
+            description: 'Event status',
+          },
+          coordinate: {
+            type: 'object',
+            properties: {
+              latitude: {
+                type: 'number',
+                description: 'Latitude coordinate',
+              },
+              longitude: {
+                type: 'number',
+                description: 'Longitude coordinate',
+              },
+            },
+          },
+          dataValues: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                dataElement: {
+                  type: 'string',
+                  description: 'ID of the data element',
+                },
+                value: {
+                  type: 'string',
+                  description: 'Value of the data element',
+                },
+              },
+              required: ['dataElement', 'value'],
+            },
+            description: 'Data values for the event',
+          },
+        },
+        required: ['id'],
+      },
+    },
+    {
+      name: 'dhis2_delete_event',
+      description: 'Delete an event from DHIS2 (requires confirmation)',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'string',
+            description: 'ID of the event to delete',
+          },
+          confirmed: {
+            type: 'boolean',
+            description: 'Set to true to confirm deletion after reviewing the confirmation message',
+          },
+        },
+        required: ['id'],
       },
     },
     {

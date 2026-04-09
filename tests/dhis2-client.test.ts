@@ -176,6 +176,40 @@ describe('DHIS2Client', () => {
     });
   });
 
+  describe('tracker lifecycle operations', () => {
+    it('should update a program', async () => {
+      const updates = { name: 'Updated Program Name' };
+      const mockResponse = { status: 'OK' };
+      mockedAxios.put.mockResolvedValueOnce({ data: mockResponse });
+
+      const result = await client.updateProgram('program123', updates);
+
+      expect(result).toEqual(mockResponse);
+      expect(mockedAxios.put).toHaveBeenCalledWith('/programs/program123', updates);
+    });
+
+    it('should delete an enrollment', async () => {
+      const mockResponse = { status: 'OK' };
+      mockedAxios.delete.mockResolvedValueOnce({ data: mockResponse });
+
+      const result = await client.deleteEnrollment('enrollment123');
+
+      expect(result).toEqual(mockResponse);
+      expect(mockedAxios.delete).toHaveBeenCalledWith('/enrollments/enrollment123');
+    });
+
+    it('should update an event', async () => {
+      const updates = { status: 'COMPLETED' as const };
+      const mockResponse = { status: 'OK' };
+      mockedAxios.put.mockResolvedValueOnce({ data: mockResponse });
+
+      const result = await client.updateEvent('event123', updates);
+
+      expect(result).toEqual(mockResponse);
+      expect(mockedAxios.put).toHaveBeenCalledWith('/events/event123', updates);
+    });
+  });
+
   describe('getAnalytics', () => {
     it('should return analytics data', async () => {
       const query = {
