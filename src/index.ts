@@ -14,6 +14,7 @@ import { auditLogger } from './audit-logger.js';
 import { authorize, filterDiscoverableTools, parseCapabilities, PolicyContext } from './security/tool-policy.js';
 import { resolveProfile, listConfiguredProfiles } from './security/credentials.js';
 import { toSafeErrorMessage } from './security/safe-errors.js';
+import { ChangeEngine, ChangeEngineError, describePlan, ApprovalResult, ConnectionIdentity } from './change-engine.js';
 import { PermissionSystem, UserPermissions } from './permission-system.js';
 import { describePermissionEvidence } from './permission-evidence.js';
 import { ParameterCompletion } from './parameter-completion.js';
@@ -113,6 +114,40 @@ if (parsedCapabilities.ignored.length) {
   console.error(`Ignoring unknown DHIS2_MCP_CAPABILITIES entries: ${parsedCapabilities.ignored.join(', ')}`);
 }
 
+let connectionEpoch = 0;
+
+function connectionIdentity(): ConnectionIdentity | null {
+  if (!connectionVerified || !dhis2Client || !currentUser?.id || !activeProfile) return null;
+  return {
+    epoch: connectionEpoch,
+    userId: String(currentUser.id),
+    username: String(currentUser.username ?? currentUser.displayName ?? 'user'),
+    profile: activeProfile,
+    origin: new URL(dhis2Client.baseURL).origin,
+  };
+}
+
+/**
+ * Trusted approval: the MCP host shows the plan summary to the user (form
+ * elicitation). Tool arguments can never produce an 'accept'.
+ */
+async function requestHostApproval(message: string): Promise<ApprovalResult> {
+  if (!server.getClientCapabilities()?.elicitation?.form) return 'unavailable';
+  const result = await server.elicitInput(
+    { mode: 'form', message, requestedSchema: { type: 'object', properties: {} } },
+    { timeout: 10 * 60 * 1000 },
+  );
+  return result.action === 'accept' ? 'accept' : result.action === 'decline' ? 'decline' : 'cancel';
+}
+
+const planTtl = Math.min(3600, Math.max(5, Number(process.env.DHIS2_MCP_PLAN_TTL_SECONDS) || 900));
+const changeEngine = new ChangeEngine({
+  gateway: () => (connectionVerified ? dhis2Client : null),
+  identity: connectionIdentity,
+  approve: requestHostApproval,
+  ttlSeconds: planTtl,
+});
+
 function policyContext(): PolicyContext {
   return {
     connectionVerified: connectionVerified && dhis2Client !== null,
@@ -208,6 +243,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         // (RT-04). Any failure leaves no connection active: the previous one is
         // revoked rather than mixed with a new identity, and nothing falls back to
         // default permissions (BASE-03).
+        connectionEpoch++;
+        changeEngine.invalidateAll();
         dhis2Client = null;
         connectionVerified = false;
         currentUser = null;
@@ -292,6 +329,43 @@ Local MCP policy is not DHIS2 authorisation; the server still enforces its own s
     // At this point, if we reach here for API tools, dhis2Client must be initialized
     // because the earlier check would have returned an error
     switch (name) {
+      case 'dhis2_plan_metadata_change':
+      case 'dhis2_apply_plan':
+      case 'dhis2_get_plan':
+      case 'dhis2_cancel_plan': {
+        const a = (args ?? {}) as Record<string, unknown>;
+        try {
+          const plan = name === 'dhis2_plan_metadata_change' ? await changeEngine.createPlan(a)
+            : name === 'dhis2_apply_plan' ? await changeEngine.applyPlan(a.planId)
+            : name === 'dhis2_get_plan' ? await changeEngine.getPlan(a.planId)
+            : changeEngine.cancelPlan(a.planId);
+          auditLogger.log({
+            toolName: name,
+            parameters: { planId: plan.id, state: plan.state },
+            outcome: ['invalid', 'failed', 'stale', 'unknown-outcome'].includes(plan.state) ? 'error' : 'success',
+            dhis2Instance: dhis2Client?.baseURL,
+            userId: currentUser?.username,
+            executionTime: Date.now() - startTime,
+            resourcesAffected: plan.targets.map(t => `${t.objectType}/${t.id}`),
+          });
+          return {
+            content: [{ type: 'text', text: describePlan(plan) }],
+            isError: ['invalid', 'failed', 'stale', 'unknown-outcome', 'applied-unverified', 'partial'].includes(plan.state),
+          };
+        } catch (e) {
+          if (!(e instanceof ChangeEngineError)) throw e;
+          auditLogger.log({
+            toolName: name,
+            parameters: { planId: typeof a.planId === 'string' ? a.planId : undefined },
+            outcome: 'error',
+            error: `${e.code}`,
+            dhis2Instance: dhis2Client?.baseURL,
+            userId: currentUser?.username,
+          });
+          return { content: [{ type: 'text', text: `⛔ ${e.code}: ${e.message}` }], isError: true };
+        }
+      }
+
       case 'dhis2_get_system_info':
         const systemInfo = await dhis2Client!.getSystemInfo();
         logSuccessfulOperation(name, {}, systemInfo, startTime);

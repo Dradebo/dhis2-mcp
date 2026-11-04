@@ -36,10 +36,37 @@ DHIS2_MCP_DEV_PASSWORD=...
 | record-level reads (tracker, enrollments, events, event/enrollment *query* analytics) | require operator capability `record-read` |
 | DataStore reads | require `datastore-read` |
 | audit export / composition export | require `audit-export` / `composition-export` |
-| create, update, delete, import, `run_validation`, DataStore writes, audit clear | **always denied** until a trusted, host-mediated approval channel exists |
+| metadata create/update via `dhis2_plan_metadata_change` → `dhis2_apply_plan` | require `metadata-write`; **every apply needs the user's approval in the MCP host** (see below) |
+| legacy direct create/update/delete/import tools, `run_validation`, DataStore writes, audit clear | **always denied** |
 | unregistered tool | denied |
 
 Capabilities can only be enabled by the operator in `DHIS2_MCP_CAPABILITIES` (comma-separated), never through tool arguments. The server ignores a `confirmed: true` argument: it is not approval.
+
+## Planned changes (safe change engine)
+
+1. `dhis2_plan_metadata_change` validates the request:
+   - Collections are allowlisted.
+   - At most 20 objects and 40 fields per plan.
+   - No deletion, and no sharing, ownership or id changes.
+2. For updates, it fetches a fresh `:owner` before-image and changes only the requested top-level fields. Everything else is re-sent as it was, including binding arrays and nested sharing access strings.
+3. It runs a DHIS2 `VALIDATE` import, and rejects the plan if DHIS2's object count differs from what was sent.
+4. It stores an immutable plan bound to the connection epoch, DHIS2 user, instance origin and profile. The plan expires after 15 minutes (`DHIS2_MCP_PLAN_TTL_SECONDS`).
+5. `dhis2_apply_plan` then:
+   - re-checks preconditions (each target is unchanged, each create is still absent);
+   - asks the host to show the user the complete change list through MCP form elicitation (in Hermes, the normal approval prompt);
+   - re-checks preconditions again after approval, then commits atomically;
+   - reads every target back.
+
+   The result is one of: `verified`, `applied-unverified` (a field was not stored as intended), `partial`, `failed`, `stale` or `unknown-outcome`. Read-back also reports collateral changes to fields the plan did not touch.
+6. If the response is lost after the commit, the server reconciles by reading the targets back. It never re-sends.
+
+Approval cannot come from tool arguments. A plan that was declined, applied, cancelled, made stale, expired, or created under another connection cannot be applied. If the host does not support elicitation, applying is refused.
+
+Limits:
+- A small time-of-check/time-of-use window remains between the last precondition read and the commit, because the DHIS2 metadata import has no conditional-write precondition.
+- Plans live in memory and are lost when the server restarts.
+- How the approval is displayed is up to the host.
+- Read-back can flag legitimate server normalisation as a mismatch. This errs toward `applied-unverified`, never a false `verified`.
 
 ## Disclosure controls
 

@@ -725,6 +725,39 @@ export class DHIS2Client {
     );
   }
 
+  /**
+   * Full-owner before-image of one metadata object, or null when absent (404).
+   * objectType must come from the plan allowlist; id must be a DHIS2 UID.
+   */
+  async getOwnerObject(objectType: string, id: string): Promise<Record<string, unknown> | null> {
+    if (!/^[A-Za-z]{2,40}$/.test(objectType) || !/^[A-Za-z][A-Za-z0-9]{10}$/.test(id)) {
+      throw new Error('Invalid object type or id.');
+    }
+    const response = await this.client.get(`/${objectType}/${id}`, {
+      params: { fields: ':owner' },
+      validateStatus: (s: number) => s === 200 || s === 404,
+    });
+    return response.status === 404 ? null : (response.data as Record<string, unknown>);
+  }
+
+  /**
+   * Atomic metadata import. 4xx responses resolve (so the import report can be
+   * parsed); 5xx/network errors reject as sanitised errors.
+   */
+  async postMetadata(payload: Record<string, unknown[]>, mode: 'VALIDATE' | 'COMMIT'): Promise<{ httpStatus: number; report: any }> {
+    const response = await this.client.post('/metadata', payload, {
+      params: {
+        importMode: mode, importStrategy: 'CREATE_AND_UPDATE', atomicMode: 'ALL',
+        identifier: 'UID', importReportMode: 'ERRORS', mergeMode: 'REPLACE',
+      },
+      validateStatus: (s: number) => s < 500,
+      timeout: 120000,
+    });
+    const data = response.data as any;
+    // DHIS2 2.41 wraps the import report in `response`.
+    return { httpStatus: response.status, report: data?.response ?? data };
+  }
+
   get baseURL(): string {
     return this.baseUrl;
   }

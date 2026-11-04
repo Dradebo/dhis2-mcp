@@ -3,6 +3,7 @@ import { redactSecrets } from './security/safe-errors.js';
 /** Parameter keys whose scalar values are safe to record. Everything else is name-only. */
 const AUDIT_VALUE_ALLOWLIST: ReadonlySet<string> = new Set([
   'profile', 'operation', 'pageSize', 'page', 'period', 'proxyType', 'platform', 'appType',
+  'planId', 'state',
 ]);
 
 function originOnly(url: string): string {

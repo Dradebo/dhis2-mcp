@@ -60,6 +60,12 @@ export class PermissionSystem {
     // Configuration and connection
     ['dhis2_configure', 'canViewSystemInfo'],
     ['dhis2_get_system_info', 'canViewSystemInfo'],
+
+    // Safe change engine
+    ['dhis2_plan_metadata_change', ['canViewMetadata', 'canCreateMetadata']],
+    ['dhis2_apply_plan', ['canViewMetadata', 'canCreateMetadata']],
+    ['dhis2_get_plan', 'canViewMetadata'],
+    ['dhis2_cancel_plan', 'canViewMetadata'],
     
     // Metadata operations - Data Elements
     ['dhis2_list_data_elements', 'canViewMetadata'],

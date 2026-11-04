@@ -56,7 +56,11 @@ export function createDevelopmentTools(): Tool[] {
     'dhis2_list_reports',
     'dhis2_generate_report',
     'dhis2_create_datastore_namespace',
-    'dhis2_manage_datastore_key'
+    'dhis2_manage_datastore_key',
+    'dhis2_plan_metadata_change',
+    'dhis2_apply_plan',
+    'dhis2_get_plan',
+    'dhis2_cancel_plan'
   ];
   
   return allTools.filter(tool => !apiOnlyTools.includes(tool.name));
@@ -117,7 +121,11 @@ export function createAPITools(): Tool[] {
     'dhis2_list_reports',
     'dhis2_generate_report',
     'dhis2_create_datastore_namespace',
-    'dhis2_manage_datastore_key'
+    'dhis2_manage_datastore_key',
+    'dhis2_plan_metadata_change',
+    'dhis2_apply_plan',
+    'dhis2_get_plan',
+    'dhis2_cancel_plan'
   ];
   
   return allTools.filter(tool => apiOnlyTools.includes(tool.name));
@@ -137,6 +145,66 @@ export function createDHIS2Tools(): Tool[] {
             pattern: '^[a-z][a-z0-9_]{0,31}$',
           },
         },
+        additionalProperties: false,
+      },
+    },
+    {
+      name: 'dhis2_plan_metadata_change',
+      description: 'Plan a metadata change (create or update; no deletion, sharing or ownership changes). The server fetches fresh before-images, applies only the requested top-level fields, runs a DHIS2 dry run and stores an immutable plan bound to this connection. Nothing is written. Returns a planId and the exact change list the user will be asked to approve.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          description: { type: 'string', description: 'What the change is for (shown to the user, max 300 chars).' },
+          changes: {
+            type: 'array',
+            maxItems: 20,
+            description: 'Up to 20 changes and 40 fields in total.',
+            items: {
+              type: 'object',
+              properties: {
+                action: { type: 'string', enum: ['create', 'update'] },
+                objectType: { type: 'string', description: 'Metadata collection, e.g. dataElements, indicators, programIndicators, visualizations, dashboards.' },
+                id: { type: 'string', description: 'update: UID of the existing object.' },
+                set: { type: 'object', description: 'update: top-level fields to change; everything else is preserved from the fresh before-image.' },
+                object: { type: 'object', description: 'create: the new object (an id is generated if omitted).' },
+              },
+              required: ['action', 'objectType'],
+            },
+          },
+        },
+        required: ['description', 'changes'],
+        additionalProperties: false,
+      },
+      annotations: { readOnlyHint: true },
+    },
+    {
+      name: 'dhis2_apply_plan',
+      description: 'Apply a validated plan. The MCP host asks the user to approve the exact change list; tool arguments cannot approve. Preconditions are re-checked before and after approval; the result is read back and reported as verified, applied-unverified, partial, failed, stale or unknown-outcome.',
+      inputSchema: {
+        type: 'object',
+        properties: { planId: { type: 'string' } },
+        required: ['planId'],
+        additionalProperties: false,
+      },
+    },
+    {
+      name: 'dhis2_get_plan',
+      description: 'Show a plan\'s state and receipt. A plan with an unknown outcome is reconciled by reading the targets back (never re-sent).',
+      inputSchema: {
+        type: 'object',
+        properties: { planId: { type: 'string' } },
+        required: ['planId'],
+        additionalProperties: false,
+      },
+      annotations: { readOnlyHint: true },
+    },
+    {
+      name: 'dhis2_cancel_plan',
+      description: 'Cancel a validated plan that has not been applied.',
+      inputSchema: {
+        type: 'object',
+        properties: { planId: { type: 'string' } },
+        required: ['planId'],
         additionalProperties: false,
       },
     },

@@ -19,19 +19,20 @@ export type OperationClass =
   | 'record-read'           // individual-level records (tracker, event line lists)
   | 'datastore-read'        // DataStore reads (arbitrary app content)
   | 'local-export'          // exports local evidence to the caller (audit log, composition)
-  | 'instance-write'        // create/update/import/server actions with side effects
+  | 'planned-write'         // plan/apply through the safe change engine (host approval per apply)
+  | 'instance-write'        // legacy direct create/update/import/server actions: always denied
   | 'instance-delete'
   | 'audit-admin';          // audit retention/deletion
 
 /** Operator capabilities that can be enabled at launch (never by tool arguments). */
-export type Capability = 'record-read' | 'datastore-read' | 'audit-export' | 'composition-export';
+export type Capability = 'record-read' | 'datastore-read' | 'audit-export' | 'composition-export' | 'metadata-write';
 const KNOWN_CAPABILITIES: ReadonlySet<Capability> = new Set([
-  'record-read', 'datastore-read', 'audit-export', 'composition-export',
+  'record-read', 'datastore-read', 'audit-export', 'composition-export', 'metadata-write',
 ]);
 
 const HARD_DENIED: ReadonlySet<OperationClass> = new Set(['instance-write', 'instance-delete', 'audit-admin']);
 const INSTANCE_CLASSES: ReadonlySet<OperationClass> = new Set([
-  'metadata-read', 'aggregate-read', 'record-read', 'datastore-read', 'instance-write', 'instance-delete',
+  'metadata-read', 'aggregate-read', 'record-read', 'datastore-read', 'planned-write', 'instance-write', 'instance-delete',
 ]);
 
 type Classifier = OperationClass | ((args: Record<string, unknown> | undefined) => OperationClass);
@@ -91,7 +92,14 @@ const REGISTRY: ReadonlyMap<string, PolicyEntry> = new Map<string, PolicyEntry>(
   ['dhis2_get_event_analytics', recordRead],
   ['dhis2_get_enrollment_analytics', recordRead],
 
-  // Writes, imports and server-side actions (denied until W2 approval exists).
+  // Safe change engine: server-held plans, host-mediated approval, read-back.
+  ['dhis2_plan_metadata_change', { classify: 'planned-write', capability: 'metadata-write' }],
+  ['dhis2_apply_plan', { classify: 'planned-write', capability: 'metadata-write' }],
+  ['dhis2_get_plan', { classify: 'planned-write', capability: 'metadata-write' }],
+  ['dhis2_cancel_plan', { classify: 'planned-write', capability: 'metadata-write' }],
+
+  // Legacy direct writes, imports and server-side actions: always denied. Metadata
+  // creates/updates go through dhis2_plan_metadata_change + dhis2_apply_plan.
   ['dhis2_create_data_element', write],
   ['dhis2_update_data_element', write],
   ['dhis2_create_data_set', write],
@@ -204,7 +212,7 @@ export function authorize(name: string, args: unknown, ctx: PolicyContext): Poli
 
   if (HARD_DENIED.has(cls)) {
     return deny(cls, 'writes_disabled',
-      'Write, delete, import and audit-deletion operations are disabled in this MCP build until a trusted, host-mediated approval channel exists. A "confirmed" argument is not accepted as approval.');
+      'Direct write, delete, import and audit-deletion tools are disabled. Metadata creates/updates go through dhis2_plan_metadata_change and dhis2_apply_plan, which require approval by the user in the MCP host. A "confirmed" argument is not accepted as approval.');
   }
 
   if (entry.capability && !ctx.capabilities.has(entry.capability)) {

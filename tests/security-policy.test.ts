@@ -101,6 +101,14 @@ describe('§9.2 fail closed', () => {
       expect(authorize(name, {}, connected(['record-read'])).allowed).toBe(true);
     }
   });
+  it('plan tools need the metadata-write capability and a verified connection', () => {
+    for (const name of ['dhis2_plan_metadata_change', 'dhis2_apply_plan', 'dhis2_get_plan', 'dhis2_cancel_plan']) {
+      expect(authorize(name, {}, connected())).toMatchObject({ allowed: false, code: 'capability_disabled' });
+      expect(authorize(name, {}, { ...disconnected, capabilities: parseCapabilities('metadata-write').capabilities }))
+        .toMatchObject({ allowed: false, code: 'not_connected' });
+      expect(authorize(name, {}, connected(['metadata-write'])).allowed).toBe(true);
+    }
+  });
   it('rejects non-object arguments', () => {
     expect(authorize('dhis2_init_webapp', [], disconnected)).toMatchObject({ allowed: false, code: 'invalid_arguments' });
   });
