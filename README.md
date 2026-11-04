@@ -105,7 +105,7 @@ npx dhis2-mcp
 
 ## 🔧 **MCP Client Configuration**
 
-> **Connecting to an instance:** credentials are never passed through tool arguments. Define a profile through environment variables in the client's server config (`DHIS2_MCP_DEV_BASE_URL`, `DHIS2_MCP_DEV_TOKEN`, …), then call `dhis2_configure` with `{"profile": "dev"}`. This build is read-only. See [SECURITY-MODEL.md](SECURITY-MODEL.md).
+> **Connect to DHIS2 in one step:** your agent adds `{"command": "npx", "args": ["-y", "dhis2-mcp"]}` to its MCP configuration (`npx -y dhis2-mcp install` prints it). Then you run `npx -y dhis2-mcp login` in a terminal and type your DHIS2 address, username and password. After that the agent works on its own and asks your permission before reading individual records or making any change. Development and training servers only in this release. See [SECURITY-MODEL.md](SECURITY-MODEL.md).
 
 ### For Claude Code (Cursor)
 Create `.claude/config.json` in your project:

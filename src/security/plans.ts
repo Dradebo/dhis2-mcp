@@ -170,16 +170,51 @@ export interface PlannedTarget {
   diffs: FieldDiff[];          // updates: changed fields; creates: all supplied fields
 }
 
+const PLAIN_TYPE: Record<string, [string, string]> = {
+  dataElements: ['data element', 'data elements'], dataElementGroups: ['data element group', 'data element groups'],
+  dataSets: ['data set', 'data sets'], categoryOptions: ['category option', 'category options'],
+  categories: ['category', 'categories'], categoryCombos: ['category combination', 'category combinations'],
+  indicators: ['indicator', 'indicators'], indicatorTypes: ['indicator type', 'indicator types'],
+  indicatorGroups: ['indicator group', 'indicator groups'], organisationUnitGroups: ['org unit group', 'org unit groups'],
+  validationRules: ['validation rule', 'validation rules'], programIndicators: ['program indicator', 'program indicators'],
+  programRules: ['program rule', 'program rules'], programRuleVariables: ['program rule variable', 'program rule variables'],
+  programRuleActions: ['program rule action', 'program rule actions'], legendSets: ['legend', 'legends'],
+  optionSets: ['option set', 'option sets'], options: ['option', 'options'], visualizations: ['chart or table', 'charts or tables'],
+  eventVisualizations: ['event report', 'event reports'], maps: ['map', 'maps'], dashboards: ['dashboard', 'dashboards'],
+  constants: ['constant', 'constants'],
+};
+
+function plainCount(objectType: string, n: number): string {
+  const [one, many] = PLAIN_TYPE[objectType] ?? [objectType, objectType];
+  return `${n} ${n === 1 ? one : many}`;
+}
+
+/** One plain-language sentence, e.g. "update 1 data element (\"ANC 1st\"); create 2 indicators". */
+export function plainSummary(targets: PlannedTarget[]): string {
+  const groups = new Map<string, PlannedTarget[]>();
+  for (const t of targets) {
+    const k = `${t.action}|${t.objectType}`;
+    groups.set(k, [...(groups.get(k) ?? []), t]);
+  }
+  return [...groups.entries()].map(([k, list]) => {
+    const [action, objectType] = k.split('|') as [string, string];
+    const names = list.slice(0, 3).map(t => t.label ? `"${safeText(t.label, 40)}"` : t.id).join(', ');
+    return `${action} ${plainCount(objectType, list.length)} (${names}${list.length > 3 ? `, +${list.length - 3} more` : ''})`;
+  }).join('; ');
+}
+
 export function renderApprovalSummary(args: {
-  planId: string; payloadHash: string; origin: string; profile: string; user: string;
+  planId: string; payloadHash: string; origin: string; profile: string; user: string; environment?: string;
   description: string; targets: PlannedTarget[]; validation: string; expiresAt: Date;
 }): string {
   const fieldTotal = args.targets.reduce((n, t) => n + t.diffs.length, 0);
   const lines = [
-    `DHIS2 change approval — plan ${args.planId.slice(0, 8)} (sha256 ${args.payloadHash.slice(0, 12)})`,
-    `Instance: ${args.origin}  (profile ${safeText(args.profile, 32)}, user ${safeText(args.user, 40)})`,
+    `Allow the assistant to change DHIS2 on the ${safeText(args.environment ?? 'connected', 20)} server ${args.origin}?`,
+    `In short: ${plainSummary(args.targets)}.`,
     `Purpose given by the assistant (unverified): "${safeText(args.description, 200)}"`,
-    `Changes: ${args.targets.length} object(s), ${fieldTotal} field(s). This is the complete list:`,
+    'Nothing will be deleted and no sharing or ownership will change.',
+    '',
+    `Details: ${args.targets.length} object(s), ${fieldTotal} field(s). This is the complete list:`,
   ];
   args.targets.forEach((t, i) => {
     lines.push(` ${i + 1}. ${t.action.toUpperCase()} ${t.objectType} ${t.id} ${t.label ? `"${safeText(t.label, 60)}"` : ''}`.trimEnd());
@@ -190,7 +225,7 @@ export function renderApprovalSummary(args: {
     }
   });
   lines.push(`DHIS2 dry run: ${args.validation}`);
-  lines.push(`Expires: ${args.expiresAt.toISOString()}. Sharing, ownership and deletion cannot be changed by plans.`);
+  lines.push(`Signed in as ${safeText(args.user, 40)} (profile ${safeText(args.profile, 32)}). Plan ${args.planId.slice(0, 8)}, sha256 ${args.payloadHash.slice(0, 12)}, expires ${args.expiresAt.toISOString()}.`);
   lines.push('Approve only if this matches what you asked for.');
   return lines.join('\n');
 }

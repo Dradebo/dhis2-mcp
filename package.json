@@ -1,24 +1,24 @@
 {
-  "name": "dhis2-mcp-server",
-  "version": "1.0.0",
-  "description": "A Model Context Protocol server providing 108 tools for DHIS2 development, including code generators, debugging helpers, and documentation access for web and Android app development.",
+  "name": "dhis2-mcp",
+  "version": "2.0.0-alpha.1",
+  "description": "Connect an AI agent to a DHIS2 development or training instance: one login in a terminal, then the agent works and asks permission before sensitive actions or changes.",
   "main": "dist/index.js",
   "bin": {
-    "dhis2-mcp": "dist/index.js"
+    "dhis2-mcp": "dist/cli.js"
   },
   "type": "module",
   "files": [
     "dist",
     "README.md",
-    "CLAUDE.md"
+    "SECURITY-MODEL.md"
   ],
   "scripts": {
-    "build": "tsc && node -e \"require('fs').chmodSync('dist/index.js', '755')\"",
+    "build": "tsc && node -e \"['dist/index.js','dist/cli.js'].forEach(f=>require('fs').chmodSync(f,'755'))\"",
     "dev": "tsc --watch",
     "start": "node dist/index.js",
     "test": "jest",
-    "test:e2e-security": "tsc --outDir build-e2e && node tests/e2e/stdio-security.mjs build-e2e/index.js && node tests/e2e/stdio-change-engine.mjs build-e2e/index.js && node tests/e2e/credential-store-check.mjs",
-    "setup-credentials": "node scripts/setup-credentials.mjs",
+    "test:e2e-security": "tsc --outDir build-e2e && node tests/e2e/stdio-security.mjs build-e2e/index.js && node tests/e2e/stdio-change-engine.mjs build-e2e/index.js && node tests/e2e/install-and-store.mjs build-e2e",
+    "login": "node dist/cli.js login",
     "lint": "eslint src/**/*.ts",
     "type-check": "tsc --noEmit",
     "prepare": "npm run build",

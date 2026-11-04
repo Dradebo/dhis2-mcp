@@ -50,25 +50,29 @@ await new Promise(r => server.listen(0, '127.0.0.1', r));
 const baseUrl = `https://localhost:${server.address().port}`;
 
 // --- MCP client over stdio -------------------------------------------------------
-const transport = new StdioClientTransport({
-  command: process.execPath,
-  args: [entry],
-  stderr: 'pipe',
-  env: {
-    PATH: process.env.PATH ?? '', SYSTEMROOT: process.env.SYSTEMROOT ?? '',
-    TEMP: certDir, TMP: certDir, USERPROFILE: certDir, HOME: certDir, APPDATA: certDir, LOCALAPPDATA: certDir,
-    NODE_EXTRA_CA_CERTS: certFile,
-    DHIS2_MCP_PROFILES: 'dev,broken',
-    DHIS2_MCP_DEV_BASE_URL: baseUrl, DHIS2_MCP_DEV_USERNAME: 'fixture', DHIS2_MCP_DEV_PASSWORD: CANARY_DEV,
-    DHIS2_MCP_BROKEN_BASE_URL: baseUrl, DHIS2_MCP_BROKEN_USERNAME: 'broken', DHIS2_MCP_BROKEN_PASSWORD: CANARY_BROKEN,
-    DHIS2_MCP_CAPABILITIES: 'audit-export,not-a-capability',
-  },
-});
+const baseEnv = {
+  PATH: process.env.PATH ?? '', SYSTEMROOT: process.env.SYSTEMROOT ?? '',
+  TEMP: certDir, TMP: certDir, USERPROFILE: certDir, HOME: certDir, APPDATA: certDir, LOCALAPPDATA: certDir,
+  NODE_EXTRA_CA_CERTS: certFile,
+  DHIS2_MCP_HOME: path.join(certDir, 'empty-store'),
+};
+const profileEnv = {
+  ...baseEnv,
+  DHIS2_MCP_PROFILES: 'dev,broken',
+  DHIS2_MCP_DEV_BASE_URL: baseUrl, DHIS2_MCP_DEV_USERNAME: 'fixture', DHIS2_MCP_DEV_PASSWORD: CANARY_DEV, DHIS2_MCP_DEV_ENVIRONMENT: 'development',
+  DHIS2_MCP_BROKEN_BASE_URL: baseUrl, DHIS2_MCP_BROKEN_USERNAME: 'broken', DHIS2_MCP_BROKEN_PASSWORD: CANARY_BROKEN, DHIS2_MCP_BROKEN_ENVIRONMENT: 'development',
+  DHIS2_MCP_CAPABILITIES: 'audit-export,not-a-capability',
+};
 let stderr = '';
-transport.stderr?.on('data', d => { stderr += d.toString(); });
 const protocolLog = [];
-const client = new Client({ name: 'e2e-security', version: '1.0.0' }, { capabilities: {} });
-await client.connect(transport);
+async function openSession(env) {
+  const transport = new StdioClientTransport({ command: process.execPath, args: [entry], stderr: 'pipe', env });
+  transport.stderr?.on('data', d => { stderr += d.toString(); });
+  const c = new Client({ name: 'e2e-security', version: '1.0.0' }, { capabilities: {} });
+  await c.connect(transport);
+  return c;
+}
+let client;
 
 const checks = [];
 const check = (id, ok, detail = '') => { checks.push({ id, ok: Boolean(ok), detail }); };
@@ -81,11 +85,12 @@ const denied = (r, code) => r.isError && r.text.includes(`Denied by MCP policy (
 const countReq = pred => requests.filter(pred).length;
 
 try {
-  // A. discovery before connection
+  // A-E run on a server with NO saved or declared connection.
+  client = await openSession(baseEnv);
   let list = await client.listTools(); protocolLog.push(JSON.stringify(list));
   let names = list.tools.map(t => t.name);
-  check('A1 configure discoverable before connection', names.includes('dhis2_configure'));
-  check('A2 no instance tools discoverable before connection', !names.some(n => /^dhis2_(list|get_data|get_analytics|create_data_element)/.test(n)), names.filter(n => /^dhis2_list/.test(n)).join(','));
+  check('A1 configure discoverable before setup', names.includes('dhis2_configure'));
+  check('A2 no instance tools discoverable before setup', !names.some(n => /^dhis2_(list|get_data|get_analytics|create_data_element|plan_)/.test(n)), names.filter(n => /^dhis2_list/.test(n)).join(','));
   const cfgSchema = list.tools.find(t => t.name === 'dhis2_configure')?.inputSchema;
   check('A3 configure schema exposes only profile', JSON.stringify(Object.keys(cfgSchema?.properties ?? {})) === '["profile"]');
 
@@ -98,16 +103,18 @@ try {
   check('D1 unknown tool denied', denied(r, 'unknown_tool'));
   check('B2 no HTTP request made by denied calls', requests.length === 0, `requests=${requests.length}`);
 
-  // E. smuggled credentials are ignored; undeclared default profile fails
+  // E. smuggled credentials are ignored; with nothing set up, configure explains the one setup step
   r = await call('dhis2_configure', { baseUrl: 'https://attacker.invalid', username: 'admin', password: 'district' });
-  check('E1 smuggled baseUrl/password ignored; undeclared profile rejected', r.isError && /not declared/.test(r.text), r.text.slice(0, 160));
+  check('E1 smuggled baseUrl/password ignored; points the person to "dhis2-mcp login"', r.isError && /dhis2-mcp login/.test(r.text), r.text.slice(0, 160));
   check('E2 still no HTTP request', requests.length === 0);
+  await client.close();
 
+  client = await openSession(profileEnv);
   // F. permission/user discovery failure fails closed
   r = await call('dhis2_configure', { profile: 'broken' });
   check('F1 configure fails when the DHIS2 user cannot be retrieved', r.isError, r.text.slice(0, 160));
   r = await call('dhis2_list_data_elements', {});
-  check('F2 no connection activated after failed permission discovery', denied(r, 'not_connected'));
+  check('F2 no connection activated after failed permission discovery (no read reaches DHIS2)', r.isError && countReq(q => q.path === '/api/dataElements') === 0, r.text.slice(0, 160));
 
   // G. verified connection: reads allowed, writes and record reads denied
   r = await call('dhis2_configure', { profile: 'dev' });
@@ -124,7 +131,7 @@ try {
   r = await call('dhis2_create_data_element', { name: 'x', shortName: 'x', valueType: 'NUMBER', domainType: 'AGGREGATE', aggregationType: 'SUM', confirmed: true });
   check('G5 fabricated confirmed:true write denied for superuser', denied(r, 'writes_disabled'));
   r = await call('dhis2_list_events', { program: 'p1' });
-  check('G6 record-level read denied without operator capability', denied(r, 'capability_disabled'));
+  check('G6 record-level read needs the person\'s permission; a host that cannot ask is refused', r.isError && /cannot ask/.test(r.text) && countReq(q => /events|tracker/.test(q.path)) === 0, r.text.slice(0, 160));
   r = await call('dhis2_manage_datastore_key', { operation: 'update', namespace: 'ns', key: 'k', value: { a: 1 }, encrypt: true });
   check('G7 DataStore write denied', denied(r, 'writes_disabled'));
   check('G8 denied calls made no HTTP request', requests.length === before, `delta=${requests.length - before}`);
@@ -145,8 +152,9 @@ try {
 
   // I. reconfiguration failure revokes the previous connection (RT-04)
   r = await call('dhis2_configure', { profile: 'broken' });
+  const deBefore = countReq(q => q.path === '/api/dataElements');
   r = await call('dhis2_list_data_elements', {});
-  check('I1 failed reconfiguration leaves no active connection (old identity revoked)', denied(r, 'not_connected'));
+  check('I1 failed reconfiguration leaves no active connection (old identity revoked)', r.isError && countReq(q => q.path === '/api/dataElements') === deBefore, r.text.slice(0, 160));
 
   // J/K. audit export is capability-gated and minimised; clear is denied
   r = await call('dhis2_export_audit_log', {});

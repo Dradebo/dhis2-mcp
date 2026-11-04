@@ -95,19 +95,31 @@ describe('§9.2 fail closed', () => {
       expect(authorize(name, {}, disconnected).allowed).toBe(false);
     }
   });
-  it('record-level reads need the operator capability', () => {
+  it('record-level reads need the person\'s consent (or an admin pre-consent)', () => {
     for (const name of ['dhis2_list_events', 'dhis2_list_tracked_entity_instances', 'dhis2_get_event_analytics']) {
-      expect(authorize(name, {}, connected())).toMatchObject({ allowed: false, code: 'capability_disabled' });
+      expect(authorize(name, {}, connected())).toMatchObject({ allowed: false, code: 'consent_required', consent: 'record-read' });
+      expect(authorize(name, {}, { ...connected(), consents: new Set(['record-read'] as const) }).allowed).toBe(true);
       expect(authorize(name, {}, connected(['record-read'])).allowed).toBe(true);
+      expect(authorize(name, undefined, connected()).allowed).toBe(true); // discoverable; consent asked at call time
     }
   });
-  it('plan tools need the metadata-write capability and a verified connection', () => {
+  it('consent for one category does not cover another', () => {
+    const ctx = { ...connected(), consents: new Set(['record-read'] as const) };
+    expect(authorize('dhis2_manage_datastore_key', { operation: 'read', namespace: 'a', key: 'b' }, ctx))
+      .toMatchObject({ allowed: false, code: 'consent_required', consent: 'datastore-read' });
+  });
+  it('instance tools are discoverable once a profile exists, but not callable until connected', () => {
+    const available = { ...disconnected, connectionAvailable: true };
+    expect(authorize('dhis2_list_data_elements', undefined, available).allowed).toBe(true);
+    expect(authorize('dhis2_list_data_elements', {}, available)).toMatchObject({ allowed: false, code: 'not_connected' });
+    expect(authorize('dhis2_list_data_elements', undefined, disconnected).allowed).toBe(false);
+  });
+  it('plan tools need a verified connection; approval happens per plan, not via configuration', () => {
     for (const name of ['dhis2_plan_metadata_change', 'dhis2_apply_plan', 'dhis2_get_plan', 'dhis2_cancel_plan']) {
-      expect(authorize(name, {}, connected())).toMatchObject({ allowed: false, code: 'capability_disabled' });
-      expect(authorize(name, {}, { ...disconnected, capabilities: parseCapabilities('metadata-write').capabilities }))
-        .toMatchObject({ allowed: false, code: 'not_connected' });
-      expect(authorize(name, {}, connected(['metadata-write'])).allowed).toBe(true);
+      expect(authorize(name, {}, disconnected)).toMatchObject({ allowed: false, code: 'not_connected' });
+      expect(authorize(name, {}, connected()).allowed).toBe(true);
     }
+    expect(parseCapabilities('metadata-write').capabilities.size).toBe(0); // writes cannot be pre-approved
   });
   it('rejects non-object arguments', () => {
     expect(authorize('dhis2_init_webapp', [], disconnected)).toMatchObject({ allowed: false, code: 'invalid_arguments' });
@@ -164,8 +176,33 @@ describe('BASE-01 credentials never enter tool arguments', () => {
     }
   });
   it('prefers a personal access token', () => {
-    const p = resolveProfile(undefined, { DHIS2_MCP_DEFAULT_BASE_URL: 'https://x.example.org', DHIS2_MCP_DEFAULT_TOKEN: 'd2pat_abc123' });
+    const p = resolveProfile(undefined, { DHIS2_MCP_DEFAULT_BASE_URL: 'https://x.example.org', DHIS2_MCP_DEFAULT_TOKEN: 'd2pat_abc123', DHIS2_MCP_DEFAULT_ENVIRONMENT: 'training' });
     expect(p.auth).toEqual({ type: 'token', token: 'd2pat_abc123' });
+    expect(p.environment).toBe('training');
+  });
+  it('connects only to development or training instances', () => {
+    const base = { DHIS2_MCP_DEFAULT_BASE_URL: 'https://hmis.example.org', DHIS2_MCP_DEFAULT_TOKEN: 'd2pat_x' };
+    expect(() => resolveProfile(undefined, base)).toThrow(/not confirmed as a development or training/);
+    expect(() => resolveProfile(undefined, { ...base, DHIS2_MCP_DEFAULT_ENVIRONMENT: 'production' })).toThrow(/only to development or training/);
+    expect(resolveProfile(undefined, { ...base, DHIS2_MCP_DEFAULT_BASE_URL: 'https://dev-hmis.example.org' }).environment).toBe('development');
+  });
+  it('uses the server\'s own saved login when no environment profile is declared', () => {
+    const fs = require('fs'); const os = require('os'); const path = require('path');
+    const home = fs.mkdtempSync(path.join(os.tmpdir(), 'dhis2-store-'));
+    const env = { DHIS2_MCP_HOME: home };
+    const prev = process.env.DHIS2_MCP_PLAIN_SECRETS; process.env.DHIS2_MCP_PLAIN_SECRETS = '1';
+    try {
+      expect(() => resolveProfile(undefined, env)).toThrow(/npx -y dhis2-mcp login/);
+      const { saveStoredProfile } = require('../src/security/credential-store');
+      saveStoredProfile('default', { baseUrl: 'https://dev.example.org', username: 'fixture', environment: 'development', verifiedAt: 'x' }, CANARY, env);
+      const p = resolveProfile(undefined, env);
+      expect(p).toMatchObject({ name: 'default', baseUrl: 'https://dev.example.org', source: 'store', environment: 'development' });
+      expect(p.auth).toEqual({ type: 'basic', username: 'fixture', password: CANARY });
+      expect(fs.readFileSync(path.join(home, 'profiles.json'), 'utf8')).not.toContain(CANARY);
+    } finally {
+      if (prev === undefined) delete process.env.DHIS2_MCP_PLAIN_SECRETS; else process.env.DHIS2_MCP_PLAIN_SECRETS = prev;
+      fs.rmSync(home, { recursive: true, force: true });
+    }
   });
   it('generators never echo a password even if one is smuggled in', () => {
     const { generateDevEnvironmentConfig } = require('../src/webapp-generators');

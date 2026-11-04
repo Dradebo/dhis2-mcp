@@ -24,11 +24,24 @@ export type OperationClass =
   | 'instance-delete'
   | 'audit-admin';          // audit retention/deletion
 
-/** Operator capabilities that can be enabled at launch (never by tool arguments). */
-export type Capability = 'record-read' | 'datastore-read' | 'audit-export' | 'composition-export' | 'metadata-write';
+/**
+ * Sensitive categories that need the person's consent (asked through the MCP host,
+ * once per connection). An administrator may pre-consent at launch via
+ * DHIS2_MCP_CAPABILITIES (never through tool arguments). Writes are never
+ * pre-consentable: every plan is approved individually by the change engine.
+ */
+export type Capability = 'record-read' | 'datastore-read' | 'audit-export' | 'composition-export';
+export type ConsentCategory = Capability;
 const KNOWN_CAPABILITIES: ReadonlySet<Capability> = new Set([
-  'record-read', 'datastore-read', 'audit-export', 'composition-export', 'metadata-write',
+  'record-read', 'datastore-read', 'audit-export', 'composition-export',
 ]);
+
+export const CONSENT_TEXT: Record<ConsentCategory, string> = {
+  'record-read': 'read individual-level records (people, enrollments, events)',
+  'datastore-read': 'read DHIS2 app storage (DataStore), which can contain any kind of saved app data',
+  'audit-export': 'export the assistant\'s activity log',
+  'composition-export': 'export DHIS2 results for use by other connected tools',
+};
 
 const HARD_DENIED: ReadonlySet<OperationClass> = new Set(['instance-write', 'instance-delete', 'audit-admin']);
 const INSTANCE_CLASSES: ReadonlySet<OperationClass> = new Set([
@@ -39,7 +52,7 @@ type Classifier = OperationClass | ((args: Record<string, unknown> | undefined) 
 
 interface PolicyEntry {
   classify: Classifier;
-  /** Capability required in addition to the class rules (operator opt-in). */
+  /** Sensitive category: the person is asked once per connection (or an admin pre-consented). */
   capability?: Capability;
   /** Discovery class used when no arguments are available. */
   discoveryClass?: OperationClass;
@@ -93,10 +106,10 @@ const REGISTRY: ReadonlyMap<string, PolicyEntry> = new Map<string, PolicyEntry>(
   ['dhis2_get_enrollment_analytics', recordRead],
 
   // Safe change engine: server-held plans, host-mediated approval, read-back.
-  ['dhis2_plan_metadata_change', { classify: 'planned-write', capability: 'metadata-write' }],
-  ['dhis2_apply_plan', { classify: 'planned-write', capability: 'metadata-write' }],
-  ['dhis2_get_plan', { classify: 'planned-write', capability: 'metadata-write' }],
-  ['dhis2_cancel_plan', { classify: 'planned-write', capability: 'metadata-write' }],
+  ['dhis2_plan_metadata_change', { classify: 'planned-write' }],
+  ['dhis2_apply_plan', { classify: 'planned-write' }],
+  ['dhis2_get_plan', { classify: 'planned-write' }],
+  ['dhis2_cancel_plan', { classify: 'planned-write' }],
 
   // Legacy direct writes, imports and server-side actions: always denied. Metadata
   // creates/updates go through dhis2_plan_metadata_change + dhis2_apply_plan.
@@ -166,6 +179,10 @@ const REGISTRY: ReadonlyMap<string, PolicyEntry> = new Map<string, PolicyEntry>(
 export interface PolicyContext {
   /** True only after a connection was built, tested and the DHIS2 user retrieved. */
   connectionVerified: boolean;
+  /** A saved/declared profile exists, so the server can connect on first use. Discovery only. */
+  connectionAvailable?: boolean;
+  /** Categories the person consented to for the current connection. */
+  consents?: ReadonlySet<ConsentCategory>;
   /** Permissions derived from the verified DHIS2 user; null when unverified. */
   permissions: UserPermissions | null;
   capabilities: ReadonlySet<Capability>;
@@ -173,11 +190,11 @@ export interface PolicyContext {
 
 export type PolicyDecision =
   | { allowed: true; operationClass: OperationClass }
-  | { allowed: false; operationClass: OperationClass | 'unknown'; code: DenialCode; reason: string };
+  | { allowed: false; operationClass: OperationClass | 'unknown'; code: DenialCode; reason: string; consent?: ConsentCategory };
 
 export type DenialCode =
   | 'unknown_tool' | 'writes_disabled' | 'not_connected' | 'permission_unverified'
-  | 'dhis2_authority_missing' | 'capability_disabled' | 'invalid_arguments';
+  | 'dhis2_authority_missing' | 'consent_required' | 'invalid_arguments';
 
 function deny(operationClass: OperationClass | 'unknown', code: DenialCode, reason: string): PolicyDecision {
   return { allowed: false, operationClass, code, reason };
@@ -215,12 +232,12 @@ export function authorize(name: string, args: unknown, ctx: PolicyContext): Poli
       'Direct write, delete, import and audit-deletion tools are disabled. Metadata creates/updates go through dhis2_plan_metadata_change and dhis2_apply_plan, which require approval by the user in the MCP host. A "confirmed" argument is not accepted as approval.');
   }
 
-  if (entry.capability && !ctx.capabilities.has(entry.capability)) {
-    return deny(cls, 'capability_disabled',
-      `This operation requires the operator capability "${entry.capability}", which is not enabled. It can only be enabled in the MCP launch environment (DHIS2_MCP_CAPABILITIES), not through tool arguments.`);
-  }
-
+  const discovery = argObj === undefined;
   if (INSTANCE_CLASSES.has(cls)) {
+    // Discovery: instance tools are listed once a profile exists; the server connects on first use.
+    if (discovery && !ctx.connectionVerified) {
+      return ctx.connectionAvailable ? { allowed: true, operationClass: cls } : deny(cls, 'not_connected', 'DHIS2 is not set up.');
+    }
     if (!ctx.connectionVerified) {
       return deny(cls, 'not_connected', 'No verified DHIS2 connection. Use dhis2_configure with an operator-defined connection profile.');
     }
@@ -230,6 +247,13 @@ export function authorize(name: string, args: unknown, ctx: PolicyContext): Poli
     if (!PermissionSystem.hasToolPermission(name, ctx.permissions)) {
       return deny(cls, 'dhis2_authority_missing', 'The connected DHIS2 user lacks the authority this MCP maps to this operation.');
     }
+  }
+
+  if (entry.capability && !discovery && !ctx.capabilities.has(entry.capability) && !ctx.consents?.has(entry.capability)) {
+    return {
+      allowed: false, operationClass: cls, code: 'consent_required', consent: entry.capability,
+      reason: `The person must agree before the assistant can ${CONSENT_TEXT[entry.capability]}.`,
+    };
   }
 
   return { allowed: true, operationClass: cls };

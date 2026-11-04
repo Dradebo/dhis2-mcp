@@ -35,6 +35,7 @@ export interface ConnectionIdentity {
   username: string;
   profile: string;
   origin: string;
+  environment?: string;
 }
 
 interface Precondition { objectType: string; id: string; kind: 'absent' | 'hash'; hash?: string }
@@ -201,6 +202,7 @@ export class ChangeEngine {
       id, owner: { ...who }, createdAt, expiresAt, state, description: input.description,
       payload: deepFreeze(payload), payloadHash, preconditions: deepFreeze(preconditions), targets: deepFreeze(targets),
       summary: renderApprovalSummary({ planId: id, payloadHash, origin: who.origin, profile: who.profile, user: who.username,
+        ...(who.environment ? { environment: who.environment } : {}),
         description: input.description, targets, validation: validationText, expiresAt }),
       validation: { status: parsed.status, stats: parsed.stats, errors: parsed.errors },
     };

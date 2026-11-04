@@ -1,46 +1,50 @@
 # Security model (local single-user stdio)
 
-This build is **read-only by design**. It applies one policy to tool discovery, completions and dispatch. It is a local stdio server for one user; a remote or multi-user deployment needs a separate authentication and session review.
+The server applies one policy to tool discovery, completions and dispatch. It is a local stdio server for one person. A remote or multi-user deployment needs a separate authentication and session review.
 
-## Connecting: credentials stay in the launch environment
+## Setup: one login, typed by a person
 
-**Simplest setup (Hermes):** run this in a terminal you can see and type your DHIS2 username and password when asked:
+1. The agent adds the server to its host. The host config holds no secrets: `{"command": "npx", "args": ["-y", "dhis2-mcp"]}`. `npx -y dhis2-mcp install` prints this config, plus the one human step.
+2. The person runs `npx -y dhis2-mcp login` in a terminal and types three things:
+   - the DHIS2 address;
+   - a yes/no confirming it is a development or training server;
+   - their username and password.
+
+   The password is masked and checked live against `/api/me` (HTTPS, no redirects). Login refuses to run without a real terminal, so an agent cannot pipe credentials into it.
+3. The login is saved in the server's own store (`%APPDATA%\dhis2-mcp`, or `~/.dhis2-mcp`; override with `DHIS2_MCP_HOME`):
+   - Windows: the password is encrypted with DPAPI for the current OS user.
+   - Other systems: the password file has `0600` permissions.
+
+   DPAPI protects against other OS users and copied files. It does not protect against processes running as the same user, such as the agent host.
+4. The server connects on first use. The agent never needs a setup call. `status` checks the saved login, and `logout` removes it.
+
+**This release connects only to development or training instances.** Login refuses otherwise. An environment profile must declare `DHIS2_MCP_<P>_ENVIRONMENT=development|training`, or have a dev/test/training-style hostname.
+
+Operators can still use environment profiles instead of the store. When they are present, they take precedence:
 
 ```bash
-node scripts/setup-credentials.mjs --url https://your-dhis2.example.org --profile dev
-```
-
-It checks the login against `/api/me` (HTTPS, no redirects) and writes `DHIS2_MCP_DEV_*` to the Hermes `.env` file. Hermes passes those values to the server through `${VAR}` references in `mcp_servers.dhis2.env`. The password is not echoed, printed or logged. It is stored in plaintext in `.env`, like the other Hermes secrets. Passwords containing `${` or line breaks are refused, because the `.env` loader would alter them.
-
-`dhis2_configure` accepts only a profile name. The MCP host (for example, Hermes) reads the instance URL and credentials from environment variables when it launches the server:
-
-```bash
-DHIS2_MCP_PROFILES=dev                 # optional, comma-separated; default: "default"
+DHIS2_MCP_PROFILES=dev
 DHIS2_MCP_DEV_BASE_URL=https://dev.example.org
-DHIS2_MCP_DEV_TOKEN=d2pat_...          # personal access token (preferred), or:
-DHIS2_MCP_DEV_USERNAME=...
-DHIS2_MCP_DEV_PASSWORD=...
+DHIS2_MCP_DEV_TOKEN=d2pat_...          # or DHIS2_MCP_DEV_USERNAME + DHIS2_MCP_DEV_PASSWORD
+DHIS2_MCP_DEV_ENVIRONMENT=development
 ```
 
-- URLs must be HTTPS and must not contain embedded credentials, a query string or a fragment. Redirects are not followed.
-- Never pass URLs, usernames, passwords or tokens in tool arguments. Arguments other than `profile` are ignored.
-- Before any connection is activated, the server tests it and retrieves the DHIS2 user. If either step fails, no connection remains active: the previous connection is revoked and the server does not fall back to default permissions.
-- Wherever the variables are stored (user environment, host config file), they are plaintext at rest. Prefer a narrowly scoped personal access token with an expiry.
+- URLs must be HTTPS, with no embedded credentials, query string or fragment. Redirects are not followed.
+- The model never handles credentials: `dhis2_configure` accepts only a profile name, and every other argument is ignored.
+- A candidate connection is fully verified before it is activated. On failure, the previous connection is revoked, with no fallback to default permissions.
 
-## Operation classes
+## Permission tiers: the server asks instead of requiring configuration
 
-| Class | Behaviour |
-|---|---|
-| local (generators, guides, permission info, audit summary) | allowed |
-| metadata / aggregate reads | allowed after a verified connection, intersected with the mapped DHIS2 authority |
-| record-level reads (tracker, enrollments, events, event/enrollment *query* analytics) | require operator capability `record-read` |
-| DataStore reads | require `datastore-read` |
-| audit export / composition export | require `audit-export` / `composition-export` |
-| metadata create/update via `dhis2_plan_metadata_change` → `dhis2_apply_plan` | require `metadata-write`; **every apply needs the user's approval in the MCP host** (see below) |
-| legacy direct create/update/delete/import tools, `run_validation`, DataStore writes, audit clear | **always denied** |
-| unregistered tool | denied |
+| Tier | Operations | Behaviour |
+|---|---|---|
+| 0 | local generators and guides; metadata and aggregate reads | no prompt (DHIS2 still enforces its own sharing and authorities) |
+| 1 | individual-level records (tracker, enrollments, events, event/enrollment *query* analytics); DataStore reads; audit/composition export | the person is asked through the MCP host, **once per connection** per category |
+| 2 | metadata create/update via `dhis2_plan_metadata_change` → `dhis2_apply_plan` | the person approves **each plan** in the MCP host (see below) |
+| — | legacy direct create/update/delete/import tools, `run_validation`, DataStore writes, audit clear; unregistered tools | always denied |
 
-Capabilities can only be enabled by the operator in `DHIS2_MCP_CAPABILITIES` (comma-separated), never through tool arguments. The server ignores a `confirmed: true` argument: it is not approval.
+- Prompts use MCP form elicitation. Hosts that cannot ask are refused tier 1 and tier 2.
+- For such hosts, an administrator can pre-approve tier-1 categories with `DHIS2_MCP_CAPABILITIES=record-read,...`. Writes can never be pre-approved.
+- A `confirmed: true` argument is ignored: it is not approval.
 
 ## Planned changes (safe change engine)
 
@@ -79,8 +83,8 @@ Limits:
 
 ```bash
 npm test                    # unit tests, incl. tests/security-policy.test.ts
-npm run test:e2e-security   # builds to build-e2e/ and runs real-stdio adversarial checks
-                            # against a local fake DHIS2 (needs openssl)
+npm run test:e2e-security   # builds to build-e2e/; real-stdio adversarial checks, change-engine checks
+                            # and install/login/store checks against a local fake DHIS2 (needs openssl)
 ```
 
 ## Known limitations

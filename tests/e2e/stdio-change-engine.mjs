@@ -73,7 +73,7 @@ const env = {
   NODE_EXTRA_CA_CERTS: certFile,
   DHIS2_MCP_PROFILES: 'dev',
   DHIS2_MCP_DEV_BASE_URL: baseUrl, DHIS2_MCP_DEV_USERNAME: 'fixture', DHIS2_MCP_DEV_PASSWORD: CANARY,
-  DHIS2_MCP_CAPABILITIES: 'metadata-write',
+  DHIS2_MCP_DEV_ENVIRONMENT: 'development',
 };
 
 async function startClient({ elicitation, answers = [] }) {
@@ -108,9 +108,9 @@ const allText = [];
 {
   const h = await startClient({ elicitation: true, answers: ['decline', 'accept'] });
   try {
-    await h.call('dhis2_configure', { profile: 'dev' });
+    // No dhis2_configure call: the server connects on first use from the set-up profile.
     const names = (await h.client.listTools()).tools.map(t => t.name);
-    check('P1 plan tools discoverable with metadata-write', names.includes('dhis2_plan_metadata_change') && names.includes('dhis2_apply_plan'));
+    check('P1 plan tools discoverable without any configuration step', names.includes('dhis2_plan_metadata_change') && names.includes('dhis2_apply_plan'));
     check('P2 legacy direct write tools still hidden', !names.includes('dhis2_create_data_element') && !names.includes('dhis2_bulk_import_data_values'));
 
     let r = await h.call('dhis2_create_data_element', { name: 'x', shortName: 'x', valueType: 'NUMBER', domainType: 'AGGREGATE', aggregationType: 'SUM', confirmed: true });
@@ -118,11 +118,13 @@ const allText = [];
 
     r = await h.call('dhis2_plan_metadata_change', rename('ANC 1st visit'));
     const plan1 = planIdOf(r.text);
+    check('P0 first call connected automatically (no configure step)', log.some(l => l.path === '/api/me'));
     check('P4 plan created and validated by a DHIS2 dry run, nothing committed', !r.isError && /State: validated/.test(r.text) && commits() === 0, r.text.slice(0, 200));
 
     r = await h.call('dhis2_apply_plan', { planId: plan1, confirmed: true, approval: 'granted' });
     check('P5 user decline in host → nothing sent, despite confirmed/approval args', r.isError && /declined/.test(r.text) && commits() === 0, r.text.slice(0, 160));
     check('P6 host prompt shows the exact field change and plan hash', /name: "ANC 1st" → "ANC 1st visit"/.test(h.state.prompts[0] ?? '') && /sha256 [0-9a-f]{12}/.test(h.state.prompts[0] ?? ''));
+    check('P6b host prompt opens in plain language', /^Allow the assistant to change DHIS2 on the development server/.test(h.state.prompts[0] ?? '') && /In short: update 1 data element \("ANC 1st"\)/.test(h.state.prompts[0] ?? ''), (h.state.prompts[0] ?? '').split('\n').slice(0, 2).join(' | '));
     r = await h.call('dhis2_apply_plan', { planId: plan1 });
     check('P7 declined plan cannot be re-applied', r.isError && /not_applicable/.test(r.text) && h.state.prompts.length === 1);
 
@@ -167,6 +169,13 @@ const allText = [];
     check('P16 sharing changes rejected at planning', r.isError && /sharing/.test(r.text));
     r = await h.call('dhis2_plan_metadata_change', { description: 'x', changes: [{ action: 'update', objectType: 'users', id: DE, set: { name: 'x' } }] });
     check('P17 non-allowlisted object type rejected', r.isError && /objectType/.test(r.text));
+    // Sensitive reads: asked once per connection, then remembered for that connection.
+    const promptsBeforeConsent = h.state.prompts.length;
+    h.state.answers.push('accept');
+    r = await h.call('dhis2_list_events', { program: 'prAAAAAAAA1' });
+    const r2 = await h.call('dhis2_list_events', { program: 'prAAAAAAAA1' });
+    check('C1 individual-record read asks the person once, then proceeds', h.state.prompts.length === promptsBeforeConsent + 1
+      && /individual-level records/.test(h.state.prompts[promptsBeforeConsent] ?? '') && !/permission/.test(r.text) && !/permission/.test(r2.text), r.text.slice(0, 120));
     allText.push(...h.state.protocol, ...h.state.prompts, h.state.stderr);
   } finally { await h.client.close().catch(() => {}); }
 }

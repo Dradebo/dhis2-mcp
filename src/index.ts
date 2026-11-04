@@ -11,8 +11,8 @@ import {
 import { DHIS2Client } from './dhis2-client.js';
 import { createDevelopmentTools, createAPITools } from './tools/index.js';
 import { auditLogger } from './audit-logger.js';
-import { authorize, filterDiscoverableTools, parseCapabilities, PolicyContext } from './security/tool-policy.js';
-import { resolveProfile, listConfiguredProfiles } from './security/credentials.js';
+import { authorize, filterDiscoverableTools, parseCapabilities, PolicyContext, ConsentCategory, CONSENT_TEXT } from './security/tool-policy.js';
+import { resolveProfile, listConfiguredProfiles, ConnectionProfile } from './security/credentials.js';
 import { toSafeErrorMessage } from './security/safe-errors.js';
 import { ChangeEngine, ChangeEngineError, describePlan, ApprovalResult, ConnectionIdentity } from './change-engine.js';
 import { PermissionSystem, UserPermissions } from './permission-system.js';
@@ -100,13 +100,16 @@ const server = new Server(
 );
 
 let dhis2Client: DHIS2Client | null = null;
-let tools: Tool[] = createDevelopmentTools(); // Initialize with development tools immediately
+// Every tool is declared up front; the policy decides what is visible and callable.
+let tools: Tool[] = [...createDevelopmentTools(), ...createAPITools()];
 let userPermissions: UserPermissions = PermissionSystem.createDefaultPermissions();
 let currentUser: any = null;
 let parameterCompletion: ParameterCompletion = new ParameterCompletion(null);
 let multiServerComposition: MultiServerComposition = new MultiServerComposition();
 let connectionVerified = false;
 let activeProfile: string | null = null;
+let activeEnvironment: string | null = null;
+const sessionConsents = new Set<ConsentCategory>();
 
 // Operator capabilities come only from the launch environment, never from tool arguments.
 const parsedCapabilities = parseCapabilities(process.env.DHIS2_MCP_CAPABILITIES);
@@ -124,6 +127,7 @@ function connectionIdentity(): ConnectionIdentity | null {
     username: String(currentUser.username ?? currentUser.displayName ?? 'user'),
     profile: activeProfile,
     origin: new URL(dhis2Client.baseURL).origin,
+    ...(activeEnvironment ? { environment: activeEnvironment } : {}),
   };
 }
 
@@ -148,9 +152,68 @@ const changeEngine = new ChangeEngine({
   ttlSeconds: planTtl,
 });
 
+/**
+ * Build and verify a candidate connection completely before activating it (RT-04).
+ * Any failure leaves no connection active: the previous one is revoked rather than
+ * mixed with a new identity, and nothing falls back to default permissions (BASE-03).
+ * Credentials come only from the server's store or the operator's environment (BASE-01).
+ */
+async function connectProfile(requestedProfile: unknown): Promise<ConnectionProfile> {
+  const profile = resolveProfile(requestedProfile);
+  connectionEpoch++;
+  changeEngine.invalidateAll();
+  sessionConsents.clear();
+  dhis2Client = null;
+  connectionVerified = false;
+  currentUser = null;
+  activeProfile = null;
+  activeEnvironment = null;
+  userPermissions = PermissionSystem.createDefaultPermissions();
+  parameterCompletion = new ParameterCompletion(null);
+
+  const candidate = new DHIS2Client(profile.baseUrl, profile.auth);
+  await candidate.testConnection();
+  const candidateUser = await candidate.getCurrentUser();
+  if (!candidateUser || typeof candidateUser !== 'object' || !candidateUser.id) {
+    throw new Error('DHIS2 user could not be verified; connection not activated.');
+  }
+  const candidatePermissions = PermissionSystem.extractPermissionsFromDHIS2User({
+    ...candidateUser,
+    authorities: Array.isArray(candidateUser.authorities) ? candidateUser.authorities : [],
+    userRoles: Array.isArray(candidateUser.userRoles) ? candidateUser.userRoles
+      : Array.isArray(candidateUser.userCredentials?.userRoles) ? candidateUser.userCredentials.userRoles : [],
+  });
+
+  dhis2Client = candidate;
+  currentUser = candidateUser;
+  userPermissions = candidatePermissions;
+  activeProfile = profile.name;
+  activeEnvironment = profile.environment;
+  connectionVerified = true;
+  parameterCompletion = new ParameterCompletion(dhis2Client);
+  return profile;
+}
+
+/** Ask the person (through the MCP host) to allow a sensitive category for this connection. */
+async function requestConsent(category: ConsentCategory, toolName: string): Promise<ApprovalResult> {
+  if (!server.getClientCapabilities()?.elicitation?.form) return 'unavailable';
+  const origin = dhis2Client ? new URL(dhis2Client.baseURL).origin : 'DHIS2';
+  const result = await server.elicitInput({
+    mode: 'form',
+    message: `Allow the assistant to ${CONSENT_TEXT[category]} on ${activeEnvironment ?? 'the'} server ${origin}?\n` +
+      `This permission lasts until the assistant reconnects. Requested by: ${toolName}.`,
+    requestedSchema: { type: 'object', properties: {} },
+  }, { timeout: 10 * 60 * 1000 });
+  return result.action === 'accept' ? 'accept' : result.action === 'decline' ? 'decline' : 'cancel';
+}
+
 function policyContext(): PolicyContext {
+  let connectionAvailable = false;
+  try { connectionAvailable = listConfiguredProfiles().length > 0; } catch { connectionAvailable = false; }
   return {
     connectionVerified: connectionVerified && dhis2Client !== null,
+    connectionAvailable,
+    consents: sessionConsents,
     permissions: connectionVerified ? userPermissions : null,
     capabilities: parsedCapabilities.capabilities,
   };
@@ -215,9 +278,35 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
   const startTime = Date.now();
 
+  // Connect on first use when a profile is set up, so agents never need a setup step.
+  if (!connectionVerified && name !== 'dhis2_configure' && createAPITools().some(t => t.name === name)
+      && policyContext().connectionAvailable) {
+    try {
+      await connectProfile(undefined);
+    } catch (error) {
+      const msg = toSafeErrorMessage(error);
+      auditLogger.log({ toolName: name, parameters: {}, outcome: 'error', error: `auto-connect: ${msg}` });
+      return { content: [{ type: 'text', text: `❌ Could not connect to DHIS2: ${msg}` }], isError: true };
+    }
+  }
+
   // Central authorisation before any handler runs (mission RT-01, BASE-03/04/05).
   // A request-supplied `confirmed` flag is not approval and has no effect.
-  const decision = authorize(name, args ?? {}, policyContext());
+  let decision = authorize(name, args ?? {}, policyContext());
+  if (!decision.allowed && decision.code === 'consent_required' && decision.consent) {
+    let answer: ApprovalResult;
+    try { answer = await requestConsent(decision.consent, name); } catch { answer = 'unavailable'; }
+    if (answer === 'accept') {
+      sessionConsents.add(decision.consent);
+      decision = authorize(name, args ?? {}, policyContext());
+    } else {
+      const text = answer === 'unavailable'
+        ? `⛔ This needs the person's permission, but this assistant host cannot ask for it. An administrator can pre-approve it by setting DHIS2_MCP_CAPABILITIES=${decision.consent} when the server is launched.`
+        : '⛔ The person did not give permission. Do not retry unless they ask you to.';
+      auditLogger.log({ toolName: name, parameters: (args ?? {}) as Record<string, any>, outcome: 'error', error: `consent:${answer}` });
+      return { content: [{ type: 'text', text }], isError: true };
+    }
+  }
   if (!decision.allowed) {
     auditLogger.log({
       toolName: name,
@@ -236,45 +325,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     switch (name) {
       case 'dhis2_configure': {
         const { profile: requestedProfile } = (args ?? {}) as { profile?: unknown };
-        // Credentials come only from the operator's launch environment (BASE-01).
-        const profile = resolveProfile(requestedProfile);
-
-        // Build and verify a candidate connection completely before activating it
-        // (RT-04). Any failure leaves no connection active: the previous one is
-        // revoked rather than mixed with a new identity, and nothing falls back to
-        // default permissions (BASE-03).
-        connectionEpoch++;
-        changeEngine.invalidateAll();
-        dhis2Client = null;
-        connectionVerified = false;
-        currentUser = null;
-        activeProfile = null;
-        userPermissions = PermissionSystem.createDefaultPermissions();
-        parameterCompletion = new ParameterCompletion(null);
-        tools = createDevelopmentTools();
-
-        const candidate = new DHIS2Client(profile.baseUrl, profile.auth);
-        await candidate.testConnection();
-        const candidateUser = await candidate.getCurrentUser();
-        if (!candidateUser || typeof candidateUser !== 'object' || !candidateUser.id) {
-          throw new Error('DHIS2 user could not be verified; connection not activated.');
-        }
-        const candidatePermissions = PermissionSystem.extractPermissionsFromDHIS2User({
-          ...candidateUser,
-          authorities: Array.isArray(candidateUser.authorities) ? candidateUser.authorities : [],
-          userRoles: Array.isArray(candidateUser.userRoles) ? candidateUser.userRoles
-            : Array.isArray(candidateUser.userCredentials?.userRoles) ? candidateUser.userCredentials.userRoles : [],
-        });
-
-        dhis2Client = candidate;
-        currentUser = candidateUser;
-        userPermissions = candidatePermissions;
-        activeProfile = profile.name;
-        connectionVerified = true;
-        parameterCompletion = new ParameterCompletion(dhis2Client);
+        const profile = await connectProfile(requestedProfile);
         const baseUrl = profile.baseUrl;
         const username = currentUser?.username || profile.username || 'token user';
-        tools = [...createDevelopmentTools(), ...createAPITools()];
         
         // Log successful connection
         auditLogger.log({
@@ -298,9 +351,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 🔐 Permission Level: ${permissionSummary.level} 
 📝 ${permissionSummary.description}
 
-🔑 Profile: ${profile.name} (${profile.auth.type === 'token' ? 'personal access token' : 'basic auth'})
+🔑 Profile: ${profile.name} (${profile.environment} server, ${profile.source === 'store' ? 'saved login' : 'operator environment'})
 🛠️ Tools permitted by MCP policy: ${filterDiscoverableTools(tools, policyContext()).length} of ${tools.length}
-   • Read-only: write, delete and import tools are disabled in this build.
+   • Reading metadata and aggregate data needs no permission.
+   • Individual records, app storage and exports ask the person once per connection.
+   • Changes go through dhis2_plan_metadata_change → dhis2_apply_plan; the person approves each plan.
 
 ✅ Allowed Operations:
 ${permissionSummary.allowedOperations.map(op => `  • ${op}`).join('\n')}
