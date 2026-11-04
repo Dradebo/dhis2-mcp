@@ -66,6 +66,10 @@ export class PermissionSystem {
     ['dhis2_apply_plan', ['canViewMetadata', 'canCreateMetadata']],
     ['dhis2_get_plan', 'canViewMetadata'],
     ['dhis2_cancel_plan', 'canViewMetadata'],
+    ['dhis2_prepare_transfer', 'canViewMetadata'],
+    ['dhis2_approve_transfer', 'canViewMetadata'],
+    ['dhis2_verify_transfer', 'canViewMetadata'],
+    ['dhis2_get_transfer', 'canViewMetadata'],
     
     // Metadata operations - Data Elements
     ['dhis2_list_data_elements', 'canViewMetadata'],

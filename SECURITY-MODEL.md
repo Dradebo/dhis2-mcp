@@ -7,7 +7,7 @@ The server applies one policy to tool discovery, completions and dispatch. It is
 1. The agent adds the server to its host. The host config holds no secrets: `{"command": "npx", "args": ["-y", "dhis2-mcp"]}`. `npx -y dhis2-mcp install` prints this config, plus the one human step.
 2. The person runs `npx -y dhis2-mcp login` in a terminal and types three things:
    - the DHIS2 address;
-   - a yes/no confirming it is a development or training server;
+   - what kind of server it is: 1 development, 2 training, or 3 production;
    - their username and password.
 
    The password is masked and checked live against `/api/me` (HTTPS, no redirects). Login refuses to run without a real terminal, so an agent cannot pipe credentials into it.
@@ -18,7 +18,10 @@ The server applies one policy to tool discovery, completions and dispatch. It is
    DPAPI protects against other OS users and copied files. It does not protect against processes running as the same user, such as the agent host.
 4. The server connects on first use. The agent never needs a setup call. `status` checks the saved login, and `logout` removes it.
 
-**This release connects only to development or training instances.** Login refuses otherwise. An environment profile must declare `DHIS2_MCP_<P>_ENVIRONMENT=development|training`, or have a dev/test/training-style hostname.
+**Production is read-only.** A production login is saved as read-only. So is any environment profile not declared, or not recognisably named, as development or training. On a production connection:
+- the policy denies and hides every change tool;
+- the HTTP transport refuses every non-GET request, whichever code path asks;
+- run `login` once per server to save a development and a production login side by side. The server defaults to the development one.
 
 Operators can still use environment profiles instead of the store. When they are present, they take precedence:
 
@@ -45,6 +48,19 @@ DHIS2_MCP_DEV_ENVIRONMENT=development
 - Prompts use MCP form elicitation. Hosts that cannot ask are refused tier 1 and tier 2.
 - For such hosts, an administrator can pre-approve tier-1 categories with `DHIS2_MCP_CAPABILITIES=record-read,...`. Writes can never be pre-approved.
 - A `confirmed: true` argument is ignored: it is not approval.
+
+## Development → production transfer (the assistant never writes to production)
+
+Customisation is done only on development. Finished work moves to production in five steps:
+1. **`dhis2_prepare_transfer`** exports the chosen objects with their metadata dependencies from development (`/{type}/{id}/metadata`, sharing skipped). It then:
+   - removes sharing, user references and development org unit assignments;
+   - drops users, roles, groups and org units entirely, and reports what was dropped;
+   - compares every object against production, **reading only**: new, changed (with field names), identical, or conflict (same code or name under a different id);
+   - writes `package.json` and a plain-language `review.md`.
+2. **`dhis2_approve_transfer`** re-hashes the package file, so edits after preparation are detected, and re-exports from development, so changes there are detected. It refuses while conflicts remain. The person then approves in the MCP host. The prompt says plainly that the assistant will not change production.
+3. On approval it writes `approval.json` (package fingerprint, source, target, time) and `FOR-THE-PRODUCTION-ADMINISTRATOR.txt` (Import/Export app steps: dry run first, then import).
+4. **A production administrator imports the file.** The assistant has no way to do this.
+5. **`dhis2_verify_transfer`** reads production and reports `verified`, `partially-imported` or `not-imported`. Transfers are stored on disk, so verification works days later and after a restart.
 
 ## Planned changes (safe change engine)
 

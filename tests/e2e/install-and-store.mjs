@@ -94,13 +94,14 @@ check('M2 first read connects automatically and succeeds', !res.isError && /Fixt
 await client.close();
 check('M3 canary absent from server output', !text.includes(CANARY) && !stderr.includes(CANARY));
 
-// 6. production is refused even if a profile claims otherwise
+// 6. production (or any unrecognised kind) resolves as read-only
 store.saveStoredProfile('prod', { baseUrl, username: 'fixture', environment: 'production', verifiedAt: 'x' }, CANARY, env);
+store.saveStoredProfile('odd', { baseUrl, username: 'fixture', environment: 'staging-ish', verifiedAt: 'x' }, CANARY, env);
 const creds = await import(pathToFileURL(path.join(buildDir, 'security', 'credentials.js')).href);
-let prodMsg = '';
-try { creds.resolveProfile('prod', env); } catch (e) { prodMsg = String(e.message); }
-check('P1 a non-development/training profile is refused', /only to development or training/.test(prodMsg), prodMsg);
+check('P1 production and unrecognised profiles resolve as production (read-only)',
+  creds.resolveProfile('prod', env).environment === 'production' && creds.resolveProfile('odd', env).environment === 'production');
 store.deleteStoredProfile('prod', env);
+store.deleteStoredProfile('odd', env);
 
 // 7. logout removes the saved login
 r = await run('logout');

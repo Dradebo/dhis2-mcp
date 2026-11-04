@@ -79,18 +79,18 @@ async function login(): Promise<number> {
     console.error('Ask the person to run:  npx -y dhis2-mcp login');
     return 2;
   }
-  const profile = (flag('profile') ?? 'default').toLowerCase();
-  if (!/^[a-z][a-z0-9_]{0,31}$/.test(profile)) { console.error('Profile names use lowercase letters, digits and _.'); return 2; }
+  const profileArg = flag('profile')?.toLowerCase();
+  if (profileArg !== undefined && !/^[a-z][a-z0-9_]{0,31}$/.test(profileArg)) { console.error('Profile names use lowercase letters, digits and _.'); return 2; }
 
   const input = new TerminalInput();
   try {
-    return await loginFlow(input, profile);
+    return await loginFlow(input, profileArg);
   } finally {
     input.close();
   }
 }
 
-async function loginFlow(input: TerminalInput, profile: string): Promise<number> {
+async function loginFlow(input: TerminalInput, profileArg: string | undefined): Promise<number> {
   const ask = (q: string) => input.prompt(q);
   const askHidden = (q: string) => input.prompt(q, true);
   console.log('\nConnect your assistant to DHIS2');
@@ -104,14 +104,17 @@ async function loginFlow(input: TerminalInput, profile: string): Promise<number>
     if (flag('url')) return 2;
   }
 
-  const answer = (await ask('Is this a development or training server, and not the live one used for real reporting? (yes/no): ')).toLowerCase();
-  if (!['y', 'yes'].includes(answer)) {
-    console.log('\nThis version only works with development or training servers, so nothing was saved.');
-    console.log('Ask your DHIS2 administrator for a development or training server address.');
-    return 3;
+  console.log('What kind of server is this?');
+  console.log('  1  Development (where the assistant builds and changes things)');
+  console.log('  2  Training');
+  console.log('  3  Production, the live server used for real reporting (the assistant can only look, never change)');
+  let environment: 'development' | 'training' | 'production' | undefined;
+  while (!environment) {
+    const k = (await ask('Type 1, 2 or 3: ')).toLowerCase();
+    environment = k === '1' || k.startsWith('dev') ? 'development' : k === '2' || k.startsWith('train') ? 'training'
+      : k === '3' || k.startsWith('prod') ? 'production' : undefined;
   }
-  const environment = /train/i.test(new URL(baseUrl).hostname) ? 'training' : 'development';
-
+  const profile = profileArg ?? (environment === 'development' ? 'dev' : environment);
   for (let attempt = 1; attempt <= 3; attempt++) {
     const username = await ask('Username: ');
     const password = await askHidden('Password: ');
@@ -125,7 +128,10 @@ async function loginFlow(input: TerminalInput, profile: string): Promise<number>
         verifiedAt: new Date().toISOString(),
       }, password);
       console.log(`connected as ${result.me.displayName || result.me.username || username}.\n`);
-      console.log('✔ All set. Your assistant can now work with DHIS2. It will ask you before making any changes.');
+      console.log(environment === 'production'
+        ? '✔ Saved as read-only. Your assistant can look at this server but will never create or change anything on it.'
+        : '✔ All set. Your assistant can now work with DHIS2. It will ask you before making any changes.');
+      if (environment !== 'production') console.log('  To also let it read your production server (read-only), run this again and choose 3.');
       console.log('  You can close this window.\n');
       return 0;
     }

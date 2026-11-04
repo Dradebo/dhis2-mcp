@@ -9,7 +9,8 @@
  *      DHIS2_MCP_<PROFILE>_TOKEN=d2pat_...  or _USERNAME + _PASSWORD
  *      DHIS2_MCP_<PROFILE>_ENVIRONMENT=development|training
  *
- * This release connects only to development or training instances.
+ * Production instances are read-only (enforced in the transport and the policy);
+ * a profile not confirmed as development/training is treated as production.
  * Errors name variables, never their values. Resolved secrets are registered for redaction.
  */
 import { registerSecret, SafeError } from './safe-errors.js';
@@ -55,19 +56,43 @@ export function listConfiguredProfiles(env: Env = process.env): string[] {
 
 function resolveEnvironment(name: string, baseUrl: string, env: Env): InstanceEnvironment {
   const declared = env[`${prefix(name)}ENVIRONMENT`]?.toLowerCase();
-  if (declared === 'development' || declared === 'training') return declared;
-  if (declared) {
-    throw new SafeError('production_not_supported', 'This release connects only to development or training DHIS2 instances.');
+  if (declared === 'development' || declared === 'training' || declared === 'production') return declared;
+  // Least privilege: anything not explicitly or recognisably non-production is read-only.
+  return !declared && looksNonProduction(baseUrl) ? 'development' : 'production';
+}
+
+/** Default profile: the only one, else the only development one, else the only training one. */
+function defaultProfile(available: string[], envOf: (n: string) => string | undefined): string {
+  if (available.length === 1) return available[0]!;
+  for (const kind of ['development', 'training']) {
+    const matches = available.filter(n => envOf(n) === kind);
+    if (matches.length === 1) return matches[0]!;
   }
-  if (looksNonProduction(baseUrl)) return 'development';
-  throw new SafeError('environment_unconfirmed',
-    `Profile "${name}" is not confirmed as a development or training instance. Run "dhis2-mcp login" (which asks), or set ${prefix(name)}ENVIRONMENT=development or training.`);
+  return 'default';
+}
+
+/** Environment of every configured profile, without reading any secret. */
+export function profileEnvironments(env: Env = process.env): Record<string, InstanceEnvironment> {
+  const out: Record<string, InstanceEnvironment> = {};
+  if (envProfilesDeclared(env)) {
+    for (const n of listConfiguredProfiles(env)) out[n] = resolveEnvironment(n, env[`${prefix(n)}BASE_URL`] ?? '', env);
+  } else {
+    for (const [n, p] of Object.entries(listStoredProfiles(env))) {
+      out[n] = p.environment === 'development' || p.environment === 'training' ? p.environment : 'production';
+    }
+  }
+  return out;
 }
 
 export function resolveProfile(requested: unknown, env: Env = process.env): ConnectionProfile {
   const available = listConfiguredProfiles(env);
   let name: unknown = requested;
-  if (name === undefined) name = available.length === 1 ? available[0] : 'default';
+  if (name === undefined) {
+    const stored = envProfilesDeclared(env) ? {} : listStoredProfiles(env);
+    name = defaultProfile(available, n => envProfilesDeclared(env)
+      ? (() => { try { return resolveEnvironment(n, env[`${prefix(n)}BASE_URL`] ?? '', env); } catch { return undefined; } })()
+      : stored[n]?.environment);
+  }
   if (typeof name !== 'string' || !PROFILE_NAME.test(name)) {
     throw new SafeError('invalid_profile', 'Connection profile names must match ^[a-z][a-z0-9_]{0,31}$.');
   }
@@ -98,9 +123,7 @@ export function resolveProfile(requested: unknown, env: Env = process.env): Conn
   }
 
   const stored = listStoredProfiles(env)[name]!;
-  if (stored.environment !== 'development' && stored.environment !== 'training') {
-    throw new SafeError('production_not_supported', 'This release connects only to development or training DHIS2 instances.');
-  }
+  const environment: InstanceEnvironment = stored.environment === 'development' || stored.environment === 'training' ? stored.environment : 'production';
   let password: string | undefined;
   try { password = readStoredSecret(name, env); } catch { password = undefined; }
   if (!password) {
@@ -109,6 +132,6 @@ export function resolveProfile(requested: unknown, env: Env = process.env): Conn
   registerSecret(password);
   return {
     name, baseUrl: stored.baseUrl, auth: { type: 'basic', username: stored.username, password },
-    username: stored.username, environment: stored.environment, source: 'store',
+    username: stored.username, environment, source: 'store',
   };
 }

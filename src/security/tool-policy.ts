@@ -20,6 +20,7 @@ export type OperationClass =
   | 'datastore-read'        // DataStore reads (arbitrary app content)
   | 'local-export'          // exports local evidence to the caller (audit log, composition)
   | 'planned-write'         // plan/apply through the safe change engine (host approval per apply)
+  | 'transfer'              // dev→production package: export from dev, compare against production read-only
   | 'instance-write'        // legacy direct create/update/import/server actions: always denied
   | 'instance-delete'
   | 'audit-admin';          // audit retention/deletion
@@ -45,8 +46,10 @@ export const CONSENT_TEXT: Record<ConsentCategory, string> = {
 
 const HARD_DENIED: ReadonlySet<OperationClass> = new Set(['instance-write', 'instance-delete', 'audit-admin']);
 const INSTANCE_CLASSES: ReadonlySet<OperationClass> = new Set([
-  'metadata-read', 'aggregate-read', 'record-read', 'datastore-read', 'planned-write', 'instance-write', 'instance-delete',
+  'metadata-read', 'aggregate-read', 'record-read', 'datastore-read', 'planned-write', 'transfer', 'instance-write', 'instance-delete',
 ]);
+/** Classes that can change an instance: never allowed on a production connection. */
+const WRITE_CLASSES: ReadonlySet<OperationClass> = new Set(['planned-write', 'instance-write', 'instance-delete']);
 
 type Classifier = OperationClass | ((args: Record<string, unknown> | undefined) => OperationClass);
 
@@ -110,6 +113,12 @@ const REGISTRY: ReadonlyMap<string, PolicyEntry> = new Map<string, PolicyEntry>(
   ['dhis2_apply_plan', { classify: 'planned-write' }],
   ['dhis2_get_plan', { classify: 'planned-write' }],
   ['dhis2_cancel_plan', { classify: 'planned-write' }],
+
+  // Development → production transfer (the MCP never writes to production).
+  ['dhis2_prepare_transfer', { classify: 'transfer' }],
+  ['dhis2_approve_transfer', { classify: 'transfer' }],
+  ['dhis2_verify_transfer', { classify: 'transfer' }],
+  ['dhis2_get_transfer', { classify: 'transfer' }],
 
   // Legacy direct writes, imports and server-side actions: always denied. Metadata
   // creates/updates go through dhis2_plan_metadata_change + dhis2_apply_plan.
@@ -183,6 +192,8 @@ export interface PolicyContext {
   connectionAvailable?: boolean;
   /** Categories the person consented to for the current connection. */
   consents?: ReadonlySet<ConsentCategory>;
+  /** Environment of the active connection; 'production' is read-only. */
+  environment?: string | null;
   /** Permissions derived from the verified DHIS2 user; null when unverified. */
   permissions: UserPermissions | null;
   capabilities: ReadonlySet<Capability>;
@@ -194,7 +205,7 @@ export type PolicyDecision =
 
 export type DenialCode =
   | 'unknown_tool' | 'writes_disabled' | 'not_connected' | 'permission_unverified'
-  | 'dhis2_authority_missing' | 'consent_required' | 'invalid_arguments';
+  | 'dhis2_authority_missing' | 'consent_required' | 'invalid_arguments' | 'production_read_only';
 
 function deny(operationClass: OperationClass | 'unknown', code: DenialCode, reason: string): PolicyDecision {
   return { allowed: false, operationClass, code, reason };
@@ -233,6 +244,10 @@ export function authorize(name: string, args: unknown, ctx: PolicyContext): Poli
   }
 
   const discovery = argObj === undefined;
+  if (WRITE_CLASSES.has(cls) && ctx.environment === 'production') {
+    return deny(cls, 'production_read_only',
+      'This is a production server: the assistant can only read here. Make changes on the development server and transfer them with dhis2_prepare_transfer.');
+  }
   if (INSTANCE_CLASSES.has(cls)) {
     // Discovery: instance tools are listed once a profile exists; the server connects on first use.
     if (discovery && !ctx.connectionVerified) {

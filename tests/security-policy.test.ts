@@ -121,6 +121,18 @@ describe('§9.2 fail closed', () => {
     }
     expect(parseCapabilities('metadata-write').capabilities.size).toBe(0); // writes cannot be pre-approved
   });
+  it('production connections are read-only: every write class is denied and hidden', () => {
+    const prod = { ...connected(['record-read']), environment: 'production' };
+    for (const name of ['dhis2_plan_metadata_change', 'dhis2_apply_plan', 'dhis2_create_data_element', 'dhis2_delete_data_element']) {
+      const d = authorize(name, {}, prod);
+      expect(d.allowed).toBe(false);
+      expect(authorize(name, undefined, prod).allowed).toBe(false);
+    }
+    expect(authorize('dhis2_plan_metadata_change', {}, prod)).toMatchObject({ code: 'production_read_only' });
+    expect(authorize('dhis2_list_data_elements', {}, prod).allowed).toBe(true);
+    expect(authorize('dhis2_get_analytics', {}, prod).allowed).toBe(true);
+    expect(authorize('dhis2_prepare_transfer', {}, prod).allowed).toBe(true); // engine itself refuses a production source
+  });
   it('rejects non-object arguments', () => {
     expect(authorize('dhis2_init_webapp', [], disconnected)).toMatchObject({ allowed: false, code: 'invalid_arguments' });
   });
@@ -180,11 +192,20 @@ describe('BASE-01 credentials never enter tool arguments', () => {
     expect(p.auth).toEqual({ type: 'token', token: 'd2pat_abc123' });
     expect(p.environment).toBe('training');
   });
-  it('connects only to development or training instances', () => {
+  it('treats anything not confirmed as development/training as production (read-only)', () => {
     const base = { DHIS2_MCP_DEFAULT_BASE_URL: 'https://hmis.example.org', DHIS2_MCP_DEFAULT_TOKEN: 'd2pat_x' };
-    expect(() => resolveProfile(undefined, base)).toThrow(/not confirmed as a development or training/);
-    expect(() => resolveProfile(undefined, { ...base, DHIS2_MCP_DEFAULT_ENVIRONMENT: 'production' })).toThrow(/only to development or training/);
+    expect(resolveProfile(undefined, base).environment).toBe('production');
+    expect(resolveProfile(undefined, { ...base, DHIS2_MCP_DEFAULT_ENVIRONMENT: 'production' }).environment).toBe('production');
     expect(resolveProfile(undefined, { ...base, DHIS2_MCP_DEFAULT_BASE_URL: 'https://dev-hmis.example.org' }).environment).toBe('development');
+  });
+  it('defaults to the development profile when production is also set up', () => {
+    const env = {
+      DHIS2_MCP_PROFILES: 'dev,production',
+      DHIS2_MCP_DEV_BASE_URL: 'https://a.example.org', DHIS2_MCP_DEV_TOKEN: 'd2pat_a', DHIS2_MCP_DEV_ENVIRONMENT: 'development',
+      DHIS2_MCP_PRODUCTION_BASE_URL: 'https://b.example.org', DHIS2_MCP_PRODUCTION_TOKEN: 'd2pat_b', DHIS2_MCP_PRODUCTION_ENVIRONMENT: 'production',
+    };
+    expect(resolveProfile(undefined, env).name).toBe('dev');
+    expect(resolveProfile('production', env).environment).toBe('production');
   });
   it('uses the server\'s own saved login when no environment profile is declared', () => {
     const fs = require('fs'); const os = require('os'); const path = require('path');
@@ -274,6 +295,23 @@ describe('transport and DataStore hardening', () => {
     const reject = use.mock.calls[0][1];
     return expect(reject({ isAxiosError: true, config: { headers: { Authorization: CANARY } }, response: { status: 401 } }))
       .rejects.toThrow('DHIS2 request failed: HTTP 401');
+  });
+  it('a read-only (production) client refuses every non-GET request in the transport', async () => {
+    const requestUse = jest.fn();
+    jest.mocked(axios.create).mockReturnValueOnce({ interceptors: { response: { use: jest.fn() }, request: { use: requestUse } } } as any);
+    new DHIS2Client('https://x.example.org', { type: 'token', token: 'd2pat_x' }, undefined, { readOnly: true });
+    expect(requestUse).toHaveBeenCalledTimes(1);
+    const gate = requestUse.mock.calls[0][0];
+    for (const method of ['post', 'put', 'patch', 'delete', 'POST']) {
+      await expect(Promise.resolve().then(() => gate({ method, url: '/metadata' }))).rejects.toThrow(/read-only/);
+    }
+    expect(gate({ method: 'get', url: '/me' })).toMatchObject({ method: 'get' });
+  });
+  it('a development client installs no read-only gate', () => {
+    const requestUse = jest.fn();
+    jest.mocked(axios.create).mockReturnValueOnce({ interceptors: { response: { use: jest.fn() }, request: { use: requestUse } } } as any);
+    new DHIS2Client('https://x.example.org', { type: 'token', token: 'd2pat_x' });
+    expect(requestUse).not.toHaveBeenCalled();
   });
   it('sends personal access tokens as an ApiToken header, not basic auth', () => {
     jest.mocked(axios.create).mockClear();

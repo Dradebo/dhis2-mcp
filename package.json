@@ -17,7 +17,7 @@
     "dev": "tsc --watch",
     "start": "node dist/index.js",
     "test": "jest",
-    "test:e2e-security": "tsc --outDir build-e2e && node tests/e2e/stdio-security.mjs build-e2e/index.js && node tests/e2e/stdio-change-engine.mjs build-e2e/index.js && node tests/e2e/install-and-store.mjs build-e2e",
+    "test:e2e-security": "tsc --outDir build-e2e && node tests/e2e/stdio-security.mjs build-e2e/index.js && node tests/e2e/stdio-change-engine.mjs build-e2e/index.js && node tests/e2e/install-and-store.mjs build-e2e && node tests/e2e/stdio-transfer.mjs build-e2e/index.js",
     "login": "node dist/cli.js login",
     "lint": "eslint src/**/*.ts",
     "type-check": "tsc --noEmit",

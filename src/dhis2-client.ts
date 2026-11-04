@@ -1,4 +1,4 @@
-import { toSafeHttpError } from './security/safe-errors.js';
+import { toSafeHttpError, SafeError } from './security/safe-errors.js';
 import type { DHIS2Auth } from './security/credentials.js';
 import axios, { AxiosInstance } from 'axios';
 
@@ -689,7 +689,10 @@ export class DHIS2Client {
    * @param auth Either a DHIS2Auth from an operator-defined connection profile, or
    *             (legacy) a username followed by `password`.
    */
-  constructor(baseUrl: string, auth: DHIS2Auth | string, password?: string) {
+  readonly readOnly: boolean;
+
+  constructor(baseUrl: string, auth: DHIS2Auth | string, password?: string, options: { readOnly?: boolean } = {}) {
+    this.readOnly = options.readOnly === true;
     const parsedUrl = new URL(baseUrl);
     if (parsedUrl.protocol !== 'https:' || parsedUrl.username || parsedUrl.password || parsedUrl.search || parsedUrl.hash) {
       throw new Error('DHIS2 instance URL must use HTTPS, without embedded credentials, query parameters, or fragments');
@@ -723,6 +726,18 @@ export class DHIS2Client {
       (response) => response,
       (error) => Promise.reject(toSafeHttpError(error)),
     );
+
+    // Production connections: the transport itself refuses anything but reads,
+    // whatever tool or code path asks (defence in depth below the policy layer).
+    if (this.readOnly) {
+      this.client?.interceptors?.request?.use((config) => {
+        const method = String(config.method ?? 'get').toLowerCase();
+        if (method !== 'get' && method !== 'head') {
+          return Promise.reject(new SafeError('read_only', `Refused: this is a read-only (production) connection; ${method.toUpperCase()} requests are never sent.`));
+        }
+        return config;
+      });
+    }
   }
 
   /**
@@ -738,6 +753,28 @@ export class DHIS2Client {
       validateStatus: (s: number) => s === 200 || s === 404,
     });
     return response.status === 404 ? null : (response.data as Record<string, unknown>);
+  }
+
+  /** Object plus its metadata dependencies (DHIS2 /{type}/{id}/metadata), sharing stripped; null if absent. */
+  async getDependencyExport(objectType: string, id: string): Promise<Record<string, unknown> | null> {
+    if (!/^[A-Za-z]{2,40}$/.test(objectType) || !/^[A-Za-z][A-Za-z0-9]{10}$/.test(id)) throw new Error('Invalid object type or id.');
+    const response = await this.client.get(`/${objectType}/${id}/metadata`, {
+      params: { skipSharing: true, download: false },
+      validateStatus: (s: number) => s === 200 || s === 404,
+      timeout: 120000,
+    });
+    return response.status === 404 ? null : (response.data as Record<string, unknown>);
+  }
+
+  /** Ids of objects whose code or name equals `value` (identity-collision check). */
+  async findIdsByField(objectType: string, field: 'code' | 'name', value: string): Promise<string[]> {
+    if (!/^[A-Za-z]{2,40}$/.test(objectType)) throw new Error('Invalid object type.');
+    const response = await this.client.get(`/${objectType}`, {
+      params: { filter: `${field}:eq:${value}`, fields: 'id', paging: false },
+      validateStatus: (s: number) => s === 200 || s === 404,
+    });
+    const list = (response.data as any)?.[objectType];
+    return Array.isArray(list) ? list.map((o: any) => String(o.id)) : [];
   }
 
   /**

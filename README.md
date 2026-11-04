@@ -105,7 +105,7 @@ npx dhis2-mcp
 
 ## 🔧 **MCP Client Configuration**
 
-> **Connect to DHIS2 in one step:** your agent adds `{"command": "npx", "args": ["-y", "dhis2-mcp"]}` to its MCP configuration (`npx -y dhis2-mcp install` prints it). Then you run `npx -y dhis2-mcp login` in a terminal and type your DHIS2 address, username and password. After that the agent works on its own and asks your permission before reading individual records or making any change. Development and training servers only in this release. See [SECURITY-MODEL.md](SECURITY-MODEL.md).
+> **Connect to DHIS2 in one step:** your agent adds `{"command": "npx", "args": ["-y", "dhis2-mcp"]}` to its MCP configuration (`npx -y dhis2-mcp install` prints it). Then you run `npx -y dhis2-mcp login` in a terminal and type your DHIS2 address, username and password. After that the agent works on its own and asks your permission before reading individual records or making any change. Production servers are read-only: the assistant builds on development, and finished work moves to production as an approved package that a production administrator imports. See [SECURITY-MODEL.md](SECURITY-MODEL.md).
 
 ### For Claude Code (Cursor)
 Create `.claude/config.json` in your project:

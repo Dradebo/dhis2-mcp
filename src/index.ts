@@ -12,9 +12,11 @@ import { DHIS2Client } from './dhis2-client.js';
 import { createDevelopmentTools, createAPITools } from './tools/index.js';
 import { auditLogger } from './audit-logger.js';
 import { authorize, filterDiscoverableTools, parseCapabilities, PolicyContext, ConsentCategory, CONSENT_TEXT } from './security/tool-policy.js';
-import { resolveProfile, listConfiguredProfiles, ConnectionProfile } from './security/credentials.js';
+import { resolveProfile, listConfiguredProfiles, profileEnvironments, ConnectionProfile } from './security/credentials.js';
 import { toSafeErrorMessage } from './security/safe-errors.js';
 import { ChangeEngine, ChangeEngineError, describePlan, ApprovalResult, ConnectionIdentity } from './change-engine.js';
+import { TransferEngine, TransferError, describeTransfer } from './transfer.js';
+import { storeDir } from './security/credential-store.js';
 import { PermissionSystem, UserPermissions } from './permission-system.js';
 import { describePermissionEvidence } from './permission-evidence.js';
 import { ParameterCompletion } from './parameter-completion.js';
@@ -171,7 +173,8 @@ async function connectProfile(requestedProfile: unknown): Promise<ConnectionProf
   userPermissions = PermissionSystem.createDefaultPermissions();
   parameterCompletion = new ParameterCompletion(null);
 
-  const candidate = new DHIS2Client(profile.baseUrl, profile.auth);
+  // Production connections get a transport that refuses every non-GET request.
+  const candidate = new DHIS2Client(profile.baseUrl, profile.auth, undefined, { readOnly: profile.environment === 'production' });
   await candidate.testConnection();
   const candidateUser = await candidate.getCurrentUser();
   if (!candidateUser || typeof candidateUser !== 'object' || !candidateUser.id) {
@@ -207,6 +210,32 @@ async function requestConsent(category: ConsentCategory, toolName: string): Prom
   return result.action === 'accept' ? 'accept' : result.action === 'decline' ? 'decline' : 'cancel';
 }
 
+const transferEngine = new TransferEngine({
+  source: () => {
+    const who = connectionIdentity();
+    return connectionVerified && dhis2Client && who ? { gw: dhis2Client, who, environment: activeEnvironment } : null;
+  },
+  openTarget: async (requested) => {
+    let name = requested;
+    if (!name) {
+      const prod = Object.entries(profileEnvironments()).filter(([, e]) => e === 'production').map(([n]) => n);
+      if (prod.length !== 1) {
+        throw new TransferError('target_unknown', prod.length
+          ? `Several production servers are set up (${prod.join(', ')}); say which one receives the transfer (targetProfile).`
+          : 'No production server is set up. Ask the person to run "npx -y dhis2-mcp login" and choose "production" for it (it will be read-only).');
+      }
+      name = prod[0];
+    }
+    const target = resolveProfile(name);
+    // Always read-only, whatever the target's environment: the assistant never imports.
+    const client = new DHIS2Client(target.baseUrl, target.auth, undefined, { readOnly: true });
+    await client.testConnection();
+    return { gw: client, profile: target.name, environment: target.environment, origin: new URL(target.baseUrl).origin };
+  },
+  approve: requestHostApproval,
+  baseDir: () => storeDir(),
+});
+
 function policyContext(): PolicyContext {
   let connectionAvailable = false;
   try { connectionAvailable = listConfiguredProfiles().length > 0; } catch { connectionAvailable = false; }
@@ -214,6 +243,7 @@ function policyContext(): PolicyContext {
     connectionVerified: connectionVerified && dhis2Client !== null,
     connectionAvailable,
     consents: sessionConsents,
+    environment: connectionVerified ? activeEnvironment : null,
     permissions: connectionVerified ? userPermissions : null,
     capabilities: parsedCapabilities.capabilities,
   };
@@ -355,7 +385,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 🛠️ Tools permitted by MCP policy: ${filterDiscoverableTools(tools, policyContext()).length} of ${tools.length}
    • Reading metadata and aggregate data needs no permission.
    • Individual records, app storage and exports ask the person once per connection.
-   • Changes go through dhis2_plan_metadata_change → dhis2_apply_plan; the person approves each plan.
+   • ${profile.environment === 'production'
+      ? 'PRODUCTION: read-only. Nothing can be created or changed here; customise on development and use dhis2_prepare_transfer.'
+      : 'Changes go through dhis2_plan_metadata_change → dhis2_apply_plan; the person approves each plan.'}
 
 ✅ Allowed Operations:
 ${permissionSummary.allowedOperations.map(op => `  • ${op}`).join('\n')}
@@ -417,6 +449,28 @@ Local MCP policy is not DHIS2 authorisation; the server still enforces its own s
             dhis2Instance: dhis2Client?.baseURL,
             userId: currentUser?.username,
           });
+          return { content: [{ type: 'text', text: `⛔ ${e.code}: ${e.message}` }], isError: true };
+        }
+      }
+
+      case 'dhis2_prepare_transfer':
+      case 'dhis2_approve_transfer':
+      case 'dhis2_verify_transfer':
+      case 'dhis2_get_transfer': {
+        const a = (args ?? {}) as Record<string, unknown>;
+        try {
+          const t = name === 'dhis2_prepare_transfer' ? await transferEngine.prepare(a)
+            : name === 'dhis2_approve_transfer' ? await transferEngine.approve(a.transferId)
+            : name === 'dhis2_verify_transfer' ? await transferEngine.verify(a.transferId)
+            : transferEngine.get(a.transferId);
+          auditLogger.log({
+            toolName: name, parameters: { transferId: t.id, state: t.state }, outcome: 'success',
+            dhis2Instance: dhis2Client?.baseURL, userId: currentUser?.username, executionTime: Date.now() - startTime,
+          });
+          return { content: [{ type: 'text', text: describeTransfer(t) }], isError: t.state === 'stale' || t.state === 'partially-imported' };
+        } catch (e) {
+          if (!(e instanceof TransferError)) throw e;
+          auditLogger.log({ toolName: name, parameters: { transferId: typeof a.transferId === 'string' ? a.transferId : undefined }, outcome: 'error', error: e.code });
           return { content: [{ type: 'text', text: `⛔ ${e.code}: ${e.message}` }], isError: true };
         }
       }

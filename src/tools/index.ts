@@ -60,7 +60,11 @@ export function createDevelopmentTools(): Tool[] {
     'dhis2_plan_metadata_change',
     'dhis2_apply_plan',
     'dhis2_get_plan',
-    'dhis2_cancel_plan'
+    'dhis2_cancel_plan',
+    'dhis2_prepare_transfer',
+    'dhis2_approve_transfer',
+    'dhis2_verify_transfer',
+    'dhis2_get_transfer'
   ];
   
   return allTools.filter(tool => !apiOnlyTools.includes(tool.name));
@@ -125,7 +129,11 @@ export function createAPITools(): Tool[] {
     'dhis2_plan_metadata_change',
     'dhis2_apply_plan',
     'dhis2_get_plan',
-    'dhis2_cancel_plan'
+    'dhis2_cancel_plan',
+    'dhis2_prepare_transfer',
+    'dhis2_approve_transfer',
+    'dhis2_verify_transfer',
+    'dhis2_get_transfer'
   ];
   
   return allTools.filter(tool => apiOnlyTools.includes(tool.name));
@@ -207,6 +215,42 @@ export function createDHIS2Tools(): Tool[] {
         required: ['planId'],
         additionalProperties: false,
       },
+    },
+    {
+      name: 'dhis2_prepare_transfer',
+      description: 'Prepare moving finished customisation from the development server to production. Exports the listed objects and their metadata dependencies from development, removes sharing, users and org unit assignments, and compares every object against production by reading only (new / changed / identical / conflict). Writes package.json and a plain-language review.md locally. Nothing is changed anywhere.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          description: { type: 'string', description: 'What is being transferred and why (shown to the person).' },
+          objects: {
+            type: 'array', maxItems: 50,
+            description: 'Top-level objects to transfer, e.g. a program, data set or dashboard; their dependencies are included automatically.',
+            items: { type: 'object', properties: { objectType: { type: 'string' }, id: { type: 'string' } }, required: ['objectType', 'id'] },
+          },
+          targetProfile: { type: 'string', description: 'Receiving server profile (default: the only production profile).' },
+        },
+        required: ['description', 'objects'],
+        additionalProperties: false,
+      },
+      annotations: { readOnlyHint: true },
+    },
+    {
+      name: 'dhis2_approve_transfer',
+      description: 'Ask the person to approve a prepared transfer in their MCP host. Re-checks that development and the package file are unchanged first. Approval produces a signed-off package and instructions for a production administrator; the assistant never imports into production.',
+      inputSchema: { type: 'object', properties: { transferId: { type: 'string' } }, required: ['transferId'], additionalProperties: false },
+    },
+    {
+      name: 'dhis2_verify_transfer',
+      description: 'After a production administrator has imported an approved package, read production and confirm every object matches the package.',
+      inputSchema: { type: 'object', properties: { transferId: { type: 'string' } }, required: ['transferId'], additionalProperties: false },
+      annotations: { readOnlyHint: true },
+    },
+    {
+      name: 'dhis2_get_transfer',
+      description: 'Show a transfer\'s state, counts and file locations.',
+      inputSchema: { type: 'object', properties: { transferId: { type: 'string' } }, required: ['transferId'], additionalProperties: false },
+      annotations: { readOnlyHint: true },
     },
     {
       name: 'dhis2_get_system_info',

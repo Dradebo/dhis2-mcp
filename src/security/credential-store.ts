@@ -15,7 +15,12 @@ import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 
-export type InstanceEnvironment = 'development' | 'training';
+/** production connections are read-only: the transport refuses every non-GET request. */
+export type InstanceEnvironment = 'development' | 'training' | 'production';
+
+export function isWritableEnvironment(env: string | null | undefined): boolean {
+  return env === 'development' || env === 'training';
+}
 
 export interface StoredProfile {
   baseUrl: string;
