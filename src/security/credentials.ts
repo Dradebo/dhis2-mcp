@@ -51,7 +51,8 @@ export function resolveProfile(requested: unknown, env: Env = process.env): Conn
     throw new SafeError('invalid_profile', 'Connection profile names must match ^[a-z][a-z0-9_]{0,31}$.');
   }
   if (!listProfiles(env).includes(name)) {
-    throw new SafeError('unknown_profile', `Connection profile "${name}" is not declared by the operator (DHIS2_MCP_PROFILES).`);
+    const declared = listConfiguredProfiles(env);
+    throw new SafeError('unknown_profile', `Connection profile "${name}" is not declared by the operator (DHIS2_MCP_PROFILES). ${declared.length ? `Configured profiles: ${declared.join(', ')}.` : 'No profiles are configured.'}`);
   }
   const p = prefix(name);
   const baseUrl = env[`${p}BASE_URL`];

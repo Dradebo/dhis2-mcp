@@ -4,6 +4,14 @@ This build is **read-only by design**. It applies one policy to tool discovery, 
 
 ## Connecting: credentials stay in the launch environment
 
+**Simplest setup (Hermes):** run this in a terminal you can see and type your DHIS2 username and password when asked:
+
+```bash
+node scripts/setup-credentials.mjs --url https://your-dhis2.example.org --profile dev
+```
+
+It checks the login against `/api/me` (HTTPS, no redirects) and writes `DHIS2_MCP_DEV_*` to the Hermes `.env` file. Hermes passes those values to the server through `${VAR}` references in `mcp_servers.dhis2.env`. The password is not echoed, printed or logged. It is stored in plaintext in `.env`, like the other Hermes secrets. Passwords containing `${` or line breaks are refused, because the `.env` loader would alter them.
+
 `dhis2_configure` accepts only a profile name. The MCP host (for example, Hermes) reads the instance URL and credentials from environment variables when it launches the server:
 
 ```bash
