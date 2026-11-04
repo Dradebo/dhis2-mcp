@@ -1,5 +1,5 @@
 import { createDevelopmentTools, createAPITools } from '../src/tools/index';
-import { PermissionSystem } from '../src/permission-system';
+import { filterDiscoverableTools } from '../src/security/tool-policy';
 
 describe('Unauthenticated MCP connection discovery', () => {
   it('keeps tool names unique after authentication adds API tools', () => {
@@ -7,9 +7,9 @@ describe('Unauthenticated MCP connection discovery', () => {
     expect(new Set(names).size).toBe(names.length);
   });
   it('exposes the connection tool before an instance is configured', () => {
-    const tools = PermissionSystem.filterToolsByPermissions(
-      createDevelopmentTools(), PermissionSystem.createDefaultPermissions()
-    );
+    const tools = filterDiscoverableTools(createDevelopmentTools(), {
+      connectionVerified: false, permissions: null, capabilities: new Set(),
+    });
     expect(tools.map(tool => tool.name)).toContain('dhis2_configure');
   });
 });

@@ -1,3 +1,5 @@
+import { toSafeHttpError } from './security/safe-errors.js';
+import type { DHIS2Auth } from './security/credentials.js';
 import axios, { AxiosInstance } from 'axios';
 
 export interface DHIS2Config {
@@ -668,32 +670,59 @@ export interface AnalyticsQuery {
   includeNumDen?: boolean;
 }
 
+/**
+ * DataStore namespace/key components are interpolated into URL paths. Restrict them
+ * to a conservative character set so they cannot add path segments, traverse or
+ * smuggle query strings (mission RT-06).
+ */
+export function assertDataStoreSegment(value: unknown, label: string): void {
+  if (typeof value !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9_.-]{0,99}$/.test(value) || value.includes('..')) {
+    throw new Error(`Invalid DataStore ${label}: use 1-100 letters, digits, '_', '.', '-' (no '..', '/', '?', '%').`);
+  }
+}
+
 export class DHIS2Client {
   private client: AxiosInstance;
   private baseUrl: string;
 
-  constructor(baseUrl: string, username: string, password: string) {
+  /**
+   * @param auth Either a DHIS2Auth from an operator-defined connection profile, or
+   *             (legacy) a username followed by `password`.
+   */
+  constructor(baseUrl: string, auth: DHIS2Auth | string, password?: string) {
     const parsedUrl = new URL(baseUrl);
     if (parsedUrl.protocol !== 'https:' || parsedUrl.username || parsedUrl.password || parsedUrl.search || parsedUrl.hash) {
       throw new Error('DHIS2 instance URL must use HTTPS, without embedded credentials, query parameters, or fragments');
     }
     this.baseUrl = baseUrl.replace(/\/$/, '');
-    
+
+    const resolved: DHIS2Auth = typeof auth === 'string'
+      ? { type: 'basic', username: auth, password: password ?? '' }
+      : auth;
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+    if (resolved.type === 'token') headers['Authorization'] = `ApiToken ${resolved.token}`;
+
     this.client = axios.create({
       baseURL: `${this.baseUrl}/api`,
-      auth: {
-        username,
-        password,
-      },
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
+      ...(resolved.type === 'basic' ? { auth: { username: resolved.username, password: resolved.password } } : {}),
+      headers,
       timeout: 30000,
       maxRedirects: 0,
       maxContentLength: 32 * 1024 * 1024,
       maxBodyLength: 32 * 1024 * 1024,
     });
+
+    // Never let raw HTTP-client errors (request config incl. Authorization header,
+    // response bodies) propagate past the transport boundary (mission RT-09).
+    // Optional chaining keeps unit tests with a bare axios mock working.
+    this.client?.interceptors?.response?.use(
+      (response) => response,
+      (error) => Promise.reject(toSafeHttpError(error)),
+    );
   }
 
   get baseURL(): string {
@@ -1638,6 +1667,8 @@ export class DHIS2Client {
     sharing?: any;
     initialKeys?: Array<{ key: string; value: any }>;
   }): Promise<any> {
+    assertDataStoreSegment(namespace, 'namespace');
+    options?.initialKeys?.forEach(({ key }) => assertDataStoreSegment(key, 'key'));
     try {
       // Create namespace metadata (if supported)
       if (options?.description || options?.sharing) {
@@ -1650,7 +1681,7 @@ export class DHIS2Client {
           await this.client.put(`/dataStore/${namespace}/__metadata__`, namespaceConfig);
         } catch (error) {
           // Metadata creation is optional, continue with key creation
-          console.warn('Could not create namespace metadata:', error);
+          console.error('Could not create namespace metadata (continuing).');
         }
       }
 
@@ -1662,7 +1693,7 @@ export class DHIS2Client {
             const response = await this.client.post(`/dataStore/${namespace}/${key}`, value);
             results.push({ key, status: 'created', data: response.data });
           } catch (error) {
-            results.push({ key, status: 'error', error: error });
+            results.push({ key, status: 'error', error: String(error) });
           }
         }
         return { namespace, results };
@@ -1683,6 +1714,13 @@ export class DHIS2Client {
   }): Promise<any> {
     try {
       const { operation, namespace, key, value, encrypt } = params;
+      assertDataStoreSegment(namespace, 'namespace');
+      if (key !== undefined) assertDataStoreSegment(key, 'key');
+      // The former "encrypt" option was Base64 encoding with an __encrypted__ marker,
+      // which provides no secrecy (mission RT-02). Reject it rather than mislead.
+      if (encrypt) {
+        throw new Error('The DataStore "encrypt" option is not supported: it was Base64 encoding, not encryption.');
+      }
 
       switch (operation) {
         case 'list':
@@ -1700,7 +1738,7 @@ export class DHIS2Client {
             throw new Error('Key and value are required for create/update operations');
           }
           
-          const data = encrypt ? this.encryptValue(value) : value;
+          const data = value;
           const method = operation === 'create' ? 'post' : 'put';
           const writeResponse = await this.client[method](`/dataStore/${namespace}/${key}`, data);
           return writeResponse.data;
@@ -1718,13 +1756,4 @@ export class DHIS2Client {
     }
   }
 
-  private encryptValue(value: any): any {
-    // Simple base64 encoding for demonstration
-    // In production, use proper encryption
-    const jsonString = JSON.stringify(value);
-    return {
-      __encrypted__: true,
-      data: Buffer.from(jsonString).toString('base64')
-    };
-  }
 }

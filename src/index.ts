@@ -11,7 +11,9 @@ import {
 import { DHIS2Client } from './dhis2-client.js';
 import { createDevelopmentTools, createAPITools } from './tools/index.js';
 import { auditLogger } from './audit-logger.js';
-import { ConfirmationSystem } from './confirmation-system.js';
+import { authorize, filterDiscoverableTools, parseCapabilities, PolicyContext } from './security/tool-policy.js';
+import { resolveProfile, listConfiguredProfiles } from './security/credentials.js';
+import { toSafeErrorMessage } from './security/safe-errors.js';
 import { PermissionSystem, UserPermissions } from './permission-system.js';
 import { describePermissionEvidence } from './permission-evidence.js';
 import { ParameterCompletion } from './parameter-completion.js';
@@ -102,13 +104,27 @@ let userPermissions: UserPermissions = PermissionSystem.createDefaultPermissions
 let currentUser: any = null;
 let parameterCompletion: ParameterCompletion = new ParameterCompletion(null);
 let multiServerComposition: MultiServerComposition = new MultiServerComposition();
+let connectionVerified = false;
+let activeProfile: string | null = null;
+
+// Operator capabilities come only from the launch environment, never from tool arguments.
+const parsedCapabilities = parseCapabilities(process.env.DHIS2_MCP_CAPABILITIES);
+if (parsedCapabilities.ignored.length) {
+  console.error(`Ignoring unknown DHIS2_MCP_CAPABILITIES entries: ${parsedCapabilities.ignored.join(', ')}`);
+}
+
+function policyContext(): PolicyContext {
+  return {
+    connectionVerified: connectionVerified && dhis2Client !== null,
+    permissions: connectionVerified ? userPermissions : null,
+    capabilities: parsedCapabilities.capabilities,
+  };
+}
 
 server.setRequestHandler(ListToolsRequestSchema, async () => {
-  // Filter tools based on user permissions
-  const filteredTools = PermissionSystem.filterToolsByPermissions(tools, userPermissions);
-  
+  // Discovery uses the same policy decision as dispatch (mission RT-01).
   return {
-    tools: filteredTools,
+    tools: filterDiscoverableTools(tools, policyContext()),
   };
 });
 
@@ -121,6 +137,12 @@ server.setRequestHandler(CompleteRequestSchema, async (request) => {
     const toolName = typeof ref === 'object' && 'name' in ref ? (ref as any).name : '';
     const argumentName = argument?.name || '';
     const partialValue = typeof argument?.value === 'string' ? argument.value : undefined;
+
+    // Completions are a disclosure surface too (mission RT-05): only for tools the
+    // policy currently allows, and never for an unregistered/denied tool.
+    if (!toolName || !authorize(toolName, undefined, policyContext()).allowed) {
+      return { completion: { values: [], hasMore: false } };
+    }
     
     const completion = await parameterCompletion.getCompletion(toolName, argumentName, partialValue);
     
@@ -144,7 +166,7 @@ server.setRequestHandler(CompleteRequestSchema, async (request) => {
       }
     };
   } catch (error) {
-    console.error('Error in completion handler:', error);
+    console.error(`Error in completion handler: ${toSafeErrorMessage(error)}`);
     return {
       completion: {
         values: [],
@@ -158,62 +180,69 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
   const startTime = Date.now();
 
-  // Check if tool requires confirmation and isn't already confirmed
-  const argsWithConfirmation = args as any;
-  if (ConfirmationSystem.requiresConfirmation(name) && !argsWithConfirmation.confirmed) {
-    const confirmationRequest = ConfirmationSystem.getConfirmationRequest(name, argsWithConfirmation);
-    if (confirmationRequest) {
-      const confirmationMessage = ConfirmationSystem.generateConfirmationMessage(confirmationRequest);
-      
-      // Log the confirmation request
-      auditLogger.log({
-        toolName: name,
-        parameters: args as Record<string, any>,
-        outcome: 'error',
-        error: 'Confirmation required',
-        dhis2Instance: dhis2Client?.baseURL
-      });
-      
-      return {
-        content: [{
-          type: 'text',
-          text: confirmationMessage
-        }],
-        isError: true
-      };
-    }
+  // Central authorisation before any handler runs (mission RT-01, BASE-03/04/05).
+  // A request-supplied `confirmed` flag is not approval and has no effect.
+  const decision = authorize(name, args ?? {}, policyContext());
+  if (!decision.allowed) {
+    auditLogger.log({
+      toolName: name,
+      parameters: (args ?? {}) as Record<string, any>,
+      outcome: 'error',
+      error: `denied:${decision.code}`,
+      dhis2Instance: dhis2Client?.baseURL,
+    });
+    return {
+      content: [{ type: 'text', text: `⛔ Denied by MCP policy (${decision.code}): ${decision.reason}` }],
+      isError: true,
+    };
   }
 
   try {
     switch (name) {
-      case 'dhis2_configure':
-        const { baseUrl, username, password } = args as {
-          baseUrl: string;
-          username: string;
-          password: string;
-        };
-        
-        dhis2Client = new DHIS2Client(baseUrl, username, password);
-        await dhis2Client!.testConnection();
-        
-        // Update parameter completion with the new client
-        parameterCompletion = new ParameterCompletion(dhis2Client);
-        
-        // Fetch user information and permissions
-        try {
-          currentUser = await dhis2Client!.getCurrentUser();
-          userPermissions = PermissionSystem.extractPermissionsFromDHIS2User(currentUser);
-        } catch (error) {
-          console.warn('Could not fetch user permissions, using defaults:', error);
-          userPermissions = PermissionSystem.createDefaultPermissions();
+      case 'dhis2_configure': {
+        const { profile: requestedProfile } = (args ?? {}) as { profile?: unknown };
+        // Credentials come only from the operator's launch environment (BASE-01).
+        const profile = resolveProfile(requestedProfile);
+
+        // Build and verify a candidate connection completely before activating it
+        // (RT-04). Any failure leaves no connection active: the previous one is
+        // revoked rather than mixed with a new identity, and nothing falls back to
+        // default permissions (BASE-03).
+        dhis2Client = null;
+        connectionVerified = false;
+        currentUser = null;
+        activeProfile = null;
+        userPermissions = PermissionSystem.createDefaultPermissions();
+        parameterCompletion = new ParameterCompletion(null);
+        tools = createDevelopmentTools();
+
+        const candidate = new DHIS2Client(profile.baseUrl, profile.auth);
+        await candidate.testConnection();
+        const candidateUser = await candidate.getCurrentUser();
+        if (!candidateUser || typeof candidateUser !== 'object' || !candidateUser.id) {
+          throw new Error('DHIS2 user could not be verified; connection not activated.');
         }
-        
+        const candidatePermissions = PermissionSystem.extractPermissionsFromDHIS2User({
+          ...candidateUser,
+          authorities: Array.isArray(candidateUser.authorities) ? candidateUser.authorities : [],
+          userRoles: Array.isArray(candidateUser.userRoles) ? candidateUser.userRoles
+            : Array.isArray(candidateUser.userCredentials?.userRoles) ? candidateUser.userCredentials.userRoles : [],
+        });
+
+        dhis2Client = candidate;
+        currentUser = candidateUser;
+        userPermissions = candidatePermissions;
+        activeProfile = profile.name;
+        connectionVerified = true;
+        parameterCompletion = new ParameterCompletion(dhis2Client);
+        const baseUrl = profile.baseUrl;
+        const username = currentUser?.username || profile.username || 'token user';
         tools = [...createDevelopmentTools(), ...createAPITools()];
         
         // Log successful connection
         auditLogger.log({
           toolName: name,
-          parameters: { baseUrl, username: '***REDACTED***' },
+          parameters: { profile: profile.name },
           outcome: 'success',
           dhis2Instance: baseUrl,
           userId: currentUser?.username || username,
@@ -232,9 +261,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 🔐 Permission Level: ${permissionSummary.level} 
 📝 ${permissionSummary.description}
 
-🛠️ Available Tools: ${PermissionSystem.filterToolsByPermissions(tools, userPermissions).length} of ${tools.length} total tools
-   • Development tools: Available without connection ✅
-   • API tools: Now available with connection ✅
+🔑 Profile: ${profile.name} (${profile.auth.type === 'token' ? 'personal access token' : 'basic auth'})
+🛠️ Tools permitted by MCP policy: ${filterDiscoverableTools(tools, policyContext()).length} of ${tools.length}
+   • Read-only: write, delete and import tools are disabled in this build.
 
 ✅ Allowed Operations:
 ${permissionSummary.allowedOperations.map(op => `  • ${op}`).join('\n')}
@@ -242,63 +271,18 @@ ${permissionSummary.allowedOperations.map(op => `  • ${op}`).join('\n')}
 ${permissionSummary.restrictedOperations.length > 0 ? `⛔ Restricted Operations:
 ${permissionSummary.restrictedOperations.map(op => `  • ${op}`).join('\n')}` : ''}
 
-🔍 All tools starting with 'dhis2_' are now available for development and API access.`,
+Local MCP policy is not DHIS2 authorisation; the server still enforces its own sharing and authorities.`,
             },
           ],
         };
+      }
 
       default:
-        // Check if this tool requires DHIS2 connection
-        const apiTools = createAPITools().map(t => t.name);
-        if (apiTools.includes(name) && !dhis2Client) {
+        // Defence in depth: the policy gate already requires a verified connection
+        // for instance tools.
+        if (createAPITools().some(t => t.name === name) && !dhis2Client) {
           return {
-            content: [
-              {
-                type: 'text',
-                text: `❌ **Connection Required**
-
-The tool \`${name}\` requires a DHIS2 instance connection to function.
-
-🚀 **Quick Setup - Choose Your Option:**
-
-**Option 1: Public Demo (Fastest)**
-Use the \`dhis2_configure\` tool with these demo credentials:
-\`\`\`json
-{
-  "baseUrl": "https://play.dhis2.org/2.40.4",
-  "username": "admin",
-  "password": "district"
-}
-\`\`\`
-
-**Option 2: Local Docker Instance**
-\`\`\`bash
-# Run DHIS2 locally
-docker run -d --name dhis2 -p 8080:8080 dhis2/core:2.40.4
-
-# Then configure with:
-{
-  "baseUrl": "http://localhost:8080",
-  "username": "admin", 
-  "password": "district"
-}
-\`\`\`
-
-**Option 3: Organization Instance**
-Contact your DHIS2 administrator for:
-- Instance URL (e.g., https://yourorg.dhis2.org)
-- Username and password
-- Required authorities for your workflow
-
-💡 **Meanwhile, try these tools without connection:**
-   • \`dhis2_init_webapp\` - Create new DHIS2 apps
-   • \`dhis2_configure_build_system\` - Setup build tools
-   • \`dhis2_generate_test_setup\` - Testing configuration
-   • \`dhis2_create_ui_components\` - UI code generation
-
-🔄 **After connecting, you'll have access to ${name} and all API tools!**`,
-              },
-            ],
+            content: [{ type: 'text', text: `❌ The tool \`${name}\` requires a verified DHIS2 connection. Use \`dhis2_configure\` with an operator-defined profile${listConfiguredProfiles().length ? ` (configured: ${listConfiguredProfiles().join(', ')})` : ''}. Never pass credentials in tool arguments.` }],
             isError: true,
           };
         }
@@ -1448,7 +1432,7 @@ Contact your DHIS2 administrator for:
 👤 **Current Session:**
   • User: ${currentUser?.displayName || 'Unknown'}
   • Permission Level: ${permissionSummary.level}
-  • Available Tools: ${PermissionSystem.filterToolsByPermissions(tools, userPermissions).length} of ${tools.length}
+  • Available Tools: ${filterDiscoverableTools(tools, policyContext()).length} of ${tools.length}
   • Connected to: ${dhis2Client?.baseURL || 'Not connected'}
 
 🛠️ **Most Used Tools:**
@@ -1489,7 +1473,7 @@ ${summary.recentErrors.slice(0, 3).map(error => `  • ${error.toolName}: ${erro
         };
 
       case 'dhis2_get_permission_info':
-        const filteredTools = PermissionSystem.filterToolsByPermissions(tools, userPermissions);
+        const filteredTools = filterDiscoverableTools(tools, policyContext());
         const permInfo = PermissionSystem.getPermissionSummary(userPermissions);
         
         auditLogger.log({
@@ -1746,11 +1730,12 @@ ${JSON.stringify(exportContext, null, 2)}
     }
   } catch (error) {
     // Log the error
+    const safeMessage = toSafeErrorMessage(error);
     auditLogger.log({
       toolName: name,
-      parameters: args as Record<string, any>,
+      parameters: (args ?? {}) as Record<string, any>,
       outcome: 'error',
-      error: error instanceof Error ? error.message : String(error),
+      error: safeMessage,
       dhis2Instance: dhis2Client?.baseURL,
       userId: currentUser?.username,
       executionTime: Date.now() - startTime
@@ -1760,7 +1745,7 @@ ${JSON.stringify(exportContext, null, 2)}
       content: [
         {
           type: 'text',
-          text: `Error: ${error instanceof Error ? error.message : String(error)}`,
+          text: `Error: ${safeMessage}`,
         },
       ],
       isError: true,

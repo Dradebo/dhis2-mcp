@@ -127,24 +127,17 @@ export function createDHIS2Tools(): Tool[] {
   return [
     {
       name: 'dhis2_configure',
-      description: 'Configure connection to a DHIS2 instance (required for API access)',
+      description: 'Connect to a DHIS2 instance using an operator-defined connection profile. The instance URL and credentials are read from the MCP launch environment; never pass URLs, usernames, passwords or tokens to this tool.',
       inputSchema: {
         type: 'object',
         properties: {
-          baseUrl: {
+          profile: {
             type: 'string',
-            description: 'Base URL of the DHIS2 instance (e.g., https://play.dhis2.org/2.40.4)',
-          },
-          username: {
-            type: 'string',
-            description: 'Username for DHIS2 authentication',
-          },
-          password: {
-            type: 'string',
-            description: 'Password for DHIS2 authentication',
+            description: 'Connection profile name declared by the operator (default: "default").',
+            pattern: '^[a-z][a-z0-9_]{0,31}$',
           },
         },
-        required: ['baseUrl', 'username', 'password'],
+        additionalProperties: false,
       },
     },
     {
@@ -2044,12 +2037,9 @@ export function createDHIS2Tools(): Tool[] {
                     type: 'string',
                     description: 'Username for proxy authentication',
                   },
-                  password: {
-                    type: 'string',
-                    description: 'Password for proxy authentication',
-                  },
                 },
-                required: ['username', 'password'],
+                required: ['username'],
+                description: 'Proxy username only. The generated config reads the password from the DHIS2_PROXY_PASSWORD environment variable; never pass passwords to this tool.',
               },
             },
             required: ['target'],
@@ -2072,10 +2062,6 @@ export function createDHIS2Tools(): Tool[] {
             type: 'string',
             description: 'DHIS2 username for development',
           },
-          password: {
-            type: 'string',
-            description: 'DHIS2 password for development',
-          },
           port: {
             type: 'number',
             description: 'Local development server port (default: 3000)',
@@ -2089,7 +2075,7 @@ export function createDHIS2Tools(): Tool[] {
             description: 'Path to environment file (default: .env.local)',
           },
         },
-        required: ['dhis2Instance', 'username', 'password'],
+        required: ['dhis2Instance'],
       },
     },
     {
@@ -2215,10 +2201,6 @@ export function createDHIS2Tools(): Tool[] {
           value: {
             type: 'object',
             description: 'Value to store (required for create/update operations)',
-          },
-          encrypt: {
-            type: 'boolean',
-            description: 'Encrypt the value (for sensitive data)',
           },
         },
         required: ['operation', 'namespace'],
@@ -2847,12 +2829,9 @@ export function createDHIS2Tools(): Tool[] {
                 type: 'string',
                 description: 'DHIS2 username for proxy authentication',
               },
-              password: {
-                type: 'string',
-                description: 'DHIS2 password for proxy authentication',
-              },
             },
-            required: ['username', 'password'],
+            required: ['username'],
+            description: 'Proxy username only. Generated code reads the password from DHIS2_PROXY_PASSWORD; never pass passwords to this tool.',
           },
           sslOptions: {
             type: 'object',

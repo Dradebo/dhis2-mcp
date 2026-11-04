@@ -105,6 +105,8 @@ npx dhis2-mcp
 
 ## 🔧 **MCP Client Configuration**
 
+> **Connecting to an instance:** credentials are never passed through tool arguments. Define a profile through environment variables in the client's server config (`DHIS2_MCP_DEV_BASE_URL`, `DHIS2_MCP_DEV_TOKEN`, …), then call `dhis2_configure` with `{"profile": "dev"}`. This build is read-only. See [SECURITY-MODEL.md](SECURITY-MODEL.md).
+
 ### For Claude Code (Cursor)
 Create `.claude/config.json` in your project:
 ```json

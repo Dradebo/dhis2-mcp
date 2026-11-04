@@ -93,10 +93,10 @@ describe('DHIS2 Tools', () => {
 
     it('should exist and have correct schema', () => {
       expect(configureTool).toBeDefined();
-      expect(configureTool.inputSchema.properties).toHaveProperty('baseUrl');
-      expect(configureTool.inputSchema.properties).toHaveProperty('username');
-      expect(configureTool.inputSchema.properties).toHaveProperty('password');
-      expect(configureTool.inputSchema.required).toEqual(['baseUrl', 'username', 'password']);
+      // Credentials come from the launch environment; only a profile name is accepted.
+      expect(Object.keys(configureTool.inputSchema.properties)).toEqual(['profile']);
+      expect(configureTool.inputSchema.additionalProperties).toBe(false);
+      expect(configureTool.inputSchema.required ?? []).toEqual([]);
     });
   });
 

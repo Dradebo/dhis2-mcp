@@ -225,62 +225,61 @@ export class PermissionSystem {
     };
   }
 
+  /**
+   * Permissions used when no DHIS2 user has been verified: deny everything.
+   * (Previously this granted metadata writes, imports and tracker access on
+   * failed permission discovery — mission BASE-03.)
+   */
   static createDefaultPermissions(): UserPermissions {
     return {
-      canCreateMetadata: true,
-      canUpdateMetadata: true,
-      canDeleteMetadata: false, // Conservative default
-      canViewMetadata: true,
-      canEnterData: true,
-      canViewData: true,
-      canImportData: true,
-      canExportData: true,
-      canDeleteData: false, // Conservative default
+      canCreateMetadata: false,
+      canUpdateMetadata: false,
+      canDeleteMetadata: false,
+      canViewMetadata: false,
+      canEnterData: false,
+      canViewData: false,
+      canImportData: false,
+      canExportData: false,
+      canDeleteData: false,
       canManageUsers: false,
       canManageSystem: false,
-      canViewSystemInfo: true,
-      canRunAnalytics: true,
-      canManageDashboards: true,
-      canManagePrograms: true,
-      canEnrollTEI: true,
-      canViewTEI: true,
-      canManageTrackerData: true,
-      canUseMobileFeatures: true,
-      canConfigureMobile: true,
-      canUseUITools: true,
-      canConfigureApps: true,
-      canDebugApplications: true,
-      isReadOnly: false,
+      canViewSystemInfo: false,
+      canRunAnalytics: false,
+      canManageDashboards: false,
+      canManagePrograms: false,
+      canEnrollTEI: false,
+      canViewTEI: false,
+      canManageTrackerData: false,
+      canUseMobileFeatures: false,
+      canConfigureMobile: false,
+      canUseUITools: false,
+      canConfigureApps: false,
+      canDebugApplications: false,
+      isReadOnly: true,
       authorities: []
     };
   }
 
-  static filterToolsByPermissions(tools: Tool[], permissions: UserPermissions): Tool[] {
-    if (permissions.isReadOnly) {
-      // In read-only mode, only allow viewing operations
-      return tools.filter(tool => 
-        !tool.name.includes('create') && 
-        !tool.name.includes('update') && 
-        !tool.name.includes('delete') &&
-        !tool.name.includes('import') &&
-        (tool.name.includes('list') || tool.name.includes('get') || tool.name === 'dhis2_configure')
-      );
+  /** True only when the tool has a DHIS2 authority mapping and the user satisfies it. Unmapped tools are denied. */
+  static hasToolPermission(toolName: string, permissions: UserPermissions): boolean {
+    const requiredPermissions = this.TOOL_PERMISSIONS.get(toolName);
+    if (!requiredPermissions) return false;
+    if (Array.isArray(requiredPermissions)) {
+      return requiredPermissions.every(permission => permissions[permission] === true);
     }
+    return permissions[requiredPermissions] === true;
+  }
 
+  /**
+   * Legacy DHIS2-authority filter. Unmapped tools are denied (mission BASE-04).
+   * Discovery filtering is not an execution boundary: dispatch, discovery and
+   * completions all use security/tool-policy.ts authorize().
+   */
+  static filterToolsByPermissions(tools: Tool[], permissions: UserPermissions): Tool[] {
     return tools.filter(tool => {
-      const requiredPermissions = this.TOOL_PERMISSIONS.get(tool.name);
-      if (!requiredPermissions) {
-        // If no specific permission is defined, allow by default
-        return true;
-      }
-
-      if (Array.isArray(requiredPermissions)) {
-        // All permissions in the array must be satisfied
-        return requiredPermissions.every(permission => permissions[permission]);
-      } else {
-        // Single permission must be satisfied
-        return permissions[requiredPermissions];
-      }
+      if (!this.hasToolPermission(tool.name, permissions)) return false;
+      if (!permissions.isReadOnly) return true;
+      return !/(create|update|delete|import)/.test(tool.name);
     });
   }
 

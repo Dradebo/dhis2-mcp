@@ -255,7 +255,7 @@ module.exports = {
     target: '${proxy.target}',
     auth: {
       username: '${proxy.auth?.username || 'your-username'}',
-      password: '${proxy.auth?.password || 'your-password'}'
+      password: process.env.DHIS2_PROXY_PASSWORD // set locally; never paste into chat
     }
   }
 };
@@ -288,7 +288,7 @@ module.exports = {
 }
 
 export function generateDevEnvironmentConfig(args: any): string {
-  const { dhis2Instance, username, password, port = 3000, https = false, envFile = '.env.local' } = args;
+  const { dhis2Instance, username, port = 3000, https = false, envFile = '.env.local' } = args;
 
   return `# DHIS2 Development Environment Setup
 
@@ -297,8 +297,8 @@ export function generateDevEnvironmentConfig(args: any): string {
 # DHIS2 Instance Configuration
 REACT_APP_DHIS2_BASE_URL=${dhis2Instance}
 DHIS2_CORE_HOST=${dhis2Instance}
-DHIS2_CORE_USERNAME=${username}
-DHIS2_CORE_PASSWORD=${password}
+DHIS2_CORE_USERNAME=${username || 'your-username'}
+DHIS2_CORE_PASSWORD=<set locally; never paste into chat or tool arguments>
 
 # Development Server Configuration
 PORT=${port}

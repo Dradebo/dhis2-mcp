@@ -19,4 +19,6 @@ export default {
     },
   },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx'],
+  // Source uses ESM-style './x.js' specifiers; map them to the .ts sources.
+  moduleNameMapper: { '^(\\.{1,2}/.*)\\.js$': '$1' },
 };

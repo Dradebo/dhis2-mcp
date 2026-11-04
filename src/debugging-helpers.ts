@@ -646,7 +646,7 @@ Create a \`.env.local\` file:
 # Proxy configuration
 DHIS2_PROXY_TARGET=${targetInstance}
 DHIS2_PROXY_USERNAME=${authentication?.username || 'your-username'}
-DHIS2_PROXY_PASSWORD=${authentication?.password || 'your-password'}
+DHIS2_PROXY_PASSWORD=<set locally; never paste into chat or tool arguments>
 PROXY_PORT=${localPort}
 \`\`\`
 
@@ -686,9 +686,9 @@ module.exports = {
         target: '${targetInstance}',
         changeOrigin: true,
         secure: ${sslOptions.secure !== false},
-        ${authentication ? `auth: '${authentication.username}:${authentication.password}',` : ''}
+        ${authentication ? `auth: process.env.DHIS2_PROXY_USERNAME + ':' + process.env.DHIS2_PROXY_PASSWORD,` : ''}
         headers: {
-          'Authorization': 'Basic ' + Buffer.from('${authentication?.username || 'username'}:${authentication?.password || 'password'}').toString('base64')
+          'Authorization': 'Basic ' + Buffer.from(process.env.DHIS2_PROXY_USERNAME + ':' + process.env.DHIS2_PROXY_PASSWORD).toString('base64')
         }
       }
     }
@@ -722,9 +722,9 @@ module.exports = function(app) {
       target: '${targetInstance}',
       changeOrigin: true,
       secure: ${sslOptions.secure !== false},
-      ${authentication ? `auth: '${authentication.username}:${authentication.password}',` : ''}
+      ${authentication ? `auth: process.env.DHIS2_PROXY_USERNAME + ':' + process.env.DHIS2_PROXY_PASSWORD,` : ''}
       headers: {
-        'Authorization': 'Basic ' + Buffer.from('${authentication?.username || 'username'}:${authentication?.password || 'password'}').toString('base64')
+        'Authorization': 'Basic ' + Buffer.from(process.env.DHIS2_PROXY_USERNAME + ':' + process.env.DHIS2_PROXY_PASSWORD).toString('base64')
       }
     })
   );
@@ -753,7 +753,7 @@ export default defineConfig({
         secure: ${sslOptions.secure !== false},
         configure: (proxy, options) => {
           proxy.on('proxyReq', (proxyReq, req, res) => {
-            const auth = Buffer.from('${authentication?.username || 'username'}:${authentication?.password || 'password'}').toString('base64');
+            const auth = Buffer.from(process.env.DHIS2_PROXY_USERNAME + ':' + process.env.DHIS2_PROXY_PASSWORD).toString('base64');
             proxyReq.setHeader('Authorization', \`Basic \${auth}\`);
           });
         }
@@ -781,12 +781,12 @@ const proxyOptions = {
   target: '${targetInstance}',
   changeOrigin: true,
   secure: ${sslOptions.secure !== false},
-  ${authentication ? `auth: '${authentication.username}:${authentication.password}',` : ''}
+  ${authentication ? `auth: process.env.DHIS2_PROXY_USERNAME + ':' + process.env.DHIS2_PROXY_PASSWORD,` : ''}
   pathRewrite: {
     '^/proxy': '', // Remove /proxy prefix
   },
   onProxyReq: (proxyReq, req, res) => {
-    const auth = Buffer.from('${authentication?.username || 'username'}:${authentication?.password || 'password'}').toString('base64');
+    const auth = Buffer.from(process.env.DHIS2_PROXY_USERNAME + ':' + process.env.DHIS2_PROXY_PASSWORD).toString('base64');
     proxyReq.setHeader('Authorization', \`Basic \${auth}\`);
   },
   logLevel: 'debug'
