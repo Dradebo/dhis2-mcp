@@ -13,6 +13,7 @@ import { createDevelopmentTools, createAPITools } from './tools/index.js';
 import { auditLogger } from './audit-logger.js';
 import { ConfirmationSystem } from './confirmation-system.js';
 import { PermissionSystem, UserPermissions } from './permission-system.js';
+import { describePermissionEvidence } from './permission-evidence.js';
 import { ParameterCompletion } from './parameter-completion.js';
 import { MultiServerComposition } from './multi-server-composition.js';
 import {
@@ -90,6 +91,7 @@ const server = new Server(
   {
     capabilities: {
       tools: {},
+      completions: {},
     },
   }
 );
@@ -1504,21 +1506,23 @@ ${summary.recentErrors.slice(0, 3).map(error => `  • ${error.toolName}: ${erro
             type: 'text',
             text: `🔐 Permission Information
 
-👤 **User Details:**
+${describePermissionEvidence(Boolean(dhis2Client), Boolean(currentUser?.id))}
+
+👤 **Cached User Details (if retrieved):**
   • Name: ${currentUser?.displayName || 'Unknown'}
   • Username: ${currentUser?.username || 'Unknown'}
   • User Groups: ${currentUser?.userGroups?.map((g: any) => g.name).join(', ') || 'None'}
 
-🎯 **Permission Level:** ${permInfo.level}
+🎯 **Local MCP policy level:** ${permInfo.level}
 📝 **Description:** ${permInfo.description}
 
-✅ **Allowed Operations:**
+✅ **Local policy permits (not verified instance access):**
 ${permInfo.allowedOperations.map(op => `  • ${op}`).join('\n')}
 
 ${permInfo.restrictedOperations.length > 0 ? `⛔ **Restricted Operations:**
 ${permInfo.restrictedOperations.map(op => `  • ${op}`).join('\n')}` : ''}
 
-🛠️ **Available Tools:** ${filteredTools.length} of ${tools.length} total
+🛠️ **Exposed Tools (discovery only):** ${filteredTools.length} of ${tools.length} total
   • Configuration: ${filteredTools.filter(t => t.name.includes('configure')).length}
   • Data Management: ${filteredTools.filter(t => t.name.includes('list') || t.name.includes('get')).length}
   • Creation Tools: ${filteredTools.filter(t => t.name.includes('create')).length}

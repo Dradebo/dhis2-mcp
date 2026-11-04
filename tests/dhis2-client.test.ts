@@ -32,6 +32,9 @@ describe('DHIS2Client', () => {
           'Accept': 'application/json',
         },
         timeout: 30000,
+        maxRedirects: 0,
+        maxContentLength: 32 * 1024 * 1024,
+        maxBodyLength: 32 * 1024 * 1024,
       });
     });
 

@@ -673,6 +673,10 @@ export class DHIS2Client {
   private baseUrl: string;
 
   constructor(baseUrl: string, username: string, password: string) {
+    const parsedUrl = new URL(baseUrl);
+    if (parsedUrl.protocol !== 'https:' || parsedUrl.username || parsedUrl.password || parsedUrl.search || parsedUrl.hash) {
+      throw new Error('DHIS2 instance URL must use HTTPS, without embedded credentials, query parameters, or fragments');
+    }
     this.baseUrl = baseUrl.replace(/\/$/, '');
     
     this.client = axios.create({
@@ -686,6 +690,9 @@ export class DHIS2Client {
         'Accept': 'application/json',
       },
       timeout: 30000,
+      maxRedirects: 0,
+      maxContentLength: 32 * 1024 * 1024,
+      maxBodyLength: 32 * 1024 * 1024,
     });
   }
 

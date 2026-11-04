@@ -4,9 +4,8 @@ import { Tool } from '@modelcontextprotocol/sdk/types.js';
 export function createDevelopmentTools(): Tool[] {
   const allTools = createDHIS2Tools();
   
-  // Filter out API-specific tools that require DHIS2 connection
   const apiOnlyTools = [
-    'dhis2_configure',
+    // dhis2_configure must be discoverable before a connection exists.
     'dhis2_get_system_info',
     'dhis2_list_data_elements',
     'dhis2_create_data_element',
@@ -68,7 +67,6 @@ export function createAPITools(): Tool[] {
   const allTools = createDHIS2Tools();
   
   const apiOnlyTools = [
-    'dhis2_configure',
     'dhis2_get_system_info',
     'dhis2_list_data_elements',
     'dhis2_create_data_element',

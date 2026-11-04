@@ -31,7 +31,7 @@ export class AuditLogger {
     }
 
     // Log to console for development
-    console.log(`[AUDIT] ${auditEntry.timestamp} - ${auditEntry.toolName}: ${auditEntry.outcome}${auditEntry.error ? ` (${auditEntry.error})` : ''}`);
+    console.error(`[AUDIT] ${auditEntry.timestamp} - ${auditEntry.toolName}: ${auditEntry.outcome}${auditEntry.error ? ` (${auditEntry.error})` : ''}`);
   }
 
   private sanitizeParameters(params: Record<string, any>): Record<string, any> {
@@ -105,7 +105,7 @@ export class AuditLogger {
 
   clear(): void {
     this.entries = [];
-    console.log('[AUDIT] Audit log cleared');
+    console.error('[AUDIT] Audit log cleared');
   }
 }
 
