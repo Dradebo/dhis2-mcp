@@ -62,6 +62,34 @@ Customisation is done only on development. Finished work moves to production in 
 4. **A production administrator imports the file.** The assistant has no way to do this.
 5. **`dhis2_verify_transfer`** reads production and reports `verified`, `partially-imported` or `not-imported`. Transfers are stored on disk, so verification works days later and after a restart.
 
+## Change packages (build-scale changes on development)
+
+Small edits use plans (below). Building a program is hundreds of objects, so it goes through packages:
+1. **`dhis2_check_design`** runs offline, with no connection. It checks the structure, the limits, forbidden fields (sharing, ownership, identity) and about 40 DHIS2 design rules that otherwise fail silently. Examples: option codes against value types, compulsory fields outside every section, rule targets, program-indicator boundaries, dashboard item sizes, name lengths and uniqueness.
+2. **`dhis2_plan_package`** handles up to 2,000 objects or 8 MB, inline or from a local `.json` file. It:
+   - confirms that every object referenced from outside the package already exists;
+   - takes before-images for updates and confirms that objects to be created don't exist yet;
+   - warns about removals from owned collections and about program versions not being bumped;
+   - runs a DHIS2 dry run;
+   - writes `package.json` and a `review.md` listing every object and field.
+
+   Packages are saved on disk, bound to the user and server, and expire after 24 hours.
+3. **`dhis2_apply_package`**:
+   - re-hashes the package file;
+   - re-checks every object;
+   - asks the person to approve in the MCP host (a plain summary with counts by type and the review-file path);
+   - re-checks again;
+   - sends **one all-or-nothing import**;
+   - reads every object back.
+
+   A concurrent or repeated apply is refused. If the outcome is unknown or the apply was interrupted, the package is reconciled by reading; nothing is re-sent.
+
+Packages are refused on production, both in the engine and by the policy and the read-only transport.
+
+## Workflow inside the server
+
+The MCP prompt `customise_from_documents` and four resources (`dhis2://guides/...`) carry the documents → customisation procedure, the modelling rules, the dashboard rules and the verification checklist. Every MCP host gets them. They are static text, with no instance data.
+
 ## Planned changes (safe change engine)
 
 1. `dhis2_plan_metadata_change` validates the request:

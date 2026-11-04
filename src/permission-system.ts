@@ -70,6 +70,13 @@ export class PermissionSystem {
     ['dhis2_approve_transfer', 'canViewMetadata'],
     ['dhis2_verify_transfer', 'canViewMetadata'],
     ['dhis2_get_transfer', 'canViewMetadata'],
+    ['dhis2_plan_package', 'canViewMetadata'],
+    ['dhis2_apply_package', 'canViewMetadata'],
+    ['dhis2_get_package', 'canViewMetadata'],
+    ['dhis2_cancel_package', 'canViewMetadata'],
+    ['dhis2_get_schema', 'canViewMetadata'],
+    ['dhis2_find_reusable', 'canViewMetadata'],
+    ['dhis2_validate_expression', 'canViewMetadata'],
     
     // Metadata operations - Data Elements
     ['dhis2_list_data_elements', 'canViewMetadata'],

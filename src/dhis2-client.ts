@@ -755,6 +755,45 @@ export class DHIS2Client {
     return response.status === 404 ? null : (response.data as Record<string, unknown>);
   }
 
+  /** True if any identifiable object has this UID (used to check package references). */
+  async identifiableObjectExists(id: string): Promise<boolean> {
+    if (!/^[A-Za-z][A-Za-z0-9]{10}$/.test(id)) return false;
+    const response = await this.client.get(`/identifiableObjects/${id}`, {
+      params: { fields: 'id' }, validateStatus: (s: number) => s === 200 || s === 404,
+    });
+    return response.status === 200;
+  }
+
+  /** Writable/required properties, enums and length limits of one metadata type (from /schemas). */
+  async getTypeSchema(objectType: string): Promise<Record<string, unknown> | null> {
+    if (!/^[A-Za-z]{2,40}$/.test(objectType)) throw new Error('Invalid object type.');
+    const response = await this.client.get('/schemas', {
+      params: { fields: 'name,plural,klass,displayName,properties[name,fieldName,propertyType,klass,required,writable,owner,length,min,max,unique,constants,itemPropertyType,collection]' },
+    });
+    const list = Array.isArray((response.data as any)?.schemas) ? (response.data as any).schemas : [];
+    return list.find((s: any) => s.plural === objectType || s.name === objectType) ?? null;
+  }
+
+  /** Candidate objects for reuse: token search over name/code/shortName, minimal fields. */
+  async findReusable(objectType: string, query: string, extraFields: string[] = []): Promise<Array<Record<string, unknown>>> {
+    if (!/^[A-Za-z]{2,40}$/.test(objectType)) throw new Error('Invalid object type.');
+    const safeFields = extraFields.filter(f => /^[A-Za-z]{1,40}(\[[A-Za-z,]{1,80}\])?$/.test(f));
+    const response = await this.client.get(`/${objectType}`, {
+      params: { filter: `identifiable:token:${query}`, fields: ['id', 'name', 'code', 'shortName', ...safeFields].join(','), pageSize: 25, page: 1 },
+    });
+    const list = (response.data as any)?.[objectType];
+    return Array.isArray(list) ? list : [];
+  }
+
+  /** DHIS2 expression check (POST, but changes nothing). kind selects the endpoint. */
+  async describeExpression(kind: 'programIndicatorExpression' | 'programIndicatorFilter' | 'indicator' | 'validationRule', expression: string): Promise<{ status: string; message: string; description?: string }> {
+    const path = { programIndicatorExpression: '/programIndicators/expression/description', programIndicatorFilter: '/programIndicators/filter/description',
+      indicator: '/indicators/expression/description', validationRule: '/validationRules/expression/description' }[kind];
+    const response = await this.client.post(path, expression, { headers: { 'Content-Type': 'text/plain' }, validateStatus: (s: number) => s < 500 });
+    const d = response.data as any;
+    return { status: String(d?.status ?? (response.status === 200 ? 'OK' : 'ERROR')), message: String(d?.message ?? ''), ...(d?.description ? { description: String(d.description) } : {}) };
+  }
+
   /** Object plus its metadata dependencies (DHIS2 /{type}/{id}/metadata), sharing stripped; null if absent. */
   async getDependencyExport(objectType: string, id: string): Promise<Record<string, unknown> | null> {
     if (!/^[A-Za-z]{2,40}$/.test(objectType) || !/^[A-Za-z][A-Za-z0-9]{10}$/.test(id)) throw new Error('Invalid object type or id.');

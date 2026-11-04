@@ -120,6 +120,19 @@ const REGISTRY: ReadonlyMap<string, PolicyEntry> = new Map<string, PolicyEntry>(
   ['dhis2_verify_transfer', { classify: 'transfer' }],
   ['dhis2_get_transfer', { classify: 'transfer' }],
 
+  // Change packages (build-scale changes on development; one approval per package).
+  ['dhis2_generate_uids', local],
+  ['dhis2_check_design', local],
+  ['dhis2_plan_package', { classify: 'planned-write' }],
+  ['dhis2_apply_package', { classify: 'planned-write' }],
+  ['dhis2_get_package', { classify: 'planned-write' }],
+  ['dhis2_cancel_package', { classify: 'planned-write' }],
+
+  // Discovery for design and reuse.
+  ['dhis2_get_schema', metaRead],
+  ['dhis2_find_reusable', metaRead],
+  ['dhis2_validate_expression', metaRead],
+
   // Legacy direct writes, imports and server-side actions: always denied. Metadata
   // creates/updates go through dhis2_plan_metadata_change + dhis2_apply_plan.
   ['dhis2_create_data_element', write],

@@ -1,0 +1,5148 @@
+{
+ "packages": [
+  {
+   "description": "SYN: score option set, 160 assessment questions, score legend",
+   "creates": {
+    "optionSets": [
+     {
+      "id": "BqUC2EOYA6Q",
+      "name": "SYN Score 0-2",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "options": [
+       {
+        "id": "ekqKg4aCsyG"
+       },
+       {
+        "id": "msKCKuYQC0E"
+       },
+       {
+        "id": "yW4G3YYQMyI"
+       }
+      ]
+     }
+    ],
+    "options": [
+     {
+      "id": "ekqKg4aCsyG",
+      "code": "0",
+      "name": "0 - Not available",
+      "sortOrder": 1,
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "msKCKuYQC0E",
+      "code": "1",
+      "name": "1 - Available, not functional",
+      "sortOrder": 2,
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "yW4G3YYQMyI",
+      "code": "2",
+      "name": "2 - Available and functional",
+      "sortOrder": 3,
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     }
+    ],
+    "dataElements": [
+     {
+      "id": "a2Gew4cGc4O",
+      "name": "SYN Item 001",
+      "shortName": "SYN Item 1",
+      "code": "SYN_ITEM_1",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "OaYeICyIo4E",
+      "name": "SYN Item 002",
+      "shortName": "SYN Item 2",
+      "code": "SYN_ITEM_2",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "aY4Usi648yG",
+      "name": "SYN Item 003",
+      "shortName": "SYN Item 3",
+      "code": "SYN_ITEM_3",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "GgWO2mayaKa",
+      "name": "SYN Item 004",
+      "shortName": "SYN Item 4",
+      "code": "SYN_ITEM_4",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "CEqe8SU6OAW",
+      "name": "SYN Item 005",
+      "shortName": "SYN Item 5",
+      "code": "SYN_ITEM_5",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "yIeymiUkOKk",
+      "name": "SYN Item 006",
+      "shortName": "SYN Item 6",
+      "code": "SYN_ITEM_6",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "qeIwqec8Eqg",
+      "name": "SYN Item 007",
+      "shortName": "SYN Item 7",
+      "code": "SYN_ITEM_7",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "CaIUOUcaSqE",
+      "name": "SYN Item 008",
+      "shortName": "SYN Item 8",
+      "code": "SYN_ITEM_8",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "aaMkMi0CM8a",
+      "name": "SYN Item 009",
+      "shortName": "SYN Item 9",
+      "code": "SYN_ITEM_9",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "Su4cmSEw64U",
+      "name": "SYN Item 010",
+      "shortName": "SYN Item 10",
+      "code": "SYN_ITEM_10",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "Wcm2emigIUa",
+      "name": "SYN Item 011",
+      "shortName": "SYN Item 11",
+      "code": "SYN_ITEM_11",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "qY02MAsYWke",
+      "name": "SYN Item 012",
+      "shortName": "SYN Item 12",
+      "code": "SYN_ITEM_12",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "qqY8UM2k8ak",
+      "name": "SYN Item 013",
+      "shortName": "SYN Item 13",
+      "code": "SYN_ITEM_13",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "eCW8WSgSm0a",
+      "name": "SYN Item 014",
+      "shortName": "SYN Item 14",
+      "code": "SYN_ITEM_14",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "muIuOocCOmS",
+      "name": "SYN Item 015",
+      "shortName": "SYN Item 15",
+      "code": "SYN_ITEM_15",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "KCuO2yw28s6",
+      "name": "SYN Item 016",
+      "shortName": "SYN Item 16",
+      "code": "SYN_ITEM_16",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "jagcaUE8ISO",
+      "name": "SYN Item 017",
+      "shortName": "SYN Item 17",
+      "code": "SYN_ITEM_17",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "yseMm8qC8uI",
+      "name": "SYN Item 018",
+      "shortName": "SYN Item 18",
+      "code": "SYN_ITEM_18",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "K0KEuMMqkm2",
+      "name": "SYN Item 019",
+      "shortName": "SYN Item 19",
+      "code": "SYN_ITEM_19",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "aw8oOuwuWka",
+      "name": "SYN Item 020",
+      "shortName": "SYN Item 20",
+      "code": "SYN_ITEM_20",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "qW8s6AgIKQm",
+      "name": "SYN Item 021",
+      "shortName": "SYN Item 21",
+      "code": "SYN_ITEM_21",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "mGIoSGag6kq",
+      "name": "SYN Item 022",
+      "shortName": "SYN Item 22",
+      "code": "SYN_ITEM_22",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "K8eUwckgUy0",
+      "name": "SYN Item 023",
+      "shortName": "SYN Item 23",
+      "code": "SYN_ITEM_23",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "KsC2Cm8E8yc",
+      "name": "SYN Item 024",
+      "shortName": "SYN Item 24",
+      "code": "SYN_ITEM_24",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "SUCKEUWWkME",
+      "name": "SYN Item 025",
+      "shortName": "SYN Item 25",
+      "code": "SYN_ITEM_25",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "Oc40cuYMIAe",
+      "name": "SYN Item 026",
+      "shortName": "SYN Item 26",
+      "code": "SYN_ITEM_26",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "uig8gSykaQy",
+      "name": "SYN Item 027",
+      "shortName": "SYN Item 27",
+      "code": "SYN_ITEM_27",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "iGcIksoSYYU",
+      "name": "SYN Item 028",
+      "shortName": "SYN Item 28",
+      "code": "SYN_ITEM_28",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "qi6eOeUsK2k",
+      "name": "SYN Item 029",
+      "shortName": "SYN Item 29",
+      "code": "SYN_ITEM_29",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "uaCeGAcom2o",
+      "name": "SYN Item 030",
+      "shortName": "SYN Item 30",
+      "code": "SYN_ITEM_30",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "KuImsU0QiEs",
+      "name": "SYN Item 031",
+      "shortName": "SYN Item 31",
+      "code": "SYN_ITEM_31",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "K8SU00KQS6S",
+      "name": "SYN Item 032",
+      "shortName": "SYN Item 32",
+      "code": "SYN_ITEM_32",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "ai4eysMAuqg",
+      "name": "SYN Item 033",
+      "shortName": "SYN Item 33",
+      "code": "SYN_ITEM_33",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "S2C4M6KSyIU",
+      "name": "SYN Item 034",
+      "shortName": "SYN Item 34",
+      "code": "SYN_ITEM_34",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "GMm6gO4skew",
+      "name": "SYN Item 035",
+      "shortName": "SYN Item 35",
+      "code": "SYN_ITEM_35",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "i82qAOoCYCQ",
+      "name": "SYN Item 036",
+      "shortName": "SYN Item 36",
+      "code": "SYN_ITEM_36",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "eomS6COuogw",
+      "name": "SYN Item 037",
+      "shortName": "SYN Item 37",
+      "code": "SYN_ITEM_37",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "euW2wWmKEoo",
+      "name": "SYN Item 038",
+      "shortName": "SYN Item 38",
+      "code": "SYN_ITEM_38",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "iYEUM2gEewO",
+      "name": "SYN Item 039",
+      "shortName": "SYN Item 39",
+      "code": "SYN_ITEM_39",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "We8k0AHEaYM",
+      "name": "SYN Item 040",
+      "shortName": "SYN Item 40",
+      "code": "SYN_ITEM_40",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "mOUIa4gAog2",
+      "name": "SYN Item 041",
+      "shortName": "SYN Item 41",
+      "code": "SYN_ITEM_41",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "WwQYuaY6U0s",
+      "name": "SYN Item 042",
+      "shortName": "SYN Item 42",
+      "code": "SYN_ITEM_42",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "G88KSGGAoeA",
+      "name": "SYN Item 043",
+      "shortName": "SYN Item 43",
+      "code": "SYN_ITEM_43",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "yYOQOAGGygc",
+      "name": "SYN Item 044",
+      "shortName": "SYN Item 44",
+      "code": "SYN_ITEM_44",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "qowIQ8yiMeE",
+      "name": "SYN Item 045",
+      "shortName": "SYN Item 45",
+      "code": "SYN_ITEM_45",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "eSsmW6qsO6c",
+      "name": "SYN Item 046",
+      "shortName": "SYN Item 46",
+      "code": "SYN_ITEM_46",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "GGIY4kUusAA",
+      "name": "SYN Item 047",
+      "shortName": "SYN Item 47",
+      "code": "SYN_ITEM_47",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "eOa8M8cSgk8",
+      "name": "SYN Item 048",
+      "shortName": "SYN Item 48",
+      "code": "SYN_ITEM_48",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "mGQ4YCsY62A",
+      "name": "SYN Item 049",
+      "shortName": "SYN Item 49",
+      "code": "SYN_ITEM_49",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "a8y6KCma2aC",
+      "name": "SYN Item 050",
+      "shortName": "SYN Item 50",
+      "code": "SYN_ITEM_50",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "KcIwA4qcOcm",
+      "name": "SYN Item 051",
+      "shortName": "SYN Item 51",
+      "code": "SYN_ITEM_51",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "qwyYmqKymea",
+      "name": "SYN Item 052",
+      "shortName": "SYN Item 52",
+      "code": "SYN_ITEM_52",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "eam8eICSGKm",
+      "name": "SYN Item 053",
+      "shortName": "SYN Item 53",
+      "code": "SYN_ITEM_53",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "GIgcMMCeQAG",
+      "name": "SYN Item 054",
+      "shortName": "SYN Item 54",
+      "code": "SYN_ITEM_54",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "GgYi6MmgCKM",
+      "name": "SYN Item 055",
+      "shortName": "SYN Item 55",
+      "code": "SYN_ITEM_55",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "Ko0yEoaeAqw",
+      "name": "SYN Item 056",
+      "shortName": "SYN Item 56",
+      "code": "SYN_ITEM_56",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "m4ka2MMGqQq",
+      "name": "SYN Item 057",
+      "shortName": "SYN Item 57",
+      "code": "SYN_ITEM_57",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "CWoKSWuUgQS",
+      "name": "SYN Item 058",
+      "shortName": "SYN Item 58",
+      "code": "SYN_ITEM_58",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "yaeSMGOoKuq",
+      "name": "SYN Item 059",
+      "shortName": "SYN Item 59",
+      "code": "SYN_ITEM_59",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "ukw8YiGyEM4",
+      "name": "SYN Item 060",
+      "shortName": "SYN Item 60",
+      "code": "SYN_ITEM_60",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "yc0KOMUUmwk",
+      "name": "SYN Item 061",
+      "shortName": "SYN Item 61",
+      "code": "SYN_ITEM_61",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "ygeaKisCYwC",
+      "name": "SYN Item 062",
+      "shortName": "SYN Item 62",
+      "code": "SYN_ITEM_62",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "KegQ84WtU48",
+      "name": "SYN Item 063",
+      "shortName": "SYN Item 63",
+      "code": "SYN_ITEM_63",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "yuYi4u40QYC",
+      "name": "SYN Item 064",
+      "shortName": "SYN Item 64",
+      "code": "SYN_ITEM_64",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "iwewCQ202gE",
+      "name": "SYN Item 065",
+      "shortName": "SYN Item 65",
+      "code": "SYN_ITEM_65",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "eeCseoWg000",
+      "name": "SYN Item 066",
+      "shortName": "SYN Item 66",
+      "code": "SYN_ITEM_66",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "qyk6MWciywW",
+      "name": "SYN Item 067",
+      "shortName": "SYN Item 67",
+      "code": "SYN_ITEM_67",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "mmWcqeUE48k",
+      "name": "SYN Item 068",
+      "shortName": "SYN Item 68",
+      "code": "SYN_ITEM_68",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "i60SWKq4eWm",
+      "name": "SYN Item 069",
+      "shortName": "SYN Item 69",
+      "code": "SYN_ITEM_69",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "CO42CEmCE4U",
+      "name": "SYN Item 070",
+      "shortName": "SYN Item 70",
+      "code": "SYN_ITEM_70",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "uumyoE4sWiU",
+      "name": "SYN Item 071",
+      "shortName": "SYN Item 71",
+      "code": "SYN_ITEM_71",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "yCWieK6aGOI",
+      "name": "SYN Item 072",
+      "shortName": "SYN Item 72",
+      "code": "SYN_ITEM_72",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "ewkMykWSYum",
+      "name": "SYN Item 073",
+      "shortName": "SYN Item 73",
+      "code": "SYN_ITEM_73",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "G24sI60Wk4c",
+      "name": "SYN Item 074",
+      "shortName": "SYN Item 74",
+      "code": "SYN_ITEM_74",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "aaKieQ0wSGK",
+      "name": "SYN Item 075",
+      "shortName": "SYN Item 75",
+      "code": "SYN_ITEM_75",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "Go8Y8eWsoae",
+      "name": "SYN Item 076",
+      "shortName": "SYN Item 76",
+      "code": "SYN_ITEM_76",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "WEo6Ge00Ciq",
+      "name": "SYN Item 077",
+      "shortName": "SYN Item 77",
+      "code": "SYN_ITEM_77",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "is0CKUKQGWY",
+      "name": "SYN Item 078",
+      "shortName": "SYN Item 78",
+      "code": "SYN_ITEM_78",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "u6eoUsMIM2E",
+      "name": "SYN Item 079",
+      "shortName": "SYN Item 79",
+      "code": "SYN_ITEM_79",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "umaygCMWc8o",
+      "name": "SYN Item 080",
+      "shortName": "SYN Item 80",
+      "code": "SYN_ITEM_80",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "OAS0AS8i6Kc",
+      "name": "SYN Item 081",
+      "shortName": "SYN Item 81",
+      "code": "SYN_ITEM_81",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "i2cC0U04gsQ",
+      "name": "SYN Item 082",
+      "shortName": "SYN Item 82",
+      "code": "SYN_ITEM_82",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "au00guamIsW",
+      "name": "SYN Item 083",
+      "shortName": "SYN Item 83",
+      "code": "SYN_ITEM_83",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "GsG2AmQ2COM",
+      "name": "SYN Item 084",
+      "shortName": "SYN Item 84",
+      "code": "SYN_ITEM_84",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "OwCAoWAC8q4",
+      "name": "SYN Item 085",
+      "shortName": "SYN Item 85",
+      "code": "SYN_ITEM_85",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "as6QgY2KYce",
+      "name": "SYN Item 086",
+      "shortName": "SYN Item 86",
+      "code": "SYN_ITEM_86",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "mUOYEciU4ou",
+      "name": "SYN Item 087",
+      "shortName": "SYN Item 87",
+      "code": "SYN_ITEM_87",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "SoAWTceAgem",
+      "name": "SYN Item 088",
+      "shortName": "SYN Item 88",
+      "code": "SYN_ITEM_88",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "yaQGIqG6k8A",
+      "name": "SYN Item 089",
+      "shortName": "SYN Item 89",
+      "code": "SYN_ITEM_89",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "yEM60Q0Eo2g",
+      "name": "SYN Item 090",
+      "shortName": "SYN Item 90",
+      "code": "SYN_ITEM_90",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "uyeG4myyCkI",
+      "name": "SYN Item 091",
+      "shortName": "SYN Item 91",
+      "code": "SYN_ITEM_91",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "GqsEqOmUg4W",
+      "name": "SYN Item 092",
+      "shortName": "SYN Item 92",
+      "code": "SYN_ITEM_92",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "Gq6S2wwAYEA",
+      "name": "SYN Item 093",
+      "shortName": "SYN Item 93",
+      "code": "SYN_ITEM_93",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "moAGcykgkii",
+      "name": "SYN Item 094",
+      "shortName": "SYN Item 94",
+      "code": "SYN_ITEM_94",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "GieUmaCckkW",
+      "name": "SYN Item 095",
+      "shortName": "SYN Item 95",
+      "code": "SYN_ITEM_95",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "mgQUQiGiqOA",
+      "name": "SYN Item 096",
+      "shortName": "SYN Item 96",
+      "code": "SYN_ITEM_96",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "CMUk8EY4iuc",
+      "name": "SYN Item 097",
+      "shortName": "SYN Item 97",
+      "code": "SYN_ITEM_97",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "KSkoUeWi2Gi",
+      "name": "SYN Item 098",
+      "shortName": "SYN Item 98",
+      "code": "SYN_ITEM_98",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "uoGAIASwCEA",
+      "name": "SYN Item 099",
+      "shortName": "SYN Item 99",
+      "code": "SYN_ITEM_99",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "eEK2cuQQe6C",
+      "name": "SYN Item 100",
+      "shortName": "SYN Item 100",
+      "code": "SYN_ITEM_100",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "ymIuwgGIYYA",
+      "name": "SYN Item 101",
+      "shortName": "SYN Item 101",
+      "code": "SYN_ITEM_101",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "K6ICEaYsao2",
+      "name": "SYN Item 102",
+      "shortName": "SYN Item 102",
+      "code": "SYN_ITEM_102",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "WAskQMIWqGe",
+      "name": "SYN Item 103",
+      "shortName": "SYN Item 103",
+      "code": "SYN_ITEM_103",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "eeOK40mcgUc",
+      "name": "SYN Item 104",
+      "shortName": "SYN Item 104",
+      "code": "SYN_ITEM_104",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "WSI00GkyQCT",
+      "name": "SYN Item 105",
+      "shortName": "SYN Item 105",
+      "code": "SYN_ITEM_105",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "a0MgMIYwqGe",
+      "name": "SYN Item 106",
+      "shortName": "SYN Item 106",
+      "code": "SYN_ITEM_106",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "SKa6C8WI6qY",
+      "name": "SYN Item 107",
+      "shortName": "SYN Item 107",
+      "code": "SYN_ITEM_107",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "KECoi8iiggQ",
+      "name": "SYN Item 108",
+      "shortName": "SYN Item 108",
+      "code": "SYN_ITEM_108",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "yewUAk8CMSa",
+      "name": "SYN Item 109",
+      "shortName": "SYN Item 109",
+      "code": "SYN_ITEM_109",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "iQMoEuiu4oa",
+      "name": "SYN Item 110",
+      "shortName": "SYN Item 110",
+      "code": "SYN_ITEM_110",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "aoI8ISYswcq",
+      "name": "SYN Item 111",
+      "shortName": "SYN Item 111",
+      "code": "SYN_ITEM_111",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "G4OAsAUqog6",
+      "name": "SYN Item 112",
+      "shortName": "SYN Item 112",
+      "code": "SYN_ITEM_112",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "SCqkmUSYuMc",
+      "name": "SYN Item 113",
+      "shortName": "SYN Item 113",
+      "code": "SYN_ITEM_113",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "W8MKcWs4kMW",
+      "name": "SYN Item 114",
+      "shortName": "SYN Item 114",
+      "code": "SYN_ITEM_114",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "mA2QYyC4egy",
+      "name": "SYN Item 115",
+      "shortName": "SYN Item 115",
+      "code": "SYN_ITEM_115",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "CKgYsOg0ckS",
+      "name": "SYN Item 116",
+      "shortName": "SYN Item 116",
+      "code": "SYN_ITEM_116",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "WiUeSAmmIEO",
+      "name": "SYN Item 117",
+      "shortName": "SYN Item 117",
+      "code": "SYN_ITEM_117",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "yK68oQIeQiy",
+      "name": "SYN Item 118",
+      "shortName": "SYN Item 118",
+      "code": "SYN_ITEM_118",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "eQsQmmA6WEU",
+      "name": "SYN Item 119",
+      "shortName": "SYN Item 119",
+      "code": "SYN_ITEM_119",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "KwgmYEIsico",
+      "name": "SYN Item 120",
+      "shortName": "SYN Item 120",
+      "code": "SYN_ITEM_120",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "SaYeCkYwOue",
+      "name": "SYN Item 121",
+      "shortName": "SYN Item 121",
+      "code": "SYN_ITEM_121",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "iwAoq8iCCIQ",
+      "name": "SYN Item 122",
+      "shortName": "SYN Item 122",
+      "code": "SYN_ITEM_122",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "u0wC2s8eAuE",
+      "name": "SYN Item 123",
+      "shortName": "SYN Item 123",
+      "code": "SYN_ITEM_123",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "SE2KEM4euIw",
+      "name": "SYN Item 124",
+      "shortName": "SYN Item 124",
+      "code": "SYN_ITEM_124",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "q4OEuaGGEI0",
+      "name": "SYN Item 125",
+      "shortName": "SYN Item 125",
+      "code": "SYN_ITEM_125",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "mSiG2MIekSk",
+      "name": "SYN Item 126",
+      "shortName": "SYN Item 126",
+      "code": "SYN_ITEM_126",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "aqEgOgEg48A",
+      "name": "SYN Item 127",
+      "shortName": "SYN Item 127",
+      "code": "SYN_ITEM_127",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "uIUSiAy0WYq",
+      "name": "SYN Item 128",
+      "shortName": "SYN Item 128",
+      "code": "SYN_ITEM_128",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "iEw2GWIyQkA",
+      "name": "SYN Item 129",
+      "shortName": "SYN Item 129",
+      "code": "SYN_ITEM_129",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "CU2gmca00y4",
+      "name": "SYN Item 130",
+      "shortName": "SYN Item 130",
+      "code": "SYN_ITEM_130",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "Gww8ka6y0QI",
+      "name": "SYN Item 131",
+      "shortName": "SYN Item 131",
+      "code": "SYN_ITEM_131",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "GK6QWkKkKEI",
+      "name": "SYN Item 132",
+      "shortName": "SYN Item 132",
+      "code": "SYN_ITEM_132",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "SsEiuGAGAGC",
+      "name": "SYN Item 133",
+      "shortName": "SYN Item 133",
+      "code": "SYN_ITEM_133",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "ekwikmq8ymC",
+      "name": "SYN Item 134",
+      "shortName": "SYN Item 134",
+      "code": "SYN_ITEM_134",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "iM6gAIW2im4",
+      "name": "SYN Item 135",
+      "shortName": "SYN Item 135",
+      "code": "SYN_ITEM_135",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "K6Cg6cKcOQK",
+      "name": "SYN Item 136",
+      "shortName": "SYN Item 136",
+      "code": "SYN_ITEM_136",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "WcuiEWK4KcC",
+      "name": "SYN Item 137",
+      "shortName": "SYN Item 137",
+      "code": "SYN_ITEM_137",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "OIY0mykeMsY",
+      "name": "SYN Item 138",
+      "shortName": "SYN Item 138",
+      "code": "SYN_ITEM_138",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "eoGU8m6U42K",
+      "name": "SYN Item 139",
+      "shortName": "SYN Item 139",
+      "code": "SYN_ITEM_139",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "y8OeuMmuS6I",
+      "name": "SYN Item 140",
+      "shortName": "SYN Item 140",
+      "code": "SYN_ITEM_140",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "qYoAq6A8Wya",
+      "name": "SYN Item 141",
+      "shortName": "SYN Item 141",
+      "code": "SYN_ITEM_141",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "aSyO0IYksa6",
+      "name": "SYN Item 142",
+      "shortName": "SYN Item 142",
+      "code": "SYN_ITEM_142",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "m2YgAcG8occ",
+      "name": "SYN Item 143",
+      "shortName": "SYN Item 143",
+      "code": "SYN_ITEM_143",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "eqaUgag2QSY",
+      "name": "SYN Item 144",
+      "shortName": "SYN Item 144",
+      "code": "SYN_ITEM_144",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "esWyoCgQ6w4",
+      "name": "SYN Item 145",
+      "shortName": "SYN Item 145",
+      "code": "SYN_ITEM_145",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "SG48gQCXUEw",
+      "name": "SYN Item 146",
+      "shortName": "SYN Item 146",
+      "code": "SYN_ITEM_146",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "KSYkACC86IU",
+      "name": "SYN Item 147",
+      "shortName": "SYN Item 147",
+      "code": "SYN_ITEM_147",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "mmmmAIwUuCK",
+      "name": "SYN Item 148",
+      "shortName": "SYN Item 148",
+      "code": "SYN_ITEM_148",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "OKEIMg6keSs",
+      "name": "SYN Item 149",
+      "shortName": "SYN Item 149",
+      "code": "SYN_ITEM_149",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "iGYqEAmcqQO",
+      "name": "SYN Item 150",
+      "shortName": "SYN Item 150",
+      "code": "SYN_ITEM_150",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "OKMkM6y6SoY",
+      "name": "SYN Item 151",
+      "shortName": "SYN Item 151",
+      "code": "SYN_ITEM_151",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "WSKoOSwMyys",
+      "name": "SYN Item 152",
+      "shortName": "SYN Item 152",
+      "code": "SYN_ITEM_152",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "eEo4WQaqi82",
+      "name": "SYN Item 153",
+      "shortName": "SYN Item 153",
+      "code": "SYN_ITEM_153",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "O62WscWMOe0",
+      "name": "SYN Item 154",
+      "shortName": "SYN Item 154",
+      "code": "SYN_ITEM_154",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "SoEi2uYmMcG",
+      "name": "SYN Item 155",
+      "shortName": "SYN Item 155",
+      "code": "SYN_ITEM_155",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "miyY4Gk4kgE",
+      "name": "SYN Item 156",
+      "shortName": "SYN Item 156",
+      "code": "SYN_ITEM_156",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "SAgeOSsOAG4",
+      "name": "SYN Item 157",
+      "shortName": "SYN Item 157",
+      "code": "SYN_ITEM_157",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "y6GgaoKEY26",
+      "name": "SYN Item 158",
+      "shortName": "SYN Item 158",
+      "code": "SYN_ITEM_158",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "OgKmsyIuCUy",
+      "name": "SYN Item 159",
+      "shortName": "SYN Item 159",
+      "code": "SYN_ITEM_159",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     },
+     {
+      "id": "WmmioKgykeo",
+      "name": "SYN Item 160",
+      "shortName": "SYN Item 160",
+      "code": "SYN_ITEM_160",
+      "valueType": "INTEGER_ZERO_OR_POSITIVE",
+      "domainType": "TRACKER",
+      "aggregationType": "NONE",
+      "optionSet": {
+       "id": "BqUC2EOYA6Q"
+      }
+     }
+    ],
+    "legendSets": [
+     {
+      "id": "GIAc4ScKOA6",
+      "name": "SYN Score bands",
+      "legends": [
+       {
+        "id": "OymEGACcyii",
+        "name": "Low",
+        "startValue": 0,
+        "endValue": 50,
+        "color": "#F46D43"
+       },
+       {
+        "id": "uQSWy4syaCk",
+        "name": "Mid",
+        "startValue": 50,
+        "endValue": 80,
+        "color": "#FDD049"
+       },
+       {
+        "id": "aYMy0kQsMc2",
+        "name": "High",
+        "startValue": 80,
+        "endValue": 101,
+        "color": "#A6D96A"
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "description": "SYN: facility assessment event program with one stage and four sections",
+   "creates": {
+    "programs": [
+     {
+      "id": "OK68C6mMCEu",
+      "name": "SYN Facility assessment",
+      "shortName": "SYN Facility assessment",
+      "programType": "WITHOUT_REGISTRATION",
+      "programStages": [
+       {
+        "id": "uAA8kCeSiMM"
+       }
+      ]
+     }
+    ],
+    "programStages": [
+     {
+      "id": "uAA8kCeSiMM",
+      "name": "SYN Assessment",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "programStageDataElements": [
+       {
+        "dataElement": {
+         "id": "a2Gew4cGc4O"
+        },
+        "compulsory": true,
+        "sortOrder": 1
+       },
+       {
+        "dataElement": {
+         "id": "OaYeICyIo4E"
+        },
+        "compulsory": false,
+        "sortOrder": 2
+       },
+       {
+        "dataElement": {
+         "id": "aY4Usi648yG"
+        },
+        "compulsory": false,
+        "sortOrder": 3
+       },
+       {
+        "dataElement": {
+         "id": "GgWO2mayaKa"
+        },
+        "compulsory": false,
+        "sortOrder": 4
+       },
+       {
+        "dataElement": {
+         "id": "CEqe8SU6OAW"
+        },
+        "compulsory": false,
+        "sortOrder": 5
+       },
+       {
+        "dataElement": {
+         "id": "yIeymiUkOKk"
+        },
+        "compulsory": false,
+        "sortOrder": 6
+       },
+       {
+        "dataElement": {
+         "id": "qeIwqec8Eqg"
+        },
+        "compulsory": false,
+        "sortOrder": 7
+       },
+       {
+        "dataElement": {
+         "id": "CaIUOUcaSqE"
+        },
+        "compulsory": false,
+        "sortOrder": 8
+       },
+       {
+        "dataElement": {
+         "id": "aaMkMi0CM8a"
+        },
+        "compulsory": false,
+        "sortOrder": 9
+       },
+       {
+        "dataElement": {
+         "id": "Su4cmSEw64U"
+        },
+        "compulsory": false,
+        "sortOrder": 10
+       },
+       {
+        "dataElement": {
+         "id": "Wcm2emigIUa"
+        },
+        "compulsory": false,
+        "sortOrder": 11
+       },
+       {
+        "dataElement": {
+         "id": "qY02MAsYWke"
+        },
+        "compulsory": false,
+        "sortOrder": 12
+       },
+       {
+        "dataElement": {
+         "id": "qqY8UM2k8ak"
+        },
+        "compulsory": false,
+        "sortOrder": 13
+       },
+       {
+        "dataElement": {
+         "id": "eCW8WSgSm0a"
+        },
+        "compulsory": false,
+        "sortOrder": 14
+       },
+       {
+        "dataElement": {
+         "id": "muIuOocCOmS"
+        },
+        "compulsory": false,
+        "sortOrder": 15
+       },
+       {
+        "dataElement": {
+         "id": "KCuO2yw28s6"
+        },
+        "compulsory": false,
+        "sortOrder": 16
+       },
+       {
+        "dataElement": {
+         "id": "jagcaUE8ISO"
+        },
+        "compulsory": false,
+        "sortOrder": 17
+       },
+       {
+        "dataElement": {
+         "id": "yseMm8qC8uI"
+        },
+        "compulsory": false,
+        "sortOrder": 18
+       },
+       {
+        "dataElement": {
+         "id": "K0KEuMMqkm2"
+        },
+        "compulsory": false,
+        "sortOrder": 19
+       },
+       {
+        "dataElement": {
+         "id": "aw8oOuwuWka"
+        },
+        "compulsory": false,
+        "sortOrder": 20
+       },
+       {
+        "dataElement": {
+         "id": "qW8s6AgIKQm"
+        },
+        "compulsory": false,
+        "sortOrder": 21
+       },
+       {
+        "dataElement": {
+         "id": "mGIoSGag6kq"
+        },
+        "compulsory": false,
+        "sortOrder": 22
+       },
+       {
+        "dataElement": {
+         "id": "K8eUwckgUy0"
+        },
+        "compulsory": false,
+        "sortOrder": 23
+       },
+       {
+        "dataElement": {
+         "id": "KsC2Cm8E8yc"
+        },
+        "compulsory": false,
+        "sortOrder": 24
+       },
+       {
+        "dataElement": {
+         "id": "SUCKEUWWkME"
+        },
+        "compulsory": false,
+        "sortOrder": 25
+       },
+       {
+        "dataElement": {
+         "id": "Oc40cuYMIAe"
+        },
+        "compulsory": false,
+        "sortOrder": 26
+       },
+       {
+        "dataElement": {
+         "id": "uig8gSykaQy"
+        },
+        "compulsory": false,
+        "sortOrder": 27
+       },
+       {
+        "dataElement": {
+         "id": "iGcIksoSYYU"
+        },
+        "compulsory": false,
+        "sortOrder": 28
+       },
+       {
+        "dataElement": {
+         "id": "qi6eOeUsK2k"
+        },
+        "compulsory": false,
+        "sortOrder": 29
+       },
+       {
+        "dataElement": {
+         "id": "uaCeGAcom2o"
+        },
+        "compulsory": false,
+        "sortOrder": 30
+       },
+       {
+        "dataElement": {
+         "id": "KuImsU0QiEs"
+        },
+        "compulsory": false,
+        "sortOrder": 31
+       },
+       {
+        "dataElement": {
+         "id": "K8SU00KQS6S"
+        },
+        "compulsory": false,
+        "sortOrder": 32
+       },
+       {
+        "dataElement": {
+         "id": "ai4eysMAuqg"
+        },
+        "compulsory": false,
+        "sortOrder": 33
+       },
+       {
+        "dataElement": {
+         "id": "S2C4M6KSyIU"
+        },
+        "compulsory": false,
+        "sortOrder": 34
+       },
+       {
+        "dataElement": {
+         "id": "GMm6gO4skew"
+        },
+        "compulsory": false,
+        "sortOrder": 35
+       },
+       {
+        "dataElement": {
+         "id": "i82qAOoCYCQ"
+        },
+        "compulsory": false,
+        "sortOrder": 36
+       },
+       {
+        "dataElement": {
+         "id": "eomS6COuogw"
+        },
+        "compulsory": false,
+        "sortOrder": 37
+       },
+       {
+        "dataElement": {
+         "id": "euW2wWmKEoo"
+        },
+        "compulsory": false,
+        "sortOrder": 38
+       },
+       {
+        "dataElement": {
+         "id": "iYEUM2gEewO"
+        },
+        "compulsory": false,
+        "sortOrder": 39
+       },
+       {
+        "dataElement": {
+         "id": "We8k0AHEaYM"
+        },
+        "compulsory": false,
+        "sortOrder": 40
+       },
+       {
+        "dataElement": {
+         "id": "mOUIa4gAog2"
+        },
+        "compulsory": true,
+        "sortOrder": 41
+       },
+       {
+        "dataElement": {
+         "id": "WwQYuaY6U0s"
+        },
+        "compulsory": false,
+        "sortOrder": 42
+       },
+       {
+        "dataElement": {
+         "id": "G88KSGGAoeA"
+        },
+        "compulsory": false,
+        "sortOrder": 43
+       },
+       {
+        "dataElement": {
+         "id": "yYOQOAGGygc"
+        },
+        "compulsory": false,
+        "sortOrder": 44
+       },
+       {
+        "dataElement": {
+         "id": "qowIQ8yiMeE"
+        },
+        "compulsory": false,
+        "sortOrder": 45
+       },
+       {
+        "dataElement": {
+         "id": "eSsmW6qsO6c"
+        },
+        "compulsory": false,
+        "sortOrder": 46
+       },
+       {
+        "dataElement": {
+         "id": "GGIY4kUusAA"
+        },
+        "compulsory": false,
+        "sortOrder": 47
+       },
+       {
+        "dataElement": {
+         "id": "eOa8M8cSgk8"
+        },
+        "compulsory": false,
+        "sortOrder": 48
+       },
+       {
+        "dataElement": {
+         "id": "mGQ4YCsY62A"
+        },
+        "compulsory": false,
+        "sortOrder": 49
+       },
+       {
+        "dataElement": {
+         "id": "a8y6KCma2aC"
+        },
+        "compulsory": false,
+        "sortOrder": 50
+       },
+       {
+        "dataElement": {
+         "id": "KcIwA4qcOcm"
+        },
+        "compulsory": false,
+        "sortOrder": 51
+       },
+       {
+        "dataElement": {
+         "id": "qwyYmqKymea"
+        },
+        "compulsory": false,
+        "sortOrder": 52
+       },
+       {
+        "dataElement": {
+         "id": "eam8eICSGKm"
+        },
+        "compulsory": false,
+        "sortOrder": 53
+       },
+       {
+        "dataElement": {
+         "id": "GIgcMMCeQAG"
+        },
+        "compulsory": false,
+        "sortOrder": 54
+       },
+       {
+        "dataElement": {
+         "id": "GgYi6MmgCKM"
+        },
+        "compulsory": false,
+        "sortOrder": 55
+       },
+       {
+        "dataElement": {
+         "id": "Ko0yEoaeAqw"
+        },
+        "compulsory": false,
+        "sortOrder": 56
+       },
+       {
+        "dataElement": {
+         "id": "m4ka2MMGqQq"
+        },
+        "compulsory": false,
+        "sortOrder": 57
+       },
+       {
+        "dataElement": {
+         "id": "CWoKSWuUgQS"
+        },
+        "compulsory": false,
+        "sortOrder": 58
+       },
+       {
+        "dataElement": {
+         "id": "yaeSMGOoKuq"
+        },
+        "compulsory": false,
+        "sortOrder": 59
+       },
+       {
+        "dataElement": {
+         "id": "ukw8YiGyEM4"
+        },
+        "compulsory": false,
+        "sortOrder": 60
+       },
+       {
+        "dataElement": {
+         "id": "yc0KOMUUmwk"
+        },
+        "compulsory": false,
+        "sortOrder": 61
+       },
+       {
+        "dataElement": {
+         "id": "ygeaKisCYwC"
+        },
+        "compulsory": false,
+        "sortOrder": 62
+       },
+       {
+        "dataElement": {
+         "id": "KegQ84WtU48"
+        },
+        "compulsory": false,
+        "sortOrder": 63
+       },
+       {
+        "dataElement": {
+         "id": "yuYi4u40QYC"
+        },
+        "compulsory": false,
+        "sortOrder": 64
+       },
+       {
+        "dataElement": {
+         "id": "iwewCQ202gE"
+        },
+        "compulsory": false,
+        "sortOrder": 65
+       },
+       {
+        "dataElement": {
+         "id": "eeCseoWg000"
+        },
+        "compulsory": false,
+        "sortOrder": 66
+       },
+       {
+        "dataElement": {
+         "id": "qyk6MWciywW"
+        },
+        "compulsory": false,
+        "sortOrder": 67
+       },
+       {
+        "dataElement": {
+         "id": "mmWcqeUE48k"
+        },
+        "compulsory": false,
+        "sortOrder": 68
+       },
+       {
+        "dataElement": {
+         "id": "i60SWKq4eWm"
+        },
+        "compulsory": false,
+        "sortOrder": 69
+       },
+       {
+        "dataElement": {
+         "id": "CO42CEmCE4U"
+        },
+        "compulsory": false,
+        "sortOrder": 70
+       },
+       {
+        "dataElement": {
+         "id": "uumyoE4sWiU"
+        },
+        "compulsory": false,
+        "sortOrder": 71
+       },
+       {
+        "dataElement": {
+         "id": "yCWieK6aGOI"
+        },
+        "compulsory": false,
+        "sortOrder": 72
+       },
+       {
+        "dataElement": {
+         "id": "ewkMykWSYum"
+        },
+        "compulsory": false,
+        "sortOrder": 73
+       },
+       {
+        "dataElement": {
+         "id": "G24sI60Wk4c"
+        },
+        "compulsory": false,
+        "sortOrder": 74
+       },
+       {
+        "dataElement": {
+         "id": "aaKieQ0wSGK"
+        },
+        "compulsory": false,
+        "sortOrder": 75
+       },
+       {
+        "dataElement": {
+         "id": "Go8Y8eWsoae"
+        },
+        "compulsory": false,
+        "sortOrder": 76
+       },
+       {
+        "dataElement": {
+         "id": "WEo6Ge00Ciq"
+        },
+        "compulsory": false,
+        "sortOrder": 77
+       },
+       {
+        "dataElement": {
+         "id": "is0CKUKQGWY"
+        },
+        "compulsory": false,
+        "sortOrder": 78
+       },
+       {
+        "dataElement": {
+         "id": "u6eoUsMIM2E"
+        },
+        "compulsory": false,
+        "sortOrder": 79
+       },
+       {
+        "dataElement": {
+         "id": "umaygCMWc8o"
+        },
+        "compulsory": false,
+        "sortOrder": 80
+       },
+       {
+        "dataElement": {
+         "id": "OAS0AS8i6Kc"
+        },
+        "compulsory": true,
+        "sortOrder": 81
+       },
+       {
+        "dataElement": {
+         "id": "i2cC0U04gsQ"
+        },
+        "compulsory": false,
+        "sortOrder": 82
+       },
+       {
+        "dataElement": {
+         "id": "au00guamIsW"
+        },
+        "compulsory": false,
+        "sortOrder": 83
+       },
+       {
+        "dataElement": {
+         "id": "GsG2AmQ2COM"
+        },
+        "compulsory": false,
+        "sortOrder": 84
+       },
+       {
+        "dataElement": {
+         "id": "OwCAoWAC8q4"
+        },
+        "compulsory": false,
+        "sortOrder": 85
+       },
+       {
+        "dataElement": {
+         "id": "as6QgY2KYce"
+        },
+        "compulsory": false,
+        "sortOrder": 86
+       },
+       {
+        "dataElement": {
+         "id": "mUOYEciU4ou"
+        },
+        "compulsory": false,
+        "sortOrder": 87
+       },
+       {
+        "dataElement": {
+         "id": "SoAWTceAgem"
+        },
+        "compulsory": false,
+        "sortOrder": 88
+       },
+       {
+        "dataElement": {
+         "id": "yaQGIqG6k8A"
+        },
+        "compulsory": false,
+        "sortOrder": 89
+       },
+       {
+        "dataElement": {
+         "id": "yEM60Q0Eo2g"
+        },
+        "compulsory": false,
+        "sortOrder": 90
+       },
+       {
+        "dataElement": {
+         "id": "uyeG4myyCkI"
+        },
+        "compulsory": false,
+        "sortOrder": 91
+       },
+       {
+        "dataElement": {
+         "id": "GqsEqOmUg4W"
+        },
+        "compulsory": false,
+        "sortOrder": 92
+       },
+       {
+        "dataElement": {
+         "id": "Gq6S2wwAYEA"
+        },
+        "compulsory": false,
+        "sortOrder": 93
+       },
+       {
+        "dataElement": {
+         "id": "moAGcykgkii"
+        },
+        "compulsory": false,
+        "sortOrder": 94
+       },
+       {
+        "dataElement": {
+         "id": "GieUmaCckkW"
+        },
+        "compulsory": false,
+        "sortOrder": 95
+       },
+       {
+        "dataElement": {
+         "id": "mgQUQiGiqOA"
+        },
+        "compulsory": false,
+        "sortOrder": 96
+       },
+       {
+        "dataElement": {
+         "id": "CMUk8EY4iuc"
+        },
+        "compulsory": false,
+        "sortOrder": 97
+       },
+       {
+        "dataElement": {
+         "id": "KSkoUeWi2Gi"
+        },
+        "compulsory": false,
+        "sortOrder": 98
+       },
+       {
+        "dataElement": {
+         "id": "uoGAIASwCEA"
+        },
+        "compulsory": false,
+        "sortOrder": 99
+       },
+       {
+        "dataElement": {
+         "id": "eEK2cuQQe6C"
+        },
+        "compulsory": false,
+        "sortOrder": 100
+       },
+       {
+        "dataElement": {
+         "id": "ymIuwgGIYYA"
+        },
+        "compulsory": false,
+        "sortOrder": 101
+       },
+       {
+        "dataElement": {
+         "id": "K6ICEaYsao2"
+        },
+        "compulsory": false,
+        "sortOrder": 102
+       },
+       {
+        "dataElement": {
+         "id": "WAskQMIWqGe"
+        },
+        "compulsory": false,
+        "sortOrder": 103
+       },
+       {
+        "dataElement": {
+         "id": "eeOK40mcgUc"
+        },
+        "compulsory": false,
+        "sortOrder": 104
+       },
+       {
+        "dataElement": {
+         "id": "WSI00GkyQCT"
+        },
+        "compulsory": false,
+        "sortOrder": 105
+       },
+       {
+        "dataElement": {
+         "id": "a0MgMIYwqGe"
+        },
+        "compulsory": false,
+        "sortOrder": 106
+       },
+       {
+        "dataElement": {
+         "id": "SKa6C8WI6qY"
+        },
+        "compulsory": false,
+        "sortOrder": 107
+       },
+       {
+        "dataElement": {
+         "id": "KECoi8iiggQ"
+        },
+        "compulsory": false,
+        "sortOrder": 108
+       },
+       {
+        "dataElement": {
+         "id": "yewUAk8CMSa"
+        },
+        "compulsory": false,
+        "sortOrder": 109
+       },
+       {
+        "dataElement": {
+         "id": "iQMoEuiu4oa"
+        },
+        "compulsory": false,
+        "sortOrder": 110
+       },
+       {
+        "dataElement": {
+         "id": "aoI8ISYswcq"
+        },
+        "compulsory": false,
+        "sortOrder": 111
+       },
+       {
+        "dataElement": {
+         "id": "G4OAsAUqog6"
+        },
+        "compulsory": false,
+        "sortOrder": 112
+       },
+       {
+        "dataElement": {
+         "id": "SCqkmUSYuMc"
+        },
+        "compulsory": false,
+        "sortOrder": 113
+       },
+       {
+        "dataElement": {
+         "id": "W8MKcWs4kMW"
+        },
+        "compulsory": false,
+        "sortOrder": 114
+       },
+       {
+        "dataElement": {
+         "id": "mA2QYyC4egy"
+        },
+        "compulsory": false,
+        "sortOrder": 115
+       },
+       {
+        "dataElement": {
+         "id": "CKgYsOg0ckS"
+        },
+        "compulsory": false,
+        "sortOrder": 116
+       },
+       {
+        "dataElement": {
+         "id": "WiUeSAmmIEO"
+        },
+        "compulsory": false,
+        "sortOrder": 117
+       },
+       {
+        "dataElement": {
+         "id": "yK68oQIeQiy"
+        },
+        "compulsory": false,
+        "sortOrder": 118
+       },
+       {
+        "dataElement": {
+         "id": "eQsQmmA6WEU"
+        },
+        "compulsory": false,
+        "sortOrder": 119
+       },
+       {
+        "dataElement": {
+         "id": "KwgmYEIsico"
+        },
+        "compulsory": false,
+        "sortOrder": 120
+       },
+       {
+        "dataElement": {
+         "id": "SaYeCkYwOue"
+        },
+        "compulsory": true,
+        "sortOrder": 121
+       },
+       {
+        "dataElement": {
+         "id": "iwAoq8iCCIQ"
+        },
+        "compulsory": false,
+        "sortOrder": 122
+       },
+       {
+        "dataElement": {
+         "id": "u0wC2s8eAuE"
+        },
+        "compulsory": false,
+        "sortOrder": 123
+       },
+       {
+        "dataElement": {
+         "id": "SE2KEM4euIw"
+        },
+        "compulsory": false,
+        "sortOrder": 124
+       },
+       {
+        "dataElement": {
+         "id": "q4OEuaGGEI0"
+        },
+        "compulsory": false,
+        "sortOrder": 125
+       },
+       {
+        "dataElement": {
+         "id": "mSiG2MIekSk"
+        },
+        "compulsory": false,
+        "sortOrder": 126
+       },
+       {
+        "dataElement": {
+         "id": "aqEgOgEg48A"
+        },
+        "compulsory": false,
+        "sortOrder": 127
+       },
+       {
+        "dataElement": {
+         "id": "uIUSiAy0WYq"
+        },
+        "compulsory": false,
+        "sortOrder": 128
+       },
+       {
+        "dataElement": {
+         "id": "iEw2GWIyQkA"
+        },
+        "compulsory": false,
+        "sortOrder": 129
+       },
+       {
+        "dataElement": {
+         "id": "CU2gmca00y4"
+        },
+        "compulsory": false,
+        "sortOrder": 130
+       },
+       {
+        "dataElement": {
+         "id": "Gww8ka6y0QI"
+        },
+        "compulsory": false,
+        "sortOrder": 131
+       },
+       {
+        "dataElement": {
+         "id": "GK6QWkKkKEI"
+        },
+        "compulsory": false,
+        "sortOrder": 132
+       },
+       {
+        "dataElement": {
+         "id": "SsEiuGAGAGC"
+        },
+        "compulsory": false,
+        "sortOrder": 133
+       },
+       {
+        "dataElement": {
+         "id": "ekwikmq8ymC"
+        },
+        "compulsory": false,
+        "sortOrder": 134
+       },
+       {
+        "dataElement": {
+         "id": "iM6gAIW2im4"
+        },
+        "compulsory": false,
+        "sortOrder": 135
+       },
+       {
+        "dataElement": {
+         "id": "K6Cg6cKcOQK"
+        },
+        "compulsory": false,
+        "sortOrder": 136
+       },
+       {
+        "dataElement": {
+         "id": "WcuiEWK4KcC"
+        },
+        "compulsory": false,
+        "sortOrder": 137
+       },
+       {
+        "dataElement": {
+         "id": "OIY0mykeMsY"
+        },
+        "compulsory": false,
+        "sortOrder": 138
+       },
+       {
+        "dataElement": {
+         "id": "eoGU8m6U42K"
+        },
+        "compulsory": false,
+        "sortOrder": 139
+       },
+       {
+        "dataElement": {
+         "id": "y8OeuMmuS6I"
+        },
+        "compulsory": false,
+        "sortOrder": 140
+       },
+       {
+        "dataElement": {
+         "id": "qYoAq6A8Wya"
+        },
+        "compulsory": false,
+        "sortOrder": 141
+       },
+       {
+        "dataElement": {
+         "id": "aSyO0IYksa6"
+        },
+        "compulsory": false,
+        "sortOrder": 142
+       },
+       {
+        "dataElement": {
+         "id": "m2YgAcG8occ"
+        },
+        "compulsory": false,
+        "sortOrder": 143
+       },
+       {
+        "dataElement": {
+         "id": "eqaUgag2QSY"
+        },
+        "compulsory": false,
+        "sortOrder": 144
+       },
+       {
+        "dataElement": {
+         "id": "esWyoCgQ6w4"
+        },
+        "compulsory": false,
+        "sortOrder": 145
+       },
+       {
+        "dataElement": {
+         "id": "SG48gQCXUEw"
+        },
+        "compulsory": false,
+        "sortOrder": 146
+       },
+       {
+        "dataElement": {
+         "id": "KSYkACC86IU"
+        },
+        "compulsory": false,
+        "sortOrder": 147
+       },
+       {
+        "dataElement": {
+         "id": "mmmmAIwUuCK"
+        },
+        "compulsory": false,
+        "sortOrder": 148
+       },
+       {
+        "dataElement": {
+         "id": "OKEIMg6keSs"
+        },
+        "compulsory": false,
+        "sortOrder": 149
+       },
+       {
+        "dataElement": {
+         "id": "iGYqEAmcqQO"
+        },
+        "compulsory": false,
+        "sortOrder": 150
+       },
+       {
+        "dataElement": {
+         "id": "OKMkM6y6SoY"
+        },
+        "compulsory": false,
+        "sortOrder": 151
+       },
+       {
+        "dataElement": {
+         "id": "WSKoOSwMyys"
+        },
+        "compulsory": false,
+        "sortOrder": 152
+       },
+       {
+        "dataElement": {
+         "id": "eEo4WQaqi82"
+        },
+        "compulsory": false,
+        "sortOrder": 153
+       },
+       {
+        "dataElement": {
+         "id": "O62WscWMOe0"
+        },
+        "compulsory": false,
+        "sortOrder": 154
+       },
+       {
+        "dataElement": {
+         "id": "SoEi2uYmMcG"
+        },
+        "compulsory": false,
+        "sortOrder": 155
+       },
+       {
+        "dataElement": {
+         "id": "miyY4Gk4kgE"
+        },
+        "compulsory": false,
+        "sortOrder": 156
+       },
+       {
+        "dataElement": {
+         "id": "SAgeOSsOAG4"
+        },
+        "compulsory": false,
+        "sortOrder": 157
+       },
+       {
+        "dataElement": {
+         "id": "y6GgaoKEY26"
+        },
+        "compulsory": false,
+        "sortOrder": 158
+       },
+       {
+        "dataElement": {
+         "id": "OgKmsyIuCUy"
+        },
+        "compulsory": false,
+        "sortOrder": 159
+       },
+       {
+        "dataElement": {
+         "id": "WmmioKgykeo"
+        },
+        "compulsory": false,
+        "sortOrder": 160
+       }
+      ],
+      "programStageSections": [
+       {
+        "id": "OMG6KASKCWy"
+       },
+       {
+        "id": "muMM4aA2yiW"
+       },
+       {
+        "id": "eOIyoGM2kKI"
+       },
+       {
+        "id": "y6MKQKQm86I"
+       }
+      ],
+      "formType": "SECTION"
+     }
+    ],
+    "programStageSections": [
+     {
+      "id": "OMG6KASKCWy",
+      "name": "SYN Section 1",
+      "sortOrder": 1,
+      "programStage": {
+       "id": "uAA8kCeSiMM"
+      },
+      "dataElements": [
+       {
+        "id": "a2Gew4cGc4O"
+       },
+       {
+        "id": "OaYeICyIo4E"
+       },
+       {
+        "id": "aY4Usi648yG"
+       },
+       {
+        "id": "GgWO2mayaKa"
+       },
+       {
+        "id": "CEqe8SU6OAW"
+       },
+       {
+        "id": "yIeymiUkOKk"
+       },
+       {
+        "id": "qeIwqec8Eqg"
+       },
+       {
+        "id": "CaIUOUcaSqE"
+       },
+       {
+        "id": "aaMkMi0CM8a"
+       },
+       {
+        "id": "Su4cmSEw64U"
+       },
+       {
+        "id": "Wcm2emigIUa"
+       },
+       {
+        "id": "qY02MAsYWke"
+       },
+       {
+        "id": "qqY8UM2k8ak"
+       },
+       {
+        "id": "eCW8WSgSm0a"
+       },
+       {
+        "id": "muIuOocCOmS"
+       },
+       {
+        "id": "KCuO2yw28s6"
+       },
+       {
+        "id": "jagcaUE8ISO"
+       },
+       {
+        "id": "yseMm8qC8uI"
+       },
+       {
+        "id": "K0KEuMMqkm2"
+       },
+       {
+        "id": "aw8oOuwuWka"
+       },
+       {
+        "id": "qW8s6AgIKQm"
+       },
+       {
+        "id": "mGIoSGag6kq"
+       },
+       {
+        "id": "K8eUwckgUy0"
+       },
+       {
+        "id": "KsC2Cm8E8yc"
+       },
+       {
+        "id": "SUCKEUWWkME"
+       },
+       {
+        "id": "Oc40cuYMIAe"
+       },
+       {
+        "id": "uig8gSykaQy"
+       },
+       {
+        "id": "iGcIksoSYYU"
+       },
+       {
+        "id": "qi6eOeUsK2k"
+       },
+       {
+        "id": "uaCeGAcom2o"
+       },
+       {
+        "id": "KuImsU0QiEs"
+       },
+       {
+        "id": "K8SU00KQS6S"
+       },
+       {
+        "id": "ai4eysMAuqg"
+       },
+       {
+        "id": "S2C4M6KSyIU"
+       },
+       {
+        "id": "GMm6gO4skew"
+       },
+       {
+        "id": "i82qAOoCYCQ"
+       },
+       {
+        "id": "eomS6COuogw"
+       },
+       {
+        "id": "euW2wWmKEoo"
+       },
+       {
+        "id": "iYEUM2gEewO"
+       },
+       {
+        "id": "We8k0AHEaYM"
+       }
+      ]
+     },
+     {
+      "id": "muMM4aA2yiW",
+      "name": "SYN Section 2",
+      "sortOrder": 2,
+      "programStage": {
+       "id": "uAA8kCeSiMM"
+      },
+      "dataElements": [
+       {
+        "id": "mOUIa4gAog2"
+       },
+       {
+        "id": "WwQYuaY6U0s"
+       },
+       {
+        "id": "G88KSGGAoeA"
+       },
+       {
+        "id": "yYOQOAGGygc"
+       },
+       {
+        "id": "qowIQ8yiMeE"
+       },
+       {
+        "id": "eSsmW6qsO6c"
+       },
+       {
+        "id": "GGIY4kUusAA"
+       },
+       {
+        "id": "eOa8M8cSgk8"
+       },
+       {
+        "id": "mGQ4YCsY62A"
+       },
+       {
+        "id": "a8y6KCma2aC"
+       },
+       {
+        "id": "KcIwA4qcOcm"
+       },
+       {
+        "id": "qwyYmqKymea"
+       },
+       {
+        "id": "eam8eICSGKm"
+       },
+       {
+        "id": "GIgcMMCeQAG"
+       },
+       {
+        "id": "GgYi6MmgCKM"
+       },
+       {
+        "id": "Ko0yEoaeAqw"
+       },
+       {
+        "id": "m4ka2MMGqQq"
+       },
+       {
+        "id": "CWoKSWuUgQS"
+       },
+       {
+        "id": "yaeSMGOoKuq"
+       },
+       {
+        "id": "ukw8YiGyEM4"
+       },
+       {
+        "id": "yc0KOMUUmwk"
+       },
+       {
+        "id": "ygeaKisCYwC"
+       },
+       {
+        "id": "KegQ84WtU48"
+       },
+       {
+        "id": "yuYi4u40QYC"
+       },
+       {
+        "id": "iwewCQ202gE"
+       },
+       {
+        "id": "eeCseoWg000"
+       },
+       {
+        "id": "qyk6MWciywW"
+       },
+       {
+        "id": "mmWcqeUE48k"
+       },
+       {
+        "id": "i60SWKq4eWm"
+       },
+       {
+        "id": "CO42CEmCE4U"
+       },
+       {
+        "id": "uumyoE4sWiU"
+       },
+       {
+        "id": "yCWieK6aGOI"
+       },
+       {
+        "id": "ewkMykWSYum"
+       },
+       {
+        "id": "G24sI60Wk4c"
+       },
+       {
+        "id": "aaKieQ0wSGK"
+       },
+       {
+        "id": "Go8Y8eWsoae"
+       },
+       {
+        "id": "WEo6Ge00Ciq"
+       },
+       {
+        "id": "is0CKUKQGWY"
+       },
+       {
+        "id": "u6eoUsMIM2E"
+       },
+       {
+        "id": "umaygCMWc8o"
+       }
+      ]
+     },
+     {
+      "id": "eOIyoGM2kKI",
+      "name": "SYN Section 3",
+      "sortOrder": 3,
+      "programStage": {
+       "id": "uAA8kCeSiMM"
+      },
+      "dataElements": [
+       {
+        "id": "OAS0AS8i6Kc"
+       },
+       {
+        "id": "i2cC0U04gsQ"
+       },
+       {
+        "id": "au00guamIsW"
+       },
+       {
+        "id": "GsG2AmQ2COM"
+       },
+       {
+        "id": "OwCAoWAC8q4"
+       },
+       {
+        "id": "as6QgY2KYce"
+       },
+       {
+        "id": "mUOYEciU4ou"
+       },
+       {
+        "id": "SoAWTceAgem"
+       },
+       {
+        "id": "yaQGIqG6k8A"
+       },
+       {
+        "id": "yEM60Q0Eo2g"
+       },
+       {
+        "id": "uyeG4myyCkI"
+       },
+       {
+        "id": "GqsEqOmUg4W"
+       },
+       {
+        "id": "Gq6S2wwAYEA"
+       },
+       {
+        "id": "moAGcykgkii"
+       },
+       {
+        "id": "GieUmaCckkW"
+       },
+       {
+        "id": "mgQUQiGiqOA"
+       },
+       {
+        "id": "CMUk8EY4iuc"
+       },
+       {
+        "id": "KSkoUeWi2Gi"
+       },
+       {
+        "id": "uoGAIASwCEA"
+       },
+       {
+        "id": "eEK2cuQQe6C"
+       },
+       {
+        "id": "ymIuwgGIYYA"
+       },
+       {
+        "id": "K6ICEaYsao2"
+       },
+       {
+        "id": "WAskQMIWqGe"
+       },
+       {
+        "id": "eeOK40mcgUc"
+       },
+       {
+        "id": "WSI00GkyQCT"
+       },
+       {
+        "id": "a0MgMIYwqGe"
+       },
+       {
+        "id": "SKa6C8WI6qY"
+       },
+       {
+        "id": "KECoi8iiggQ"
+       },
+       {
+        "id": "yewUAk8CMSa"
+       },
+       {
+        "id": "iQMoEuiu4oa"
+       },
+       {
+        "id": "aoI8ISYswcq"
+       },
+       {
+        "id": "G4OAsAUqog6"
+       },
+       {
+        "id": "SCqkmUSYuMc"
+       },
+       {
+        "id": "W8MKcWs4kMW"
+       },
+       {
+        "id": "mA2QYyC4egy"
+       },
+       {
+        "id": "CKgYsOg0ckS"
+       },
+       {
+        "id": "WiUeSAmmIEO"
+       },
+       {
+        "id": "yK68oQIeQiy"
+       },
+       {
+        "id": "eQsQmmA6WEU"
+       },
+       {
+        "id": "KwgmYEIsico"
+       }
+      ]
+     },
+     {
+      "id": "y6MKQKQm86I",
+      "name": "SYN Section 4",
+      "sortOrder": 4,
+      "programStage": {
+       "id": "uAA8kCeSiMM"
+      },
+      "dataElements": [
+       {
+        "id": "SaYeCkYwOue"
+       },
+       {
+        "id": "iwAoq8iCCIQ"
+       },
+       {
+        "id": "u0wC2s8eAuE"
+       },
+       {
+        "id": "SE2KEM4euIw"
+       },
+       {
+        "id": "q4OEuaGGEI0"
+       },
+       {
+        "id": "mSiG2MIekSk"
+       },
+       {
+        "id": "aqEgOgEg48A"
+       },
+       {
+        "id": "uIUSiAy0WYq"
+       },
+       {
+        "id": "iEw2GWIyQkA"
+       },
+       {
+        "id": "CU2gmca00y4"
+       },
+       {
+        "id": "Gww8ka6y0QI"
+       },
+       {
+        "id": "GK6QWkKkKEI"
+       },
+       {
+        "id": "SsEiuGAGAGC"
+       },
+       {
+        "id": "ekwikmq8ymC"
+       },
+       {
+        "id": "iM6gAIW2im4"
+       },
+       {
+        "id": "K6Cg6cKcOQK"
+       },
+       {
+        "id": "WcuiEWK4KcC"
+       },
+       {
+        "id": "OIY0mykeMsY"
+       },
+       {
+        "id": "eoGU8m6U42K"
+       },
+       {
+        "id": "y8OeuMmuS6I"
+       },
+       {
+        "id": "qYoAq6A8Wya"
+       },
+       {
+        "id": "aSyO0IYksa6"
+       },
+       {
+        "id": "m2YgAcG8occ"
+       },
+       {
+        "id": "eqaUgag2QSY"
+       },
+       {
+        "id": "esWyoCgQ6w4"
+       },
+       {
+        "id": "SG48gQCXUEw"
+       },
+       {
+        "id": "KSYkACC86IU"
+       },
+       {
+        "id": "mmmmAIwUuCK"
+       },
+       {
+        "id": "OKEIMg6keSs"
+       },
+       {
+        "id": "iGYqEAmcqQO"
+       },
+       {
+        "id": "OKMkM6y6SoY"
+       },
+       {
+        "id": "WSKoOSwMyys"
+       },
+       {
+        "id": "eEo4WQaqi82"
+       },
+       {
+        "id": "O62WscWMOe0"
+       },
+       {
+        "id": "SoEi2uYmMcG"
+       },
+       {
+        "id": "miyY4Gk4kgE"
+       },
+       {
+        "id": "SAgeOSsOAG4"
+       },
+       {
+        "id": "y6GgaoKEY26"
+       },
+       {
+        "id": "OgKmsyIuCUy"
+       },
+       {
+        "id": "WmmioKgykeo"
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "description": "SYN: skip logic, 20 item indicators, 2 charts and a summary dashboard",
+   "creates": {
+    "programRuleVariables": [
+     {
+      "id": "uAG4YuIcS8y",
+      "name": "syn_item_1",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "programRuleVariableSourceType": "DATAELEMENT_CURRENT_EVENT",
+      "dataElement": {
+       "id": "a2Gew4cGc4O"
+      },
+      "useCodeForOptionSet": true
+     },
+     {
+      "id": "uWgAcoQk8O2",
+      "name": "syn_item_9",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "programRuleVariableSourceType": "DATAELEMENT_CURRENT_EVENT",
+      "dataElement": {
+       "id": "aaMkMi0CM8a"
+      },
+      "useCodeForOptionSet": true
+     },
+     {
+      "id": "GiiO8kAoSeQ",
+      "name": "syn_item_17",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "programRuleVariableSourceType": "DATAELEMENT_CURRENT_EVENT",
+      "dataElement": {
+       "id": "jagcaUE8ISO"
+      },
+      "useCodeForOptionSet": true
+     },
+     {
+      "id": "KiSMQmsGmu0",
+      "name": "syn_item_25",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "programRuleVariableSourceType": "DATAELEMENT_CURRENT_EVENT",
+      "dataElement": {
+       "id": "SUCKEUWWkME"
+      },
+      "useCodeForOptionSet": true
+     },
+     {
+      "id": "u8USSA8g0Q6",
+      "name": "syn_item_33",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "programRuleVariableSourceType": "DATAELEMENT_CURRENT_EVENT",
+      "dataElement": {
+       "id": "ai4eysMAuqg"
+      },
+      "useCodeForOptionSet": true
+     },
+     {
+      "id": "GWcsoscmIYA",
+      "name": "syn_item_41",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "programRuleVariableSourceType": "DATAELEMENT_CURRENT_EVENT",
+      "dataElement": {
+       "id": "mOUIa4gAog2"
+      },
+      "useCodeForOptionSet": true
+     },
+     {
+      "id": "W2SQGGucYaM",
+      "name": "syn_item_49",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "programRuleVariableSourceType": "DATAELEMENT_CURRENT_EVENT",
+      "dataElement": {
+       "id": "mGQ4YCsY62A"
+      },
+      "useCodeForOptionSet": true
+     },
+     {
+      "id": "aagIgIOg2Y4",
+      "name": "syn_item_57",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "programRuleVariableSourceType": "DATAELEMENT_CURRENT_EVENT",
+      "dataElement": {
+       "id": "m4ka2MMGqQq"
+      },
+      "useCodeForOptionSet": true
+     },
+     {
+      "id": "yKOYMgmUeCa",
+      "name": "syn_item_65",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "programRuleVariableSourceType": "DATAELEMENT_CURRENT_EVENT",
+      "dataElement": {
+       "id": "iwewCQ202gE"
+      },
+      "useCodeForOptionSet": true
+     },
+     {
+      "id": "a0o3Ay0qeIe",
+      "name": "syn_item_73",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "programRuleVariableSourceType": "DATAELEMENT_CURRENT_EVENT",
+      "dataElement": {
+       "id": "ewkMykWSYum"
+      },
+      "useCodeForOptionSet": true
+     },
+     {
+      "id": "GG6i4QOAmoQ",
+      "name": "syn_item_81",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "programRuleVariableSourceType": "DATAELEMENT_CURRENT_EVENT",
+      "dataElement": {
+       "id": "OAS0AS8i6Kc"
+      },
+      "useCodeForOptionSet": true
+     },
+     {
+      "id": "KyigK0U2Ao2",
+      "name": "syn_item_89",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "programRuleVariableSourceType": "DATAELEMENT_CURRENT_EVENT",
+      "dataElement": {
+       "id": "yaQGIqG6k8A"
+      },
+      "useCodeForOptionSet": true
+     },
+     {
+      "id": "S8sOGqgaGyW",
+      "name": "syn_item_97",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "programRuleVariableSourceType": "DATAELEMENT_CURRENT_EVENT",
+      "dataElement": {
+       "id": "CMUk8EY4iuc"
+      },
+      "useCodeForOptionSet": true
+     },
+     {
+      "id": "aYIWgWMEoGQ",
+      "name": "syn_item_105",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "programRuleVariableSourceType": "DATAELEMENT_CURRENT_EVENT",
+      "dataElement": {
+       "id": "WSI00GkyQCT"
+      },
+      "useCodeForOptionSet": true
+     },
+     {
+      "id": "Oyiq0eIa8yS",
+      "name": "syn_item_113",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "programRuleVariableSourceType": "DATAELEMENT_CURRENT_EVENT",
+      "dataElement": {
+       "id": "SCqkmUSYuMc"
+      },
+      "useCodeForOptionSet": true
+     },
+     {
+      "id": "KiMcGOogiOI",
+      "name": "syn_item_121",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "programRuleVariableSourceType": "DATAELEMENT_CURRENT_EVENT",
+      "dataElement": {
+       "id": "SaYeCkYwOue"
+      },
+      "useCodeForOptionSet": true
+     },
+     {
+      "id": "aScme6guiiG",
+      "name": "syn_item_129",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "programRuleVariableSourceType": "DATAELEMENT_CURRENT_EVENT",
+      "dataElement": {
+       "id": "iEw2GWIyQkA"
+      },
+      "useCodeForOptionSet": true
+     },
+     {
+      "id": "mkOysqk8gxM",
+      "name": "syn_item_137",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "programRuleVariableSourceType": "DATAELEMENT_CURRENT_EVENT",
+      "dataElement": {
+       "id": "WcuiEWK4KcC"
+      },
+      "useCodeForOptionSet": true
+     },
+     {
+      "id": "iiSYGsaaUa0",
+      "name": "syn_item_145",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "programRuleVariableSourceType": "DATAELEMENT_CURRENT_EVENT",
+      "dataElement": {
+       "id": "esWyoCgQ6w4"
+      },
+      "useCodeForOptionSet": true
+     },
+     {
+      "id": "yuKgQIeAIkM",
+      "name": "syn_item_153",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "programRuleVariableSourceType": "DATAELEMENT_CURRENT_EVENT",
+      "dataElement": {
+       "id": "eEo4WQaqi82"
+      },
+      "useCodeForOptionSet": true
+     }
+    ],
+    "programRules": [
+     {
+      "id": "OUIoEWmCo0W",
+      "name": "SYN hide item 2 when item 1 is 0",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "condition": "#{syn_item_1} == 0",
+      "programRuleActions": [
+       {
+        "id": "GeuEauGyMmK"
+       }
+      ]
+     },
+     {
+      "id": "Ggs60o8kk6q",
+      "name": "SYN hide item 10 when item 9 is 0",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "condition": "#{syn_item_9} == 0",
+      "programRuleActions": [
+       {
+        "id": "uWWqUCg2CKE"
+       }
+      ]
+     },
+     {
+      "id": "ema6c08ge4c",
+      "name": "SYN hide item 18 when item 17 is 0",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "condition": "#{syn_item_17} == 0",
+      "programRuleActions": [
+       {
+        "id": "GUciMY0aE0s"
+       }
+      ]
+     },
+     {
+      "id": "auUgiMQK6GA",
+      "name": "SYN hide item 26 when item 25 is 0",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "condition": "#{syn_item_25} == 0",
+      "programRuleActions": [
+       {
+        "id": "aIOMsikyyUi"
+       }
+      ]
+     },
+     {
+      "id": "S4c8myKssQc",
+      "name": "SYN hide item 34 when item 33 is 0",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "condition": "#{syn_item_33} == 0",
+      "programRuleActions": [
+       {
+        "id": "qi44i8SI00g"
+       }
+      ]
+     },
+     {
+      "id": "qKQAEMCAWyO",
+      "name": "SYN hide item 42 when item 41 is 0",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "condition": "#{syn_item_41} == 0",
+      "programRuleActions": [
+       {
+        "id": "G62akIEeY44"
+       }
+      ]
+     },
+     {
+      "id": "KussWyUO2SE",
+      "name": "SYN hide item 50 when item 49 is 0",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "condition": "#{syn_item_49} == 0",
+      "programRuleActions": [
+       {
+        "id": "qYow88CYu2k"
+       }
+      ]
+     },
+     {
+      "id": "SeSMEwSici6",
+      "name": "SYN hide item 58 when item 57 is 0",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "condition": "#{syn_item_57} == 0",
+      "programRuleActions": [
+       {
+        "id": "isCa8AMkq2S"
+       }
+      ]
+     },
+     {
+      "id": "ekiQKMi2CqO",
+      "name": "SYN hide item 66 when item 65 is 0",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "condition": "#{syn_item_65} == 0",
+      "programRuleActions": [
+       {
+        "id": "mM8iUS8Ewoe"
+       }
+      ]
+     },
+     {
+      "id": "qaek20luqsG",
+      "name": "SYN hide item 74 when item 73 is 0",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "condition": "#{syn_item_73} == 0",
+      "programRuleActions": [
+       {
+        "id": "mgIUYggocw4"
+       }
+      ]
+     },
+     {
+      "id": "OUE8Wm2wAAk",
+      "name": "SYN hide item 82 when item 81 is 0",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "condition": "#{syn_item_81} == 0",
+      "programRuleActions": [
+       {
+        "id": "Se4kWSSaQ2i"
+       }
+      ]
+     },
+     {
+      "id": "acm8mCuwSGs",
+      "name": "SYN hide item 90 when item 89 is 0",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "condition": "#{syn_item_89} == 0",
+      "programRuleActions": [
+       {
+        "id": "mM20uwmgAu8"
+       }
+      ]
+     },
+     {
+      "id": "W2sEgA4UQsG",
+      "name": "SYN hide item 98 when item 97 is 0",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "condition": "#{syn_item_97} == 0",
+      "programRuleActions": [
+       {
+        "id": "OqCC4ymsAAQ"
+       }
+      ]
+     },
+     {
+      "id": "GYw0W0IIAUw",
+      "name": "SYN hide item 106 when item 105 is 0",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "condition": "#{syn_item_105} == 0",
+      "programRuleActions": [
+       {
+        "id": "uQscIKMsoOk"
+       }
+      ]
+     },
+     {
+      "id": "SqYogQUKGAk",
+      "name": "SYN hide item 114 when item 113 is 0",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "condition": "#{syn_item_113} == 0",
+      "programRuleActions": [
+       {
+        "id": "ueeaeSsQYgA"
+       }
+      ]
+     },
+     {
+      "id": "GoaGCUwSiUs",
+      "name": "SYN hide item 122 when item 121 is 0",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "condition": "#{syn_item_121} == 0",
+      "programRuleActions": [
+       {
+        "id": "SWIs6EkQKKe"
+       }
+      ]
+     },
+     {
+      "id": "uM8mcgmaOiW",
+      "name": "SYN hide item 130 when item 129 is 0",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "condition": "#{syn_item_129} == 0",
+      "programRuleActions": [
+       {
+        "id": "yMoyYE4Uewm"
+       }
+      ]
+     },
+     {
+      "id": "miQCAMi68U6",
+      "name": "SYN hide item 138 when item 137 is 0",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "condition": "#{syn_item_137} == 0",
+      "programRuleActions": [
+       {
+        "id": "msk04gGUq2u"
+       }
+      ]
+     },
+     {
+      "id": "yw4sE28oSeG",
+      "name": "SYN hide item 146 when item 145 is 0",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "condition": "#{syn_item_145} == 0",
+      "programRuleActions": [
+       {
+        "id": "yIAiWKSmase"
+       }
+      ]
+     },
+     {
+      "id": "Oc4aaYQmqqW",
+      "name": "SYN hide item 154 when item 153 is 0",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "condition": "#{syn_item_153} == 0",
+      "programRuleActions": [
+       {
+        "id": "i2CWIIm2gso"
+       }
+      ]
+     }
+    ],
+    "programRuleActions": [
+     {
+      "id": "GeuEauGyMmK",
+      "programRuleActionType": "HIDEFIELD",
+      "dataElement": {
+       "id": "OaYeICyIo4E"
+      },
+      "programRule": {
+       "id": "OUIoEWmCo0W"
+      }
+     },
+     {
+      "id": "uWWqUCg2CKE",
+      "programRuleActionType": "HIDEFIELD",
+      "dataElement": {
+       "id": "Su4cmSEw64U"
+      },
+      "programRule": {
+       "id": "Ggs60o8kk6q"
+      }
+     },
+     {
+      "id": "GUciMY0aE0s",
+      "programRuleActionType": "HIDEFIELD",
+      "dataElement": {
+       "id": "yseMm8qC8uI"
+      },
+      "programRule": {
+       "id": "ema6c08ge4c"
+      }
+     },
+     {
+      "id": "aIOMsikyyUi",
+      "programRuleActionType": "HIDEFIELD",
+      "dataElement": {
+       "id": "Oc40cuYMIAe"
+      },
+      "programRule": {
+       "id": "auUgiMQK6GA"
+      }
+     },
+     {
+      "id": "qi44i8SI00g",
+      "programRuleActionType": "HIDEFIELD",
+      "dataElement": {
+       "id": "S2C4M6KSyIU"
+      },
+      "programRule": {
+       "id": "S4c8myKssQc"
+      }
+     },
+     {
+      "id": "G62akIEeY44",
+      "programRuleActionType": "HIDEFIELD",
+      "dataElement": {
+       "id": "WwQYuaY6U0s"
+      },
+      "programRule": {
+       "id": "qKQAEMCAWyO"
+      }
+     },
+     {
+      "id": "qYow88CYu2k",
+      "programRuleActionType": "HIDEFIELD",
+      "dataElement": {
+       "id": "a8y6KCma2aC"
+      },
+      "programRule": {
+       "id": "KussWyUO2SE"
+      }
+     },
+     {
+      "id": "isCa8AMkq2S",
+      "programRuleActionType": "HIDEFIELD",
+      "dataElement": {
+       "id": "CWoKSWuUgQS"
+      },
+      "programRule": {
+       "id": "SeSMEwSici6"
+      }
+     },
+     {
+      "id": "mM8iUS8Ewoe",
+      "programRuleActionType": "HIDEFIELD",
+      "dataElement": {
+       "id": "eeCseoWg000"
+      },
+      "programRule": {
+       "id": "ekiQKMi2CqO"
+      }
+     },
+     {
+      "id": "mgIUYggocw4",
+      "programRuleActionType": "HIDEFIELD",
+      "dataElement": {
+       "id": "G24sI60Wk4c"
+      },
+      "programRule": {
+       "id": "qaek20luqsG"
+      }
+     },
+     {
+      "id": "Se4kWSSaQ2i",
+      "programRuleActionType": "HIDEFIELD",
+      "dataElement": {
+       "id": "i2cC0U04gsQ"
+      },
+      "programRule": {
+       "id": "OUE8Wm2wAAk"
+      }
+     },
+     {
+      "id": "mM20uwmgAu8",
+      "programRuleActionType": "HIDEFIELD",
+      "dataElement": {
+       "id": "yEM60Q0Eo2g"
+      },
+      "programRule": {
+       "id": "acm8mCuwSGs"
+      }
+     },
+     {
+      "id": "OqCC4ymsAAQ",
+      "programRuleActionType": "HIDEFIELD",
+      "dataElement": {
+       "id": "KSkoUeWi2Gi"
+      },
+      "programRule": {
+       "id": "W2sEgA4UQsG"
+      }
+     },
+     {
+      "id": "uQscIKMsoOk",
+      "programRuleActionType": "HIDEFIELD",
+      "dataElement": {
+       "id": "a0MgMIYwqGe"
+      },
+      "programRule": {
+       "id": "GYw0W0IIAUw"
+      }
+     },
+     {
+      "id": "ueeaeSsQYgA",
+      "programRuleActionType": "HIDEFIELD",
+      "dataElement": {
+       "id": "W8MKcWs4kMW"
+      },
+      "programRule": {
+       "id": "SqYogQUKGAk"
+      }
+     },
+     {
+      "id": "SWIs6EkQKKe",
+      "programRuleActionType": "HIDEFIELD",
+      "dataElement": {
+       "id": "iwAoq8iCCIQ"
+      },
+      "programRule": {
+       "id": "GoaGCUwSiUs"
+      }
+     },
+     {
+      "id": "yMoyYE4Uewm",
+      "programRuleActionType": "HIDEFIELD",
+      "dataElement": {
+       "id": "CU2gmca00y4"
+      },
+      "programRule": {
+       "id": "uM8mcgmaOiW"
+      }
+     },
+     {
+      "id": "msk04gGUq2u",
+      "programRuleActionType": "HIDEFIELD",
+      "dataElement": {
+       "id": "OIY0mykeMsY"
+      },
+      "programRule": {
+       "id": "miQCAMi68U6"
+      }
+     },
+     {
+      "id": "yIAiWKSmase",
+      "programRuleActionType": "HIDEFIELD",
+      "dataElement": {
+       "id": "SG48gQCXUEw"
+      },
+      "programRule": {
+       "id": "yw4sE28oSeG"
+      }
+     },
+     {
+      "id": "i2CWIIm2gso",
+      "programRuleActionType": "HIDEFIELD",
+      "dataElement": {
+       "id": "O62WscWMOe0"
+      },
+      "programRule": {
+       "id": "Oc4aaYQmqqW"
+      }
+     }
+    ],
+    "programIndicators": [
+     {
+      "id": "WsU0ywogeM2",
+      "name": "SYN Item 1 functional (%)",
+      "shortName": "SYN Item 1 functional",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "analyticsType": "EVENT",
+      "expression": "d2:countIfValue(#{uAA8kCeSiMM.a2Gew4cGc4O}, 2) * 100",
+      "filter": "d2:hasValue(#{uAA8kCeSiMM.a2Gew4cGc4O})",
+      "analyticsPeriodBoundaries": [
+       {
+        "boundaryTarget": "EVENT_DATE",
+        "analyticsPeriodBoundaryType": "AFTER_START_OF_REPORTING_PERIOD"
+       },
+       {
+        "boundaryTarget": "EVENT_DATE",
+        "analyticsPeriodBoundaryType": "BEFORE_END_OF_REPORTING_PERIOD"
+       }
+      ],
+      "legendSets": [
+       {
+        "id": "GIAc4ScKOA6"
+       }
+      ],
+      "aggregationType": "AVERAGE"
+     },
+     {
+      "id": "ym2iKIq6Scy",
+      "name": "SYN Item 2 functional (%)",
+      "shortName": "SYN Item 2 functional",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "analyticsType": "EVENT",
+      "expression": "d2:countIfValue(#{uAA8kCeSiMM.OaYeICyIo4E}, 2) * 100",
+      "filter": "d2:hasValue(#{uAA8kCeSiMM.OaYeICyIo4E})",
+      "analyticsPeriodBoundaries": [
+       {
+        "boundaryTarget": "EVENT_DATE",
+        "analyticsPeriodBoundaryType": "AFTER_START_OF_REPORTING_PERIOD"
+       },
+       {
+        "boundaryTarget": "EVENT_DATE",
+        "analyticsPeriodBoundaryType": "BEFORE_END_OF_REPORTING_PERIOD"
+       }
+      ],
+      "legendSets": [
+       {
+        "id": "GIAc4ScKOA6"
+       }
+      ],
+      "aggregationType": "AVERAGE"
+     },
+     {
+      "id": "OU6AQCWkcsU",
+      "name": "SYN Item 3 functional (%)",
+      "shortName": "SYN Item 3 functional",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "analyticsType": "EVENT",
+      "expression": "d2:countIfValue(#{uAA8kCeSiMM.aY4Usi648yG}, 2) * 100",
+      "filter": "d2:hasValue(#{uAA8kCeSiMM.aY4Usi648yG})",
+      "analyticsPeriodBoundaries": [
+       {
+        "boundaryTarget": "EVENT_DATE",
+        "analyticsPeriodBoundaryType": "AFTER_START_OF_REPORTING_PERIOD"
+       },
+       {
+        "boundaryTarget": "EVENT_DATE",
+        "analyticsPeriodBoundaryType": "BEFORE_END_OF_REPORTING_PERIOD"
+       }
+      ],
+      "legendSets": [
+       {
+        "id": "GIAc4ScKOA6"
+       }
+      ],
+      "aggregationType": "AVERAGE"
+     },
+     {
+      "id": "iM0kW2cK2m0",
+      "name": "SYN Item 4 functional (%)",
+      "shortName": "SYN Item 4 functional",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "analyticsType": "EVENT",
+      "expression": "d2:countIfValue(#{uAA8kCeSiMM.GgWO2mayaKa}, 2) * 100",
+      "filter": "d2:hasValue(#{uAA8kCeSiMM.GgWO2mayaKa})",
+      "analyticsPeriodBoundaries": [
+       {
+        "boundaryTarget": "EVENT_DATE",
+        "analyticsPeriodBoundaryType": "AFTER_START_OF_REPORTING_PERIOD"
+       },
+       {
+        "boundaryTarget": "EVENT_DATE",
+        "analyticsPeriodBoundaryType": "BEFORE_END_OF_REPORTING_PERIOD"
+       }
+      ],
+      "legendSets": [
+       {
+        "id": "GIAc4ScKOA6"
+       }
+      ],
+      "aggregationType": "AVERAGE"
+     },
+     {
+      "id": "SYEO44OaSCG",
+      "name": "SYN Item 5 functional (%)",
+      "shortName": "SYN Item 5 functional",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "analyticsType": "EVENT",
+      "expression": "d2:countIfValue(#{uAA8kCeSiMM.CEqe8SU6OAW}, 2) * 100",
+      "filter": "d2:hasValue(#{uAA8kCeSiMM.CEqe8SU6OAW})",
+      "analyticsPeriodBoundaries": [
+       {
+        "boundaryTarget": "EVENT_DATE",
+        "analyticsPeriodBoundaryType": "AFTER_START_OF_REPORTING_PERIOD"
+       },
+       {
+        "boundaryTarget": "EVENT_DATE",
+        "analyticsPeriodBoundaryType": "BEFORE_END_OF_REPORTING_PERIOD"
+       }
+      ],
+      "legendSets": [
+       {
+        "id": "GIAc4ScKOA6"
+       }
+      ],
+      "aggregationType": "AVERAGE"
+     },
+     {
+      "id": "aS2AuiAm8Ae",
+      "name": "SYN Item 6 functional (%)",
+      "shortName": "SYN Item 6 functional",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "analyticsType": "EVENT",
+      "expression": "d2:countIfValue(#{uAA8kCeSiMM.yIeymiUkOKk}, 2) * 100",
+      "filter": "d2:hasValue(#{uAA8kCeSiMM.yIeymiUkOKk})",
+      "analyticsPeriodBoundaries": [
+       {
+        "boundaryTarget": "EVENT_DATE",
+        "analyticsPeriodBoundaryType": "AFTER_START_OF_REPORTING_PERIOD"
+       },
+       {
+        "boundaryTarget": "EVENT_DATE",
+        "analyticsPeriodBoundaryType": "BEFORE_END_OF_REPORTING_PERIOD"
+       }
+      ],
+      "legendSets": [
+       {
+        "id": "GIAc4ScKOA6"
+       }
+      ],
+      "aggregationType": "AVERAGE"
+     },
+     {
+      "id": "OM4kmwSKU0e",
+      "name": "SYN Item 7 functional (%)",
+      "shortName": "SYN Item 7 functional",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "analyticsType": "EVENT",
+      "expression": "d2:countIfValue(#{uAA8kCeSiMM.qeIwqec8Eqg}, 2) * 100",
+      "filter": "d2:hasValue(#{uAA8kCeSiMM.qeIwqec8Eqg})",
+      "analyticsPeriodBoundaries": [
+       {
+        "boundaryTarget": "EVENT_DATE",
+        "analyticsPeriodBoundaryType": "AFTER_START_OF_REPORTING_PERIOD"
+       },
+       {
+        "boundaryTarget": "EVENT_DATE",
+        "analyticsPeriodBoundaryType": "BEFORE_END_OF_REPORTING_PERIOD"
+       }
+      ],
+      "legendSets": [
+       {
+        "id": "GIAc4ScKOA6"
+       }
+      ],
+      "aggregationType": "AVERAGE"
+     },
+     {
+      "id": "Sg0WyyGKseO",
+      "name": "SYN Item 8 functional (%)",
+      "shortName": "SYN Item 8 functional",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "analyticsType": "EVENT",
+      "expression": "d2:countIfValue(#{uAA8kCeSiMM.CaIUOUcaSqE}, 2) * 100",
+      "filter": "d2:hasValue(#{uAA8kCeSiMM.CaIUOUcaSqE})",
+      "analyticsPeriodBoundaries": [
+       {
+        "boundaryTarget": "EVENT_DATE",
+        "analyticsPeriodBoundaryType": "AFTER_START_OF_REPORTING_PERIOD"
+       },
+       {
+        "boundaryTarget": "EVENT_DATE",
+        "analyticsPeriodBoundaryType": "BEFORE_END_OF_REPORTING_PERIOD"
+       }
+      ],
+      "legendSets": [
+       {
+        "id": "GIAc4ScKOA6"
+       }
+      ],
+      "aggregationType": "AVERAGE"
+     },
+     {
+      "id": "KkcucA4WW6C",
+      "name": "SYN Item 9 functional (%)",
+      "shortName": "SYN Item 9 functional",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "analyticsType": "EVENT",
+      "expression": "d2:countIfValue(#{uAA8kCeSiMM.aaMkMi0CM8a}, 2) * 100",
+      "filter": "d2:hasValue(#{uAA8kCeSiMM.aaMkMi0CM8a})",
+      "analyticsPeriodBoundaries": [
+       {
+        "boundaryTarget": "EVENT_DATE",
+        "analyticsPeriodBoundaryType": "AFTER_START_OF_REPORTING_PERIOD"
+       },
+       {
+        "boundaryTarget": "EVENT_DATE",
+        "analyticsPeriodBoundaryType": "BEFORE_END_OF_REPORTING_PERIOD"
+       }
+      ],
+      "legendSets": [
+       {
+        "id": "GIAc4ScKOA6"
+       }
+      ],
+      "aggregationType": "AVERAGE"
+     },
+     {
+      "id": "CgoKaYasUWo",
+      "name": "SYN Item 10 functional (%)",
+      "shortName": "SYN Item 10 functional",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "analyticsType": "EVENT",
+      "expression": "d2:countIfValue(#{uAA8kCeSiMM.Su4cmSEw64U}, 2) * 100",
+      "filter": "d2:hasValue(#{uAA8kCeSiMM.Su4cmSEw64U})",
+      "analyticsPeriodBoundaries": [
+       {
+        "boundaryTarget": "EVENT_DATE",
+        "analyticsPeriodBoundaryType": "AFTER_START_OF_REPORTING_PERIOD"
+       },
+       {
+        "boundaryTarget": "EVENT_DATE",
+        "analyticsPeriodBoundaryType": "BEFORE_END_OF_REPORTING_PERIOD"
+       }
+      ],
+      "legendSets": [
+       {
+        "id": "GIAc4ScKOA6"
+       }
+      ],
+      "aggregationType": "AVERAGE"
+     },
+     {
+      "id": "mmYUQS2yCeY",
+      "name": "SYN Item 11 functional (%)",
+      "shortName": "SYN Item 11 functional",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "analyticsType": "EVENT",
+      "expression": "d2:countIfValue(#{uAA8kCeSiMM.Wcm2emigIUa}, 2) * 100",
+      "filter": "d2:hasValue(#{uAA8kCeSiMM.Wcm2emigIUa})",
+      "analyticsPeriodBoundaries": [
+       {
+        "boundaryTarget": "EVENT_DATE",
+        "analyticsPeriodBoundaryType": "AFTER_START_OF_REPORTING_PERIOD"
+       },
+       {
+        "boundaryTarget": "EVENT_DATE",
+        "analyticsPeriodBoundaryType": "BEFORE_END_OF_REPORTING_PERIOD"
+       }
+      ],
+      "legendSets": [
+       {
+        "id": "GIAc4ScKOA6"
+       }
+      ],
+      "aggregationType": "AVERAGE"
+     },
+     {
+      "id": "ymCqU2YYUw6",
+      "name": "SYN Item 12 functional (%)",
+      "shortName": "SYN Item 12 functional",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "analyticsType": "EVENT",
+      "expression": "d2:countIfValue(#{uAA8kCeSiMM.qY02MAsYWke}, 2) * 100",
+      "filter": "d2:hasValue(#{uAA8kCeSiMM.qY02MAsYWke})",
+      "analyticsPeriodBoundaries": [
+       {
+        "boundaryTarget": "EVENT_DATE",
+        "analyticsPeriodBoundaryType": "AFTER_START_OF_REPORTING_PERIOD"
+       },
+       {
+        "boundaryTarget": "EVENT_DATE",
+        "analyticsPeriodBoundaryType": "BEFORE_END_OF_REPORTING_PERIOD"
+       }
+      ],
+      "legendSets": [
+       {
+        "id": "GIAc4ScKOA6"
+       }
+      ],
+      "aggregationType": "AVERAGE"
+     },
+     {
+      "id": "S8oWO4qAsmE",
+      "name": "SYN Item 13 functional (%)",
+      "shortName": "SYN Item 13 functional",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "analyticsType": "EVENT",
+      "expression": "d2:countIfValue(#{uAA8kCeSiMM.qqY8UM2k8ak}, 2) * 100",
+      "filter": "d2:hasValue(#{uAA8kCeSiMM.qqY8UM2k8ak})",
+      "analyticsPeriodBoundaries": [
+       {
+        "boundaryTarget": "EVENT_DATE",
+        "analyticsPeriodBoundaryType": "AFTER_START_OF_REPORTING_PERIOD"
+       },
+       {
+        "boundaryTarget": "EVENT_DATE",
+        "analyticsPeriodBoundaryType": "BEFORE_END_OF_REPORTING_PERIOD"
+       }
+      ],
+      "legendSets": [
+       {
+        "id": "GIAc4ScKOA6"
+       }
+      ],
+      "aggregationType": "AVERAGE"
+     },
+     {
+      "id": "mwQAuWGMysw",
+      "name": "SYN Item 14 functional (%)",
+      "shortName": "SYN Item 14 functional",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "analyticsType": "EVENT",
+      "expression": "d2:countIfValue(#{uAA8kCeSiMM.eCW8WSgSm0a}, 2) * 100",
+      "filter": "d2:hasValue(#{uAA8kCeSiMM.eCW8WSgSm0a})",
+      "analyticsPeriodBoundaries": [
+       {
+        "boundaryTarget": "EVENT_DATE",
+        "analyticsPeriodBoundaryType": "AFTER_START_OF_REPORTING_PERIOD"
+       },
+       {
+        "boundaryTarget": "EVENT_DATE",
+        "analyticsPeriodBoundaryType": "BEFORE_END_OF_REPORTING_PERIOD"
+       }
+      ],
+      "legendSets": [
+       {
+        "id": "GIAc4ScKOA6"
+       }
+      ],
+      "aggregationType": "AVERAGE"
+     },
+     {
+      "id": "mOkyyuSaKMy",
+      "name": "SYN Item 15 functional (%)",
+      "shortName": "SYN Item 15 functional",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "analyticsType": "EVENT",
+      "expression": "d2:countIfValue(#{uAA8kCeSiMM.muIuOocCOmS}, 2) * 100",
+      "filter": "d2:hasValue(#{uAA8kCeSiMM.muIuOocCOmS})",
+      "analyticsPeriodBoundaries": [
+       {
+        "boundaryTarget": "EVENT_DATE",
+        "analyticsPeriodBoundaryType": "AFTER_START_OF_REPORTING_PERIOD"
+       },
+       {
+        "boundaryTarget": "EVENT_DATE",
+        "analyticsPeriodBoundaryType": "BEFORE_END_OF_REPORTING_PERIOD"
+       }
+      ],
+      "legendSets": [
+       {
+        "id": "GIAc4ScKOA6"
+       }
+      ],
+      "aggregationType": "AVERAGE"
+     },
+     {
+      "id": "aowIGguYcQ6",
+      "name": "SYN Item 16 functional (%)",
+      "shortName": "SYN Item 16 functional",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "analyticsType": "EVENT",
+      "expression": "d2:countIfValue(#{uAA8kCeSiMM.KCuO2yw28s6}, 2) * 100",
+      "filter": "d2:hasValue(#{uAA8kCeSiMM.KCuO2yw28s6})",
+      "analyticsPeriodBoundaries": [
+       {
+        "boundaryTarget": "EVENT_DATE",
+        "analyticsPeriodBoundaryType": "AFTER_START_OF_REPORTING_PERIOD"
+       },
+       {
+        "boundaryTarget": "EVENT_DATE",
+        "analyticsPeriodBoundaryType": "BEFORE_END_OF_REPORTING_PERIOD"
+       }
+      ],
+      "legendSets": [
+       {
+        "id": "GIAc4ScKOA6"
+       }
+      ],
+      "aggregationType": "AVERAGE"
+     },
+     {
+      "id": "GSwwQs40OWo",
+      "name": "SYN Item 17 functional (%)",
+      "shortName": "SYN Item 17 functional",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "analyticsType": "EVENT",
+      "expression": "d2:countIfValue(#{uAA8kCeSiMM.jagcaUE8ISO}, 2) * 100",
+      "filter": "d2:hasValue(#{uAA8kCeSiMM.jagcaUE8ISO})",
+      "analyticsPeriodBoundaries": [
+       {
+        "boundaryTarget": "EVENT_DATE",
+        "analyticsPeriodBoundaryType": "AFTER_START_OF_REPORTING_PERIOD"
+       },
+       {
+        "boundaryTarget": "EVENT_DATE",
+        "analyticsPeriodBoundaryType": "BEFORE_END_OF_REPORTING_PERIOD"
+       }
+      ],
+      "legendSets": [
+       {
+        "id": "GIAc4ScKOA6"
+       }
+      ],
+      "aggregationType": "AVERAGE"
+     },
+     {
+      "id": "WYQ4gYQIigi",
+      "name": "SYN Item 18 functional (%)",
+      "shortName": "SYN Item 18 functional",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "analyticsType": "EVENT",
+      "expression": "d2:countIfValue(#{uAA8kCeSiMM.yseMm8qC8uI}, 2) * 100",
+      "filter": "d2:hasValue(#{uAA8kCeSiMM.yseMm8qC8uI})",
+      "analyticsPeriodBoundaries": [
+       {
+        "boundaryTarget": "EVENT_DATE",
+        "analyticsPeriodBoundaryType": "AFTER_START_OF_REPORTING_PERIOD"
+       },
+       {
+        "boundaryTarget": "EVENT_DATE",
+        "analyticsPeriodBoundaryType": "BEFORE_END_OF_REPORTING_PERIOD"
+       }
+      ],
+      "legendSets": [
+       {
+        "id": "GIAc4ScKOA6"
+       }
+      ],
+      "aggregationType": "AVERAGE"
+     },
+     {
+      "id": "ukO82QSKwmw",
+      "name": "SYN Item 19 functional (%)",
+      "shortName": "SYN Item 19 functional",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "analyticsType": "EVENT",
+      "expression": "d2:countIfValue(#{uAA8kCeSiMM.K0KEuMMqkm2}, 2) * 100",
+      "filter": "d2:hasValue(#{uAA8kCeSiMM.K0KEuMMqkm2})",
+      "analyticsPeriodBoundaries": [
+       {
+        "boundaryTarget": "EVENT_DATE",
+        "analyticsPeriodBoundaryType": "AFTER_START_OF_REPORTING_PERIOD"
+       },
+       {
+        "boundaryTarget": "EVENT_DATE",
+        "analyticsPeriodBoundaryType": "BEFORE_END_OF_REPORTING_PERIOD"
+       }
+      ],
+      "legendSets": [
+       {
+        "id": "GIAc4ScKOA6"
+       }
+      ],
+      "aggregationType": "AVERAGE"
+     },
+     {
+      "id": "eOc0wMk0giG",
+      "name": "SYN Item 20 functional (%)",
+      "shortName": "SYN Item 20 functional",
+      "program": {
+       "id": "OK68C6mMCEu"
+      },
+      "analyticsType": "EVENT",
+      "expression": "d2:countIfValue(#{uAA8kCeSiMM.aw8oOuwuWka}, 2) * 100",
+      "filter": "d2:hasValue(#{uAA8kCeSiMM.aw8oOuwuWka})",
+      "analyticsPeriodBoundaries": [
+       {
+        "boundaryTarget": "EVENT_DATE",
+        "analyticsPeriodBoundaryType": "AFTER_START_OF_REPORTING_PERIOD"
+       },
+       {
+        "boundaryTarget": "EVENT_DATE",
+        "analyticsPeriodBoundaryType": "BEFORE_END_OF_REPORTING_PERIOD"
+       }
+      ],
+      "legendSets": [
+       {
+        "id": "GIAc4ScKOA6"
+       }
+      ],
+      "aggregationType": "AVERAGE"
+     }
+    ],
+    "visualizations": [
+     {
+      "id": "qamaCAm00M2",
+      "name": "SYN Functional items 1-10",
+      "type": "BAR",
+      "relativePeriods": {
+       "last12Months": true
+      },
+      "dataDimensionItems": [
+       {
+        "dataDimensionItemType": "PROGRAM_INDICATOR",
+        "programIndicator": {
+         "id": "WsU0ywogeM2"
+        }
+       },
+       {
+        "dataDimensionItemType": "PROGRAM_INDICATOR",
+        "programIndicator": {
+         "id": "ym2iKIq6Scy"
+        }
+       },
+       {
+        "dataDimensionItemType": "PROGRAM_INDICATOR",
+        "programIndicator": {
+         "id": "OU6AQCWkcsU"
+        }
+       },
+       {
+        "dataDimensionItemType": "PROGRAM_INDICATOR",
+        "programIndicator": {
+         "id": "iM0kW2cK2m0"
+        }
+       },
+       {
+        "dataDimensionItemType": "PROGRAM_INDICATOR",
+        "programIndicator": {
+         "id": "SYEO44OaSCG"
+        }
+       },
+       {
+        "dataDimensionItemType": "PROGRAM_INDICATOR",
+        "programIndicator": {
+         "id": "aS2AuiAm8Ae"
+        }
+       },
+       {
+        "dataDimensionItemType": "PROGRAM_INDICATOR",
+        "programIndicator": {
+         "id": "OM4kmwSKU0e"
+        }
+       },
+       {
+        "dataDimensionItemType": "PROGRAM_INDICATOR",
+        "programIndicator": {
+         "id": "Sg0WyyGKseO"
+        }
+       },
+       {
+        "dataDimensionItemType": "PROGRAM_INDICATOR",
+        "programIndicator": {
+         "id": "KkcucA4WW6C"
+        }
+       },
+       {
+        "dataDimensionItemType": "PROGRAM_INDICATOR",
+        "programIndicator": {
+         "id": "CgoKaYasUWo"
+        }
+       }
+      ],
+      "columns": [
+       {
+        "dimension": "dx"
+       }
+      ],
+      "rows": [
+       {
+        "dimension": "ou"
+       }
+      ],
+      "filters": [
+       {
+        "dimension": "pe"
+       }
+      ]
+     },
+     {
+      "id": "O6EcaouQogW",
+      "name": "SYN Functional items 11-20",
+      "type": "BAR",
+      "relativePeriods": {
+       "last12Months": true
+      },
+      "dataDimensionItems": [
+       {
+        "dataDimensionItemType": "PROGRAM_INDICATOR",
+        "programIndicator": {
+         "id": "mmYUQS2yCeY"
+        }
+       },
+       {
+        "dataDimensionItemType": "PROGRAM_INDICATOR",
+        "programIndicator": {
+         "id": "ymCqU2YYUw6"
+        }
+       },
+       {
+        "dataDimensionItemType": "PROGRAM_INDICATOR",
+        "programIndicator": {
+         "id": "S8oWO4qAsmE"
+        }
+       },
+       {
+        "dataDimensionItemType": "PROGRAM_INDICATOR",
+        "programIndicator": {
+         "id": "mwQAuWGMysw"
+        }
+       },
+       {
+        "dataDimensionItemType": "PROGRAM_INDICATOR",
+        "programIndicator": {
+         "id": "mOkyyuSaKMy"
+        }
+       },
+       {
+        "dataDimensionItemType": "PROGRAM_INDICATOR",
+        "programIndicator": {
+         "id": "aowIGguYcQ6"
+        }
+       },
+       {
+        "dataDimensionItemType": "PROGRAM_INDICATOR",
+        "programIndicator": {
+         "id": "GSwwQs40OWo"
+        }
+       },
+       {
+        "dataDimensionItemType": "PROGRAM_INDICATOR",
+        "programIndicator": {
+         "id": "WYQ4gYQIigi"
+        }
+       },
+       {
+        "dataDimensionItemType": "PROGRAM_INDICATOR",
+        "programIndicator": {
+         "id": "ukO82QSKwmw"
+        }
+       },
+       {
+        "dataDimensionItemType": "PROGRAM_INDICATOR",
+        "programIndicator": {
+         "id": "eOc0wMk0giG"
+        }
+       }
+      ],
+      "columns": [
+       {
+        "dimension": "dx"
+       }
+      ],
+      "rows": [
+       {
+        "dimension": "ou"
+       }
+      ],
+      "filters": [
+       {
+        "dimension": "pe"
+       }
+      ]
+     }
+    ],
+    "dashboards": [
+     {
+      "id": "SkO86mm8cOq",
+      "name": "SYN Facility assessment summary",
+      "dashboardItems": [
+       {
+        "id": "eiwASAUg2ge",
+        "type": "VISUALIZATION",
+        "visualization": {
+         "id": "qamaCAm00M2"
+        },
+        "x": 0,
+        "y": 0,
+        "width": 30,
+        "height": 20
+       },
+       {
+        "id": "eY2EKSYu8mg",
+        "type": "VISUALIZATION",
+        "visualization": {
+         "id": "O6EcaouQogW"
+        },
+        "x": 30,
+        "y": 0,
+        "width": 30,
+        "height": 20
+       }
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

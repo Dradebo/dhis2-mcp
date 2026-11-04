@@ -6,8 +6,17 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
   CompleteRequestSchema,
+  ListPromptsRequestSchema,
+  GetPromptRequestSchema,
+  ListResourcesRequestSchema,
+  ReadResourceRequestSchema,
   Tool,
 } from '@modelcontextprotocol/sdk/types.js';
+import fs from 'node:fs';
+import { PackageEngine, PackageError, describePackage, checkPackageOffline, PACKAGE_LIMITS } from './package-engine.js';
+import { summariseFindings } from './design-check.js';
+import { generateUid } from './security/plans.js';
+import { GUIDES, PROMPTS, getPrompt } from './workflow.js';
 import { DHIS2Client } from './dhis2-client.js';
 import { createDevelopmentTools, createAPITools } from './tools/index.js';
 import { auditLogger } from './audit-logger.js';
@@ -97,6 +106,8 @@ const server = new Server(
     capabilities: {
       tools: {},
       completions: {},
+      prompts: {},
+      resources: {},
     },
   }
 );
@@ -152,6 +163,49 @@ const changeEngine = new ChangeEngine({
   identity: connectionIdentity,
   approve: requestHostApproval,
   ttlSeconds: planTtl,
+});
+
+const packageEngine = new PackageEngine({
+  gateway: () => (connectionVerified ? dhis2Client : null),
+  identity: connectionIdentity,
+  approve: requestHostApproval,
+  baseDir: () => storeDir(),
+});
+
+/** Package arguments: inline, or a local .json file for large packages. */
+function packageArgs(a: Record<string, unknown>): Record<string, unknown> {
+  if (typeof a.packageFile !== 'string') return a;
+  const file = a.packageFile;
+  if (!/\.json$/i.test(file)) throw new PackageError('invalid_package', 'packageFile must be a .json file.');
+  let stat: fs.Stats;
+  try { stat = fs.statSync(file); } catch { throw new PackageError('invalid_package', 'packageFile was not found.'); }
+  if (!stat.isFile() || stat.size > PACKAGE_LIMITS.maxBytes) throw new PackageError('invalid_package', `packageFile must be a file of at most ${PACKAGE_LIMITS.maxBytes / 1048576} MB.`);
+  let body: Record<string, unknown>;
+  try { body = JSON.parse(fs.readFileSync(file, 'utf8')); } catch { throw new PackageError('invalid_package', 'packageFile is not valid JSON.'); }
+  if (!body || typeof body !== 'object' || Array.isArray(body)) throw new PackageError('invalid_package', 'packageFile must hold an object {description?, creates, updates}.');
+  return { description: a.description ?? body.description, creates: body.creates, updates: body.updates };
+}
+
+function offlineText(r: ReturnType<typeof checkPackageOffline>): string {
+  const counts = Object.entries(r.counts).map(([t, c]) => `${t}: ${[c.create ? `${c.create} new` : '', c.update ? `${c.update} updated` : ''].filter(Boolean).join(', ')}`).join('; ');
+  return [
+    r.ok ? '✅ Offline checks passed.' : '❌ Offline checks found problems.',
+    counts ? `Objects: ${counts}` : '',
+    ...(r.problems.length ? ['Structural problems:', ...r.problems.slice(0, 60).map(p => `  - ${p}`)] : []),
+    summariseFindings(r.findings),
+    r.externalRefs.length ? `References to objects outside the package (must already exist on the server): ${r.externalRefs.length}${r.externalRefs.length <= 40 ? ` (${r.externalRefs.join(', ')})` : ''}` : 'No references outside the package.',
+  ].filter(Boolean).join('\n');
+}
+
+server.setRequestHandler(ListPromptsRequestSchema, async () => ({ prompts: PROMPTS }));
+server.setRequestHandler(GetPromptRequestSchema, async (request) => getPrompt(request.params.name, request.params.arguments as Record<string, string> | undefined));
+server.setRequestHandler(ListResourcesRequestSchema, async () => ({
+  resources: GUIDES.map(g => ({ uri: g.uri, name: g.name, description: g.description, mimeType: 'text/markdown' })),
+}));
+server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+  const g = GUIDES.find(x => x.uri === request.params.uri);
+  if (!g) throw new Error(`Unknown resource: ${request.params.uri}`);
+  return { contents: [{ uri: g.uri, mimeType: 'text/markdown', text: g.text }] };
 });
 
 /**
@@ -416,6 +470,89 @@ Local MCP policy is not DHIS2 authorisation; the server still enforces its own s
     // At this point, if we reach here for API tools, dhis2Client must be initialized
     // because the earlier check would have returned an error
     switch (name) {
+      case 'dhis2_generate_uids': {
+        const n = Math.min(1000, Math.max(1, Math.floor(Number((args as any)?.count) || 0)));
+        return { content: [{ type: 'text', text: Array.from({ length: n }, generateUid).join('\n') }] };
+      }
+
+      case 'dhis2_check_design': {
+        try {
+          const a = packageArgs((args ?? {}) as Record<string, unknown>);
+          const r = checkPackageOffline({ ...a, description: typeof a.description === 'string' && a.description.trim() ? a.description : 'design check' });
+          return { content: [{ type: 'text', text: offlineText(r) }], isError: !r.ok };
+        } catch (e) {
+          if (!(e instanceof PackageError)) throw e;
+          return { content: [{ type: 'text', text: `⛔ ${e.code}: ${e.message}` }], isError: true };
+        }
+      }
+
+      case 'dhis2_plan_package':
+      case 'dhis2_apply_package':
+      case 'dhis2_get_package':
+      case 'dhis2_cancel_package': {
+        const a = (args ?? {}) as Record<string, unknown>;
+        try {
+          if (name === 'dhis2_plan_package') {
+            const { pkg, offline } = await packageEngine.plan(packageArgs(a));
+            if (!pkg) {
+              auditLogger.log({ toolName: name, parameters: {}, outcome: 'error', error: 'offline_checks' });
+              return { content: [{ type: 'text', text: `${offlineText(offline)}\n\nNothing was sent to DHIS2. Fix the errors and plan again.` }], isError: true };
+            }
+            auditLogger.log({ toolName: name, parameters: { packageId: pkg.id, state: pkg.state }, outcome: pkg.state === 'validated' ? 'success' : 'error',
+              dhis2Instance: dhis2Client?.baseURL, userId: currentUser?.username, executionTime: Date.now() - startTime });
+            return { content: [{ type: 'text', text: describePackage(pkg) }], isError: pkg.state !== 'validated' };
+          }
+          const pkg = name === 'dhis2_apply_package' ? await packageEngine.apply(a.packageId)
+            : name === 'dhis2_get_package' ? await packageEngine.get(a.packageId)
+            : packageEngine.cancel(a.packageId);
+          auditLogger.log({ toolName: name, parameters: { packageId: pkg.id, state: pkg.state },
+            outcome: ['verified', 'validated', 'cancelled'].includes(pkg.state) ? 'success' : 'error',
+            dhis2Instance: dhis2Client?.baseURL, userId: currentUser?.username, executionTime: Date.now() - startTime,
+            ...(name === 'dhis2_apply_package' ? { resourcesAffected: pkg.targets.slice(0, 200).map(t => `${t.objectType}/${t.id}`) } : {}) });
+          return { content: [{ type: 'text', text: describePackage(pkg) }],
+            isError: ['invalid', 'failed', 'stale', 'unknown-outcome', 'applied-unverified', 'partial'].includes(pkg.state) };
+        } catch (e) {
+          if (!(e instanceof PackageError)) throw e;
+          auditLogger.log({ toolName: name, parameters: { packageId: typeof a.packageId === 'string' ? a.packageId : undefined }, outcome: 'error', error: e.code });
+          return { content: [{ type: 'text', text: `⛔ ${e.code}: ${e.message}` }], isError: true };
+        }
+      }
+
+      case 'dhis2_get_schema': {
+        const t = String((args as any)?.objectType ?? '');
+        const schema = await dhis2Client!.getTypeSchema(t);
+        if (!schema) return { content: [{ type: 'text', text: `No schema named "${t.slice(0, 40)}" on this server.` }], isError: true };
+        const props = Array.isArray((schema as any).properties) ? (schema as any).properties : [];
+        const lines = props.filter((p: any) => p.writable || p.required).sort((x: any, y: any) => Number(y.required) - Number(x.required) || String(x.fieldName ?? x.name).localeCompare(String(y.fieldName ?? y.name)))
+          .map((p: any) => `- ${p.fieldName ?? p.name}: ${p.propertyType}${p.collection ? `[${p.itemPropertyType ?? ''}]` : ''}${p.required ? ' REQUIRED' : ''}${p.owner === false && (p.collection || p.propertyType === 'REFERENCE') ? ' (not owned: set on the other side)' : ''}${p.unique ? ' unique' : ''}${p.length && p.length < 100000 ? ` max ${p.length}` : ''}${Array.isArray(p.constants) && p.constants.length ? ` one of ${p.constants.join('|')}` : ''}`);
+        return { content: [{ type: 'text', text: [`Schema ${(schema as any).plural ?? t} (${(schema as any).displayName ?? ''})`, ...lines].join('\n') }] };
+      }
+
+      case 'dhis2_find_reusable': {
+        const t = String((args as any)?.objectType ?? '');
+        const q = String((args as any)?.query ?? '').replace(/[^\p{L}\p{N} _-]/gu, ' ').trim().slice(0, 80);
+        if (!q) return { content: [{ type: 'text', text: 'query must contain words to match.' }], isError: true };
+        const extra: Record<string, string[]> = {
+          dataElements: ['valueType', 'domainType', 'aggregationType', 'optionSet[id,name]', 'categoryCombo[id,name]'],
+          trackedEntityAttributes: ['valueType', 'optionSet[id,name]', 'unique'],
+          optionSets: ['valueType', 'options[code,name]'], categoryCombos: ['dataDimensionType', 'categories[id,name]'],
+          indicators: ['numerator', 'denominator', 'indicatorType[id,name]'], programIndicators: ['expression', 'filter', 'program[id,name]', 'analyticsType'],
+          legendSets: ['legends[name,startValue,endValue]'], programs: ['programType'],
+        };
+        const rows = await dhis2Client!.findReusable(t, q, extra[t] ?? []);
+        return { content: [{ type: 'text', text: rows.length ? `${rows.length} candidate(s) in ${t} for "${q}":\n${JSON.stringify(rows, null, 1).slice(0, 12000)}` : `No ${t} match "${q}".` }] };
+      }
+
+      case 'dhis2_validate_expression': {
+        const kind = (args as any)?.kind;
+        const expr = String((args as any)?.expression ?? '');
+        if (!['programIndicatorExpression', 'programIndicatorFilter', 'indicator', 'validationRule'].includes(kind) || !expr || expr.length > 20000) {
+          return { content: [{ type: 'text', text: 'kind must be one of programIndicatorExpression, programIndicatorFilter, indicator, validationRule, and expression must be 1-20000 characters.' }], isError: true };
+        }
+        const r = await dhis2Client!.describeExpression(kind, expr);
+        return { content: [{ type: 'text', text: `${r.status}${r.message ? `: ${r.message}` : ''}${r.description ? `\nReads as: ${r.description}` : ''}` }], isError: r.status !== 'OK' };
+      }
+
       case 'dhis2_plan_metadata_change':
       case 'dhis2_apply_plan':
       case 'dhis2_get_plan':

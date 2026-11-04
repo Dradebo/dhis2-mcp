@@ -64,7 +64,14 @@ export function createDevelopmentTools(): Tool[] {
     'dhis2_prepare_transfer',
     'dhis2_approve_transfer',
     'dhis2_verify_transfer',
-    'dhis2_get_transfer'
+    'dhis2_get_transfer',
+    'dhis2_plan_package',
+    'dhis2_apply_package',
+    'dhis2_get_package',
+    'dhis2_cancel_package',
+    'dhis2_get_schema',
+    'dhis2_find_reusable',
+    'dhis2_validate_expression'
   ];
   
   return allTools.filter(tool => !apiOnlyTools.includes(tool.name));
@@ -133,7 +140,14 @@ export function createAPITools(): Tool[] {
     'dhis2_prepare_transfer',
     'dhis2_approve_transfer',
     'dhis2_verify_transfer',
-    'dhis2_get_transfer'
+    'dhis2_get_transfer',
+    'dhis2_plan_package',
+    'dhis2_apply_package',
+    'dhis2_get_package',
+    'dhis2_cancel_package',
+    'dhis2_get_schema',
+    'dhis2_find_reusable',
+    'dhis2_validate_expression'
   ];
   
   return allTools.filter(tool => apiOnlyTools.includes(tool.name));
@@ -250,6 +264,89 @@ export function createDHIS2Tools(): Tool[] {
       name: 'dhis2_get_transfer',
       description: 'Show a transfer\'s state, counts and file locations.',
       inputSchema: { type: 'object', properties: { transferId: { type: 'string' } }, required: ['transferId'], additionalProperties: false },
+      annotations: { readOnlyHint: true },
+    },
+    {
+      name: 'dhis2_generate_uids',
+      description: 'Generate valid DHIS2 UIDs locally (no server needed), for ids that objects in one package use to reference each other.',
+      inputSchema: { type: 'object', properties: { count: { type: 'number', minimum: 1, maximum: 1000 } }, required: ['count'], additionalProperties: false },
+      annotations: { readOnlyHint: true },
+    },
+    {
+      name: 'dhis2_check_design',
+      description: 'Check a draft metadata package offline (no server needed): structure, limits, references, and DHIS2 design rules that otherwise fail silently (option codes vs value types, unsectioned compulsory fields, rule targets, program-indicator boundaries, dashboard item sizes, name lengths and uniqueness, and more). Run until there are no errors before dhis2_plan_package.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          description: { type: 'string', description: 'What the package builds and why (shown to the person).' },
+          creates: { type: 'object', description: 'New objects by collection, e.g. {"optionSets":[...],"dataElements":[...],"programs":[...]}. Every object needs an id (dhis2_generate_uids) so objects can reference each other.' },
+          updates: { type: 'array', description: 'Changes to existing objects: [{objectType, id, set:{field: value}}]. Unchanged fields are preserved.', items: { type: 'object' } },
+          packageFile: { type: 'string', description: 'Alternative to creates/updates for large packages: path to a local .json file holding {description?, creates, updates}.' },
+        },
+        additionalProperties: false,
+      },
+      annotations: { readOnlyHint: true },
+    },
+    {
+      name: 'dhis2_plan_package',
+      description: 'Plan a change package on the development server: up to 2000 new or updated objects applied together. Runs the design checks, confirms every referenced object exists, takes before-images, runs a DHIS2 dry run, and writes a review file listing every object and field. Nothing is changed. Then show the person the review file and call dhis2_apply_package.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          description: { type: 'string', description: 'What the package builds and why (shown to the person).' },
+          creates: { type: 'object', description: 'New objects by collection, e.g. {"optionSets":[...],"dataElements":[...],"programs":[...]}. Every object needs an id (dhis2_generate_uids) so objects can reference each other.' },
+          updates: { type: 'array', description: 'Changes to existing objects: [{objectType, id, set:{field: value}}]. Unchanged fields are preserved.', items: { type: 'object' } },
+          packageFile: { type: 'string', description: 'Alternative to creates/updates for large packages: path to a local .json file holding {description?, creates, updates}.' },
+        },
+        additionalProperties: false,
+      },
+    },
+    {
+      name: 'dhis2_apply_package',
+      description: 'Apply a planned package. Re-checks the package file and every object, asks the person to approve in their MCP host, re-checks again, imports everything in one all-or-nothing request, and reads every object back.',
+      inputSchema: { type: 'object', properties: { packageId: { type: 'string' } }, required: ['packageId'], additionalProperties: false },
+    },
+    {
+      name: 'dhis2_get_package',
+      description: 'Show a package\'s state, counts, read-back results and file locations. An interrupted apply is reconciled by reading (never re-sent).',
+      inputSchema: { type: 'object', properties: { packageId: { type: 'string' } }, required: ['packageId'], additionalProperties: false },
+      annotations: { readOnlyHint: true },
+    },
+    {
+      name: 'dhis2_cancel_package',
+      description: 'Cancel a planned package that has not been applied.',
+      inputSchema: { type: 'object', properties: { packageId: { type: 'string' } }, required: ['packageId'], additionalProperties: false },
+    },
+    {
+      name: 'dhis2_get_schema',
+      description: 'Properties of one metadata type on this server: required, writable, owned collections, enum values and length limits. Use before building objects of that type.',
+      inputSchema: { type: 'object', properties: { objectType: { type: 'string', description: 'Plural collection name, e.g. programRuleActions' } }, required: ['objectType'], additionalProperties: false },
+      annotations: { readOnlyHint: true },
+    },
+    {
+      name: 'dhis2_find_reusable',
+      description: 'Search existing metadata to reuse before creating new objects (token match on name, code and short name; 25 results).',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          objectType: { type: 'string', description: 'e.g. optionSets, dataElements, categoryCombos, legendSets, indicators, programIndicators' },
+          query: { type: 'string', description: 'Words to match' },
+        },
+        required: ['objectType', 'query'], additionalProperties: false,
+      },
+      annotations: { readOnlyHint: true },
+    },
+    {
+      name: 'dhis2_validate_expression',
+      description: 'Ask DHIS2 whether an expression is valid and how it reads (changes nothing). Kinds: programIndicatorExpression, programIndicatorFilter, indicator, validationRule.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          kind: { type: 'string', enum: ['programIndicatorExpression', 'programIndicatorFilter', 'indicator', 'validationRule'] },
+          expression: { type: 'string' },
+        },
+        required: ['kind', 'expression'], additionalProperties: false,
+      },
       annotations: { readOnlyHint: true },
     },
     {
