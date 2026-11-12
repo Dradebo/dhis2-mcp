@@ -39,9 +39,16 @@ const server = https.createServer({ key: fs.readFileSync(keyFile), cert: fs.read
 await new Promise(r => server.listen(0, '127.0.0.1', r));
 const baseUrl = `https://localhost:${server.address().port}`;
 
+// The store is isolated by DHIS2_MCP_HOME. The user's real home folders stay as they are: the OS secret
+// stores belong to them (DPAPI keys under APPDATA, the macOS Keychain under HOME), exactly as when a
+// person runs login and their agent host later starts the server. (CI on macOS and Windows caught a
+// fake HOME/APPDATA here hiding the saved password from the child processes.)
+const keep = (k) => (process.env[k] !== undefined ? { [k]: process.env[k] } : {});
 const env = {
   PATH: process.env.PATH ?? '', SYSTEMROOT: process.env.SYSTEMROOT ?? '', TEMP: dir, TMP: dir,
-  USERPROFILE: dir, HOME: dir, APPDATA: dir, LOCALAPPDATA: dir, NODE_EXTRA_CA_CERTS: certFile, DHIS2_MCP_HOME: home,
+  ...keep('USERPROFILE'), ...keep('HOME'), ...keep('APPDATA'), ...keep('LOCALAPPDATA'), ...keep('USER'), ...keep('LOGNAME'),
+  ...keep('DBUS_SESSION_BUS_ADDRESS'), ...keep('XDG_RUNTIME_DIR'),
+  NODE_EXTRA_CA_CERTS: certFile, DHIS2_MCP_HOME: home,
 };
 // Async on purpose: a synchronous spawn would block this process, which also hosts the fake DHIS2.
 const run = (...args) => new Promise(resolve => {
@@ -109,6 +116,7 @@ check('O1 logout removes the saved connection', r.status === 0 && /Removed/.test
 r = await run('status');
 check('O2 status afterwards explains how to log in', r.status === 1 && /npx -y dhis2-mcp-server login/.test(r.stdout));
 
+try { store.deleteStoredProfile('default', env); } catch { /* already removed by O1 */ }
 server.close();
 fs.rmSync(dir, { recursive: true, force: true });
 const failed = checks.filter(c => !c.ok);

@@ -1,0 +1,35 @@
+name: release
+
+# Publishes to npm when a GitHub release is published, using npm Trusted Publishing:
+# npm trusts this repository and workflow (configured once on npmjs.com), so no npm token or
+# one-time code is stored anywhere, and the package carries a provenance statement.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write   # lets npm verify this run came from Dradebo/dhis2-mcp release.yml
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+      - name: npm new enough for Trusted Publishing (11.5.1+)
+        run: npm install -g npm@^11.5.1 && npm --version
+      - run: npm ci
+      - name: Tests must pass before anything is published
+        run: |
+          npx tsc --noEmit -p .
+          npx jest
+      - name: The version in package.json matches the release tag
+        if: github.event_name == 'release'
+        run: test "v$(node -p "require('./package.json').version")" = "${{ github.event.release.tag_name }}"
+      - name: Publish
+        run: npm publish --provenance --access public
