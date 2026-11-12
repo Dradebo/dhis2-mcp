@@ -26,7 +26,12 @@ function fakeStores() {
         return '';
       }
       const acct = args[args.indexOf('-a') + 1]!;
-      if (args[0] === 'find-generic-password') { if (!keychain.has(acct)) throw new Error('not found'); return keychain.get(acct)! + '\n'; }
+      if (args[0] === 'find-generic-password') {
+        if (!keychain.has(acct)) throw new Error('not found');
+        // Like the real tool: data that is not printable ASCII is printed as hex.
+        const v = keychain.get(acct)!;
+        return (/^[\x20-\x7e]*$/.test(v) ? v : Buffer.from(v, 'utf8').toString('hex')) + '\n';
+      }
       if (args[0] === 'delete-generic-password') { keychain.delete(acct); return ''; }
     }
     if (file.endsWith('secret-tool')) {

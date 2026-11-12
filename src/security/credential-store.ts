@@ -97,6 +97,7 @@ let platform: NodeJS.Platform = process.platform;
 export function __setSecretBackendForTests(r?: Run, p?: NodeJS.Platform): void { run = r ?? defaultRun; platform = p ?? process.platform; }
 
 const SECURITY = '/usr/bin/security';
+const KEYCHAIN_PREFIX = 'b64:';
 const SECRET_TOOL_PATHS = ['/usr/bin/secret-tool', '/usr/local/bin/secret-tool', '/bin/secret-tool'];
 function secretTool(): string | undefined {
   return SECRET_TOOL_PATHS.find(p => { try { fs.accessSync(p, fs.constants.X_OK); return true; } catch { return false; } });
@@ -111,7 +112,10 @@ function account(name: string, env: Record<string, string | undefined>): string 
 function osStorePut(sch: Scheme, acct: string, password: string): boolean {
   try {
     if (sch === 'keychain') {
-      const hex = Buffer.from(password, 'utf8').toString('hex');
+      // `security find-generic-password -w` prints non-ASCII data as hex, so a password with
+      // e.g. "ü" would not read back as typed (found on a macOS CI runner). Store printable
+      // ASCII instead: "b64:" + base64 of the UTF-8 password.
+      const hex = Buffer.from(KEYCHAIN_PREFIX + Buffer.from(password, 'utf8').toString('base64'), 'utf8').toString('hex');
       run(SECURITY, ['-i'], `add-generic-password -U -a "${acct}" -s "${SERVICE}" -l "DHIS2 MCP" -X ${hex}\n`);
     } else if (sch === 'secret-service') {
       run(secretTool()!, ['store', '--label=DHIS2 MCP', 'service', SERVICE, 'account', acct], password);
@@ -121,7 +125,10 @@ function osStorePut(sch: Scheme, acct: string, password: string): boolean {
 }
 function osStoreGet(sch: Scheme, acct: string): string | undefined {
   try {
-    if (sch === 'keychain') return run(SECURITY, ['find-generic-password', '-a', acct, '-s', SERVICE, '-w']).replace(/\n$/, '');
+    if (sch === 'keychain') {
+      const raw = run(SECURITY, ['find-generic-password', '-a', acct, '-s', SERVICE, '-w']).replace(/\n$/, '');
+      return raw.startsWith(KEYCHAIN_PREFIX) ? Buffer.from(raw.slice(KEYCHAIN_PREFIX.length), 'base64').toString('utf8') : undefined;
+    }
     if (sch === 'secret-service') { const v = run(secretTool()!, ['lookup', 'service', SERVICE, 'account', acct]); return v === '' ? undefined : v; }
   } catch { /* not found or store locked */ }
   return undefined;

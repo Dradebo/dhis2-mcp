@@ -53,18 +53,6 @@ jobs:
       - name: Real secret store (macOS Keychain)
         if: runner.os == 'macOS'
         run: EXPECT_SECRET_LOCATION='macOS Keychain' node tests/e2e/os-secret-store.mjs build-e2e
-      - name: Keychain diagnostics (dummy values only)
-        if: always() && runner.os == 'macOS'
-        run: |
-          set +e
-          echo "default keychain: $(security default-keychain)"; security list-keychains
-          security show-keychain-info "$(security default-keychain | tr -d ' \"')" ; echo "show-keychain-info exit $?"
-          printf 'add-generic-password -U -a "diag" -s "dhis2-mcp-diag" -l "diag" -X 6869\n' | /usr/bin/security -i; echo "security -i add exit $?"
-          /usr/bin/security find-generic-password -a diag -s dhis2-mcp-diag -w; echo "find exit $?"
-          /usr/bin/security add-generic-password -U -a diag2 -s dhis2-mcp-diag -w dummy; echo "argv add exit $?"
-          /usr/bin/security find-generic-password -a diag2 -s dhis2-mcp-diag -w; echo "find2 exit $?"
-          /usr/bin/security delete-generic-password -a diag -s dhis2-mcp-diag >/dev/null 2>&1; /usr/bin/security delete-generic-password -a diag2 -s dhis2-mcp-diag >/dev/null 2>&1
-          exit 0
       - name: Real secret store (Linux, no keyring -> private file)
         if: runner.os == 'Linux'
         run: EXPECT_SECRET_LOCATION='private file' node tests/e2e/os-secret-store.mjs build-e2e
