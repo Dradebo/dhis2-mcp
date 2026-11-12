@@ -58,6 +58,16 @@ function writePrivate(file: string, data: unknown): void {
 
 // --- DPAPI via Windows PowerShell; secrets travel over stdin, never argv ------
 const PS = ['-NoProfile', '-NonInteractive', '-Command'];
+/** A cold PowerShell start on a slow or freshly booted machine can take well over 30 s. */
+const SECRET_TOOL_TIMEOUT_MS = 120_000;
+/** Why reading a saved password failed, without anything secret: for status messages. */
+export function secretReadFailureReason(e: unknown): string {
+  const err = e as { code?: unknown; signal?: unknown; status?: unknown };
+  if (err?.code === 'ETIMEDOUT' || err?.signal === 'SIGTERM') return 'the system password store did not answer in time';
+  if (err?.code === 'ENOENT') return 'the system password store program was not found';
+  if (typeof err?.status === 'number') return `the system password store refused (exit ${err.status})`;
+  return 'the system password store failed';
+}
 /** Absolute path, so a PATH entry cannot substitute another program. */
 function powershell(): string {
   return path.join(process.env.SystemRoot || process.env.SYSTEMROOT || 'C:\\Windows', 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
@@ -65,12 +75,12 @@ function powershell(): string {
 function dpapiProtect(plain: string): string {
   return execFileSync(powershell(), [...PS,
     '$s=[Console]::In.ReadToEnd(); ConvertTo-SecureString -String $s -AsPlainText -Force | ConvertFrom-SecureString'],
-  { input: plain, encoding: 'utf8', windowsHide: true, timeout: 30000 }).trim();
+  { input: plain, encoding: 'utf8', windowsHide: true, timeout: SECRET_TOOL_TIMEOUT_MS }).trim();
 }
 function dpapiUnprotect(blob: string): string {
   const out = execFileSync(powershell(), [...PS,
     '$e=[Console]::In.ReadToEnd().Trim(); $ss=ConvertTo-SecureString -String $e; $p=[Runtime.InteropServices.Marshal]::SecureStringToBSTR($ss); try { [Console]::Out.Write([Runtime.InteropServices.Marshal]::PtrToStringBSTR($p)) } finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($p) }'],
-  { input: blob, encoding: 'utf8', windowsHide: true, timeout: 30000 });
+  { input: blob, encoding: 'utf8', windowsHide: true, timeout: SECRET_TOOL_TIMEOUT_MS });
   return out;
 }
 
@@ -80,7 +90,7 @@ function dpapiUnprotect(blob: string): string {
 const SERVICE = 'dhis2-mcp';
 type Run = (file: string, args: string[], input?: string) => string;
 const defaultRun: Run = (file, args, input) =>
-  execFileSync(file, args, { input: input ?? '', encoding: 'utf8', windowsHide: true, timeout: 30000, stdio: ['pipe', 'pipe', 'pipe'] });
+  execFileSync(file, args, { input: input ?? '', encoding: 'utf8', windowsHide: true, timeout: SECRET_TOOL_TIMEOUT_MS, stdio: ['pipe', 'pipe', 'pipe'] });
 let run: Run = defaultRun;
 let platform: NodeJS.Platform = process.platform;
 /** Tests only: replace the program runner and the platform. */

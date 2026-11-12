@@ -10,7 +10,7 @@
  */
 import { checkLogin, validateInstanceUrl } from './setup/login-check.js';
 import {
-  deleteStoredProfile, listStoredProfiles, readStoredSecret, saveStoredProfile, storeDir,
+  deleteStoredProfile, listStoredProfiles, readStoredSecret, saveStoredProfile, secretReadFailureReason, storeDir,
 } from './security/credential-store.js';
 
 const HOST_CONFIG = { mcpServers: { dhis2: { command: 'npx', args: ['-y', 'dhis2-mcp-server'] } } };
@@ -162,7 +162,7 @@ async function status(): Promise<number> {
       const r = pw ? await checkLogin(p.baseUrl, p.username, pw) : { ok: false as const, why: 'saved password missing' };
       state = r.ok ? 'working' : `not working: ${r.why}`;
       if (!r.ok) allOk = false;
-    } catch { state = 'saved password could not be read'; allOk = false; }
+    } catch (e) { state = `saved password could not be read: ${secretReadFailureReason(e)}`; allOk = false; }
     console.log(`${name}: ${p.baseUrl} as ${p.username} (${p.environment}) — ${state}`);
   }
   console.log(`Saved in: ${storeDir()}`);
