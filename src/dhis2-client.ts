@@ -1,4 +1,6 @@
 import { toSafeHttpError, SafeError } from './security/safe-errors.js';
+import type { AggValue, SharingObject } from './ops/gateway.js';
+import type { TaskNotification } from './jobs.js';
 import type { DHIS2Auth } from './security/credentials.js';
 import axios, { AxiosInstance } from 'axios';
 
@@ -832,6 +834,122 @@ export class DHIS2Client {
     const data = response.data as any;
     // DHIS2 2.41 wraps the import report in `response`.
     return { httpStatus: response.status, report: data?.response ?? data };
+  }
+
+  // ---- approved operations: data, sharing, jobs (see src/operations.ts) -------------------
+
+  async getDefaultCategoryOptionCombo(): Promise<string> {
+    const r = await this.client.get('/categoryOptionCombos', { params: { filter: 'name:eq:default', fields: 'id', paging: false } });
+    const id = (r.data as any)?.categoryOptionCombos?.[0]?.id;
+    if (typeof id !== 'string') throw new Error('The default category option combination was not found.');
+    return id;
+  }
+
+  /** Current aggregate values for every combination (chunked: 50 data elements × 50 org units × 50 periods per request). */
+  async getCurrentDataValues(q: { dataElements: string[]; periods: string[]; orgUnits: string[] }): Promise<AggValue[]> {
+    const chunk = <T>(a: T[], n: number) => Array.from({ length: Math.ceil(a.length / n) }, (_, i) => a.slice(i * n, i * n + n));
+    const out: AggValue[] = [];
+    for (const des of chunk(q.dataElements, 50)) for (const ous of chunk(q.orgUnits, 50)) for (const pes of chunk(q.periods, 50)) {
+      const r = await this.client.get('/dataValueSets', {
+        params: { dataElement: des, orgUnit: ous, period: pes },
+        paramsSerializer: { indexes: null }, timeout: 120000,
+      });
+      for (const v of (r.data as any)?.dataValues ?? []) {
+        out.push({ dataElement: v.dataElement, period: v.period, orgUnit: v.orgUnit, categoryOptionCombo: v.categoryOptionCombo,
+          attributeOptionCombo: v.attributeOptionCombo, value: String(v.value ?? ''), ...(v.comment ? { comment: String(v.comment) } : {}) });
+      }
+    }
+    return out;
+  }
+
+  async postDataValues(payload: { dataValues: AggValue[] }, dryRun: boolean): Promise<{ httpStatus: number; summary: any }> {
+    const r = await this.client.post('/dataValueSets', payload, {
+      params: { dryRun, importStrategy: 'CREATE_AND_UPDATE', async: false },
+      validateStatus: (s: number) => s < 500, timeout: 300000,
+    });
+    const d = r.data as any;
+    return { httpStatus: r.status, summary: d?.response ?? d };
+  }
+
+  async postTracker(payload: Record<string, unknown>, mode: 'VALIDATE' | 'COMMIT'): Promise<{ httpStatus: number; report: any }> {
+    const r = await this.client.post('/tracker', payload, {
+      params: { importMode: mode, atomicMode: 'ALL', importStrategy: 'CREATE_AND_UPDATE', async: false, reportMode: 'ERRORS' },
+      validateStatus: (s: number) => s < 500, timeout: 300000,
+    });
+    const d = r.data as any;
+    return { httpStatus: r.status, report: d?.validationReport || d?.stats ? d : (d?.response ?? d) };
+  }
+
+  async getTrackerRecord(kind: 'event' | 'enrollment' | 'trackedEntity', uid: string): Promise<Record<string, any> | null> {
+    if (!/^[A-Za-z][A-Za-z0-9]{10}$/.test(uid)) throw new Error('Invalid id.');
+    const spec = {
+      event: ['events', 'event,program,programStage,orgUnit,occurredAt,status,enrollment,dataValues[dataElement,value]'],
+      enrollment: ['enrollments', 'enrollment,program,orgUnit,enrolledAt,occurredAt,trackedEntity,status'],
+      trackedEntity: ['trackedEntities', 'trackedEntity,trackedEntityType,orgUnit,attributes[attribute,value]'],
+    }[kind] as [string, string];
+    const r = await this.client.get(`/tracker/${spec[0]}/${uid}`, { params: { fields: spec[1] }, validateStatus: (s: number) => s === 200 || s === 404 });
+    return r.status === 404 ? null : (r.data as Record<string, any>);
+  }
+
+  private async pagedTracker(path: string, params: Record<string, unknown>, key: string, max: number): Promise<{ records: Array<Record<string, any>>; complete: boolean }> {
+    const records: Array<Record<string, any>> = [];
+    const pageSize = 1000;
+    for (let page = 1; records.length < max; page++) {
+      const r = await this.client.get(path, { params: { ...params, page, pageSize }, timeout: 120000 });
+      const list = (r.data as any)?.instances ?? (r.data as any)?.[key] ?? [];
+      records.push(...list);
+      if (list.length < pageSize) return { records, complete: true };
+    }
+    return { records: records.slice(0, max), complete: false };
+  }
+
+  findEvents(q: { program: string; orgUnit: string; occurredAfter: string; occurredBefore: string }, max: number) {
+    return this.pagedTracker('/tracker/events', { ...q, orgUnitMode: 'SELECTED',
+      fields: 'event,program,programStage,orgUnit,occurredAt,dataValues[dataElement,value]' }, 'events', max);
+  }
+
+  findTrackedEntities(q: { trackedEntityType: string; orgUnit: string }, max: number) {
+    return this.pagedTracker('/tracker/trackedEntities', { trackedEntityType: q.trackedEntityType, orgUnits: q.orgUnit, orgUnitMode: 'SELECTED',
+      fields: 'trackedEntity,trackedEntityType,orgUnit,attributes[attribute,value]' }, 'trackedEntities', max);
+  }
+
+  async getSharing(type: string, id: string): Promise<SharingObject | null> {
+    if (!/^[A-Za-z]{2,40}$/.test(type) || !/^[A-Za-z][A-Za-z0-9]{10}$/.test(id)) throw new Error('Invalid type or id.');
+    const r = await this.client.get('/sharing', { params: { type, id }, validateStatus: (s: number) => s === 200 || s === 404 });
+    if (r.status === 404) return null;
+    const o = (r.data as any)?.object ?? {};
+    return { publicAccess: String(o.publicAccess ?? '--------'), ...(typeof o.externalAccess === 'boolean' ? { externalAccess: o.externalAccess } : {}),
+      userGroupAccesses: (o.userGroupAccesses ?? []).map((g: any) => ({ id: g.id, access: g.access })),
+      userAccesses: (o.userAccesses ?? []).map((u: any) => ({ id: u.id, access: u.access })),
+      ...(o.name ? { name: String(o.name) } : {}) };
+  }
+
+  async postSharing(type: string, id: string, object: SharingObject): Promise<{ httpStatus: number; message: string }> {
+    if (!/^[A-Za-z]{2,40}$/.test(type) || !/^[A-Za-z][A-Za-z0-9]{10}$/.test(id)) throw new Error('Invalid type or id.');
+    const r = await this.client.post('/sharing', { object }, { params: { type, id }, validateStatus: (s: number) => s < 500 });
+    return { httpStatus: r.status, message: String((r.data as any)?.message ?? '') };
+  }
+
+  async getPrincipalName(kind: 'userGroups' | 'users', id: string): Promise<string | null> {
+    if (!/^[A-Za-z][A-Za-z0-9]{10}$/.test(id)) return null;
+    const r = await this.client.get(`/${kind}/${id}`, { params: { fields: 'id,displayName' }, validateStatus: (s: number) => s === 200 || s === 404 });
+    return r.status === 404 ? null : String((r.data as any)?.displayName ?? id);
+  }
+
+  async getRunningAnalytics(): Promise<Record<string, TaskNotification[]>> {
+    const r = await this.client.get('/system/tasks/ANALYTICS_TABLE', { validateStatus: (s: number) => s === 200 || s === 404 });
+    return r.status === 404 || !r.data || typeof r.data !== 'object' ? {} : (r.data as Record<string, TaskNotification[]>);
+  }
+
+  async startAnalytics(params: Record<string, string | number | boolean>): Promise<string> {
+    const r = await this.client.post('/resourceTables/analytics', null, { params });
+    return String((r.data as any)?.response?.id ?? '');
+  }
+
+  async getAnalyticsNotifications(jobId: string): Promise<TaskNotification[]> {
+    if (!/^[A-Za-z][A-Za-z0-9]{10}$/.test(jobId)) throw new Error('Invalid job id.');
+    const r = await this.client.get(`/system/tasks/ANALYTICS_TABLE/${jobId}`, { validateStatus: (s: number) => s === 200 || s === 404 });
+    return r.status === 404 || !Array.isArray(r.data) ? [] : (r.data as TaskNotification[]);
   }
 
   get baseURL(): string {

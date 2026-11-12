@@ -90,6 +90,49 @@ Packages are refused on production, both in the engine and by the policy and the
 
 The MCP prompt `customise_from_documents` and four resources (`dhis2://guides/...`) carry the documents → customisation procedure, the modelling rules, the dashboard rules and the verification checklist. Every MCP host gets them. They are static text, with no instance data.
 
+## Data imports, sharing changes and analytics runs (development only)
+
+All three are refused on production, by both the policy and the read-only transport.
+
+**Data imports and sharing changes** go through one shared lifecycle (`src/operations.ts`):
+1. **Plan.** The server reads the current state and builds the exact payload.
+   - Each item is classified as new, changed (old → new) or already identical. Identical items are not sent.
+   - DHIS2's own dry run is used where one exists.
+   - `payload.json` and `review.md` are written locally.
+2. **Apply.**
+   1. The payload file is re-hashed, so any edit is detected.
+   2. The server is checked again for changes.
+   3. The person approves in the MCP host.
+   4. The server is checked again.
+   5. The change is sent once.
+   6. Every item is read back.
+3. **Outcome.** An unknown or interrupted send is settled by reading, never re-sent. State persists on disk, expires after 24 hours, and is bound to the DHIS2 user, server and profile.
+
+**Aggregate values** (`/dataValueSets`):
+- Missing category and attribute combos are filled with the server's default.
+- Deleting values is not supported.
+- DHIS2 does not import data values atomically, but the dry run catches conflicts first and the read-back reports any partial result.
+
+**Tracker records** (`/api/tracker`, atomic):
+- Every record, including nested enrollments and events, gets its id before sending.
+- **Duplicate guard.** New stand-alone events and new tracked entities are compared with what the server holds (same program or type, org unit and date, identical values) and with each other.
+  - Likely re-imports are refused unless the person confirmed they are genuinely new (`acknowledgeDuplicates`). The approval prompt then says so.
+  - Events inside an enrollment are not compared: two people's events may legitimately be identical.
+- Record values never appear in tool output, only in the local review file.
+
+**Sharing** (`/api/sharing`):
+- Changes merge with existing grants; anything not named is kept.
+- Owners and external access are never changed.
+- Access is described in plain words ("can see it; see and enter data").
+- Making something editable by everyone, or open to data entry by everyone, is flagged in the approval prompt.
+- DHIS2 has no dry run for sharing, so every object, user group and user is checked by reading first.
+
+**Analytics runs** (`/resourceTables/analytics`):
+- The person approves each run.
+- A second run is refused while one is in progress.
+- Progress comes from DHIS2's task notifications (`dhis2_get_job`).
+- Job records persist on disk.
+
 ## Customisation projects: ledger, clarifications, handover (local only)
 
 The server keeps the record of a documents → configuration job, so it does not depend on the agent's chat memory:

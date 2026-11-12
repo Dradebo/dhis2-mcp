@@ -26,6 +26,11 @@ import { toSafeErrorMessage } from './security/safe-errors.js';
 import { ChangeEngine, ChangeEngineError, describePlan, ApprovalResult, ConnectionIdentity } from './change-engine.js';
 import { TransferEngine, TransferError, describeTransfer } from './transfer.js';
 import { ProjectEngine, ProjectError, describeProject } from './project.js';
+import { OperationEngine, OperationError, describeOperation, OpKindName } from './operations.js';
+import { aggregateKind } from './ops/aggregate.js';
+import { trackerKind } from './ops/tracker.js';
+import { sharingKind } from './ops/sharing.js';
+import { JobEngine, JobError, describeJob } from './jobs.js';
 import { storeDir } from './security/credential-store.js';
 import { PermissionSystem, UserPermissions } from './permission-system.js';
 import { describePermissionEvidence } from './permission-evidence.js';
@@ -291,6 +296,39 @@ const transferEngine = new TransferEngine({
   baseDir: () => storeDir(),
 });
 
+const operationEngine = new OperationEngine<DHIS2Client>({
+  gateway: () => (connectionVerified ? dhis2Client : null),
+  identity: connectionIdentity,
+  approve: requestHostApproval,
+  baseDir: () => storeDir(),
+}, [aggregateKind, trackerKind, sharingKind]);
+
+const jobEngine = new JobEngine({
+  gateway: () => (connectionVerified ? dhis2Client : null),
+  identity: connectionIdentity,
+  approve: requestHostApproval,
+  baseDir: () => storeDir(),
+});
+
+/** Data import arguments: inline, or a local .json file for large imports. */
+function dataImportArgs(a: Record<string, unknown>): { kind: OpKindName; input: Record<string, unknown> } {
+  let body: Record<string, unknown> = a;
+  if (typeof a.dataFile === 'string') {
+    const file = a.dataFile;
+    if (!/\.json$/i.test(file)) throw new OperationError('invalid', 'dataFile must be a .json file.');
+    let stat: fs.Stats;
+    try { stat = fs.statSync(file); } catch { throw new OperationError('invalid', 'dataFile was not found.'); }
+    if (!stat.isFile() || stat.size > 32 * 1024 * 1024) throw new OperationError('invalid', 'dataFile must be a file of at most 32 MB.');
+    try { body = JSON.parse(fs.readFileSync(file, 'utf8')); } catch { throw new OperationError('invalid', 'dataFile is not valid JSON.'); }
+    if (!body || typeof body !== 'object' || Array.isArray(body)) throw new OperationError('invalid', 'dataFile must hold an object.');
+    body = { ...body, ...(a.description !== undefined ? { description: a.description } : {}), ...(a.acknowledgeDuplicates !== undefined ? { acknowledgeDuplicates: a.acknowledgeDuplicates } : {}) };
+  }
+  const hasAgg = body.dataValues !== undefined;
+  const hasTracker = ['trackedEntities', 'enrollments', 'events'].some(k => body[k] !== undefined);
+  if (hasAgg === hasTracker) throw new OperationError('invalid', 'Give either dataValues (aggregate) or trackedEntities/enrollments/events (tracker), not both and not neither.');
+  return { kind: hasAgg ? 'aggregate-data' : 'tracker-data', input: body };
+}
+
 const projectEngine = new ProjectEngine({
   baseDir: () => storeDir(),
   ask: async (message, requestedSchema) => {
@@ -483,6 +521,46 @@ Local MCP policy is not DHIS2 authorisation; the server still enforces its own s
       case 'dhis2_generate_uids': {
         const n = Math.min(1000, Math.max(1, Math.floor(Number((args as any)?.count) || 0)));
         return { content: [{ type: 'text', text: Array.from({ length: n }, generateUid).join('\n') }] };
+      }
+
+      case 'dhis2_plan_data':
+      case 'dhis2_plan_sharing_change':
+      case 'dhis2_apply_operation':
+      case 'dhis2_get_operation':
+      case 'dhis2_cancel_operation': {
+        const a = (args ?? {}) as Record<string, unknown>;
+        try {
+          let op;
+          if (name === 'dhis2_plan_data') { const { kind, input } = dataImportArgs(a); op = await operationEngine.plan(kind, input); }
+          else if (name === 'dhis2_plan_sharing_change') op = await operationEngine.plan('sharing', a);
+          else if (name === 'dhis2_apply_operation') op = await operationEngine.apply(a.operationId);
+          else if (name === 'dhis2_get_operation') op = await operationEngine.get(a.operationId);
+          else op = operationEngine.cancel(a.operationId);
+          auditLogger.log({ toolName: name, parameters: { operationId: op.id, kind: op.kind, state: op.state },
+            outcome: ['verified', 'validated', 'cancelled'].includes(op.state) ? 'success' : 'error',
+            dhis2Instance: dhis2Client?.baseURL, userId: currentUser?.username, executionTime: Date.now() - startTime });
+          return { content: [{ type: 'text', text: describeOperation(op) }],
+            isError: ['invalid', 'failed', 'stale', 'unknown-outcome', 'applied-unverified', 'partial', 'not-applied'].includes(op.state) };
+        } catch (e) {
+          if (!(e instanceof OperationError)) throw e;
+          auditLogger.log({ toolName: name, parameters: { operationId: typeof a.operationId === 'string' ? a.operationId : undefined }, outcome: 'error', error: e.code });
+          return { content: [{ type: 'text', text: `⛔ ${e.code}: ${e.message}` }], isError: true };
+        }
+      }
+
+      case 'dhis2_run_analytics':
+      case 'dhis2_get_job': {
+        const a = (args ?? {}) as Record<string, unknown>;
+        try {
+          const job = name === 'dhis2_run_analytics' ? await jobEngine.startAnalytics(a) : await jobEngine.get(a.jobId);
+          auditLogger.log({ toolName: name, parameters: { jobId: job.jobId, state: job.state }, outcome: job.state === 'failed' ? 'error' : 'success',
+            dhis2Instance: dhis2Client?.baseURL, userId: currentUser?.username, executionTime: Date.now() - startTime });
+          return { content: [{ type: 'text', text: describeJob(job) }], isError: job.state === 'failed' };
+        } catch (e) {
+          if (!(e instanceof JobError)) throw e;
+          auditLogger.log({ toolName: name, parameters: {}, outcome: 'error', error: e.code });
+          return { content: [{ type: 'text', text: `⛔ ${e.code}: ${e.message}` }], isError: true };
+        }
       }
 
       case 'dhis2_start_project':

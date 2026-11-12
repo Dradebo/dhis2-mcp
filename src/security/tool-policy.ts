@@ -133,6 +133,14 @@ const REGISTRY: ReadonlyMap<string, PolicyEntry> = new Map<string, PolicyEntry>(
   ['dhis2_apply_package', { classify: 'planned-write' }],
   ['dhis2_get_package', { classify: 'planned-write' }],
   ['dhis2_cancel_package', { classify: 'planned-write' }],
+  // Approved operations (data imports, sharing) and analytics jobs: one approval each, never on production.
+  ['dhis2_plan_data', { classify: 'planned-write' }],
+  ['dhis2_plan_sharing_change', { classify: 'planned-write' }],
+  ['dhis2_apply_operation', { classify: 'planned-write' }],
+  ['dhis2_get_operation', { classify: 'planned-write' }],
+  ['dhis2_cancel_operation', { classify: 'planned-write' }],
+  ['dhis2_run_analytics', { classify: 'planned-write' }],
+  ['dhis2_get_job', { classify: 'planned-write' }],
 
   // Discovery for design and reuse.
   ['dhis2_get_schema', metaRead],

@@ -53,14 +53,18 @@ definitions later: unresolved items stay unresolved and are reported.
 ## 6. Verify
 - Read-back is automatic after apply; treat any mismatch, missing or collateral change as a defect.
 - Validate every program indicator and indicator expression with the expression-description endpoints.
-- Analytics: after the analytics job, query each indicator for a period with data and one without;
-  real zeros and "no data" must be distinguishable.
+- Analytics: start a run with dhis2_run_analytics (the person approves) and follow it with dhis2_get_job; then
+  query each indicator for a period with data and one without; real zeros and "no data" must be distinguishable.
 - Forms and rules: static checks do not prove rules fire. Where a browser is available, open a new form in Capture
   without saving and exercise the skip logic; otherwise report native testing as pending.
 
-## 7. Sharing (approval)
-- New objects get the server's default sharing. Propose sharing (which user groups can see/enter data) as a separate,
-  explicit approval. Never copy sharing from another server.
+## 7. Data and sharing (approvals)
+- Data (baselines, test or historical data): dhis2_plan_data with aggregate dataValues or tracker records, then
+  dhis2_apply_operation. Replaced values are shown old → new. Likely re-imports are refused: ask the person, and only
+  pass acknowledgeDuplicates: true if they confirm the records are genuinely new.
+- Sharing: new objects get the server's default sharing. Agree with the person which user groups can see, edit or
+  enter data, then dhis2_plan_sharing_change → dhis2_apply_operation. Existing grants are kept unless named.
+  Never copy sharing from another server.
 
 ## 8. Handover
 Link each requirement to its objects and packageIds, record the checks you ran (dhis2_record_requirements checks), then
