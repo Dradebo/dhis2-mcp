@@ -32,6 +32,7 @@ function fakeServer(name, objects, exportsFor) {
     log.push({ method: req.method, path: url.pathname });
     const json = (s, d) => { res.writeHead(s, { 'content-type': 'application/json' }); res.end(JSON.stringify(d)); };
     if (req.method !== 'GET') return json(405, { message: `${name} refuses ${req.method}` });
+    if (url.pathname === '/api/system/info') return json(200, { version: '2.41.10', revision: 'abc1234' });
     if (url.pathname === '/api/me') return json(200, user);
     let m = /^\/api\/(\w+)\/(\w{11})\/metadata$/.exec(url.pathname);
     if (m) { const e = exportsFor?.(m[1], m[2]); return e ? json(200, e) : json(404, {}); }

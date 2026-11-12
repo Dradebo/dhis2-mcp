@@ -186,8 +186,8 @@ graph LR
   "steps": [
     {
       "server": "dhis2-mcp",
-      "tool": "dhis2_run_validation",
-      "parameters": { "orgUnit": "country-level" }
+      "tool": "dhis2_get_analytics",
+      "parameters": { "dimension": ["dx:<indicator ids>", "pe:LAST_12_MONTHS", "ou:USER_ORGUNIT"] }
     },
     {
       "server": "github-mcp", 
@@ -275,7 +275,7 @@ This standardized format ensures seamless integration with other MCP servers.`;
         {
           id: 'validate-data',
           server: 'dhis2-mcp',
-          tool: 'dhis2_run_validation',
+          tool: 'dhis2_get_analytics',
           parameters: {}
         },
         {
@@ -297,7 +297,7 @@ This standardized format ensures seamless integration with other MCP servers.`;
           }
         }
       ],
-      triggers: ['dhis2_run_validation']
+      triggers: ['dhis2_get_analytics']
     });
 
     // Development Pipeline Workflow

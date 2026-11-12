@@ -17,6 +17,7 @@ import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { canonicalJson, deepFreeze, isUid, mismatchedFields, safeText, sha256 } from './security/plans.js';
 import type { ApprovalResult, ConnectionIdentity } from './change-engine.js';
+import { checkVersionRules } from './design-check.js';
 
 export const TRANSFER_ROOT_TYPES: ReadonlySet<string> = new Set([
   'programs', 'programStages', 'trackedEntityTypes', 'trackedEntityAttributes', 'dataSets', 'dataElements',
@@ -46,11 +47,14 @@ const LIMITS = { maxRoots: 50, maxObjects: 5000 };
 
 export interface SourceGateway {
   baseURL: string;
+  readonly release?: number | undefined;
   getDependencyExport(objectType: string, id: string): Promise<Record<string, unknown> | null>;
 }
 export interface TargetGateway {
   baseURL: string;
   readOnly: boolean;
+  /** DHIS2 release of the receiving server (e.g. 40); the package is checked against its rules. */
+  readonly release?: number | undefined;
   getOwnerObject(objectType: string, id: string): Promise<Record<string, unknown> | null>;
   findIdsByField(objectType: string, field: 'code' | 'name', value: string): Promise<string[]>;
 }
@@ -77,6 +81,9 @@ export interface Transfer {
   packageHash: string;
   items: TransferItem[];
   notTransferred: Array<{ what: string; count: number; reason: string }>;
+  /** DHIS2 releases of both servers, and what in the package would not work on the receiving version. */
+  versions: { source?: number; target?: number };
+  versionProblems: string[];
   dir: string;
   files: { package: string; review: string; approval?: string; adminInstructions?: string; verification?: string };
   pkg: Record<string, Array<Record<string, unknown>>>;
@@ -227,6 +234,10 @@ export class TransferEngine {
       `- ${c.conflict} conflict(s) must be resolved before import.`,
       ...(c.unknown ? [`- ${c.unknown} object(s) could not be checked against ${t.target.environment}.`] : []),
       '- Nothing will be deleted. The assistant does not change the production server; an administrator imports this file.', '',
+      '## DHIS2 versions', '',
+      `Development: ${t.versions.source !== undefined ? `2.${t.versions.source}` : 'unknown'}; receiving server: ${t.versions.target !== undefined ? `2.${t.versions.target}` : 'unknown'}.`,
+      ...(t.versionProblems.length ? ['', '**Will not work on the receiving version (must be changed before approval):**', ...t.versionProblems.map(p => `- ${p}`)]
+        : ['Nothing in the package depends on a newer version than the receiving server has.']), '',
       '## Not transferred', '',
       ...t.notTransferred.map(n => `- ${n.what} (${n.count}): ${n.reason}`), '',
       '## Every object', '',
@@ -256,13 +267,18 @@ export class TransferEngine {
     const cleanRoots = roots.map(r => ({ objectType: r.objectType as string, id: r.id as string }));
     const { pkg, notTransferred } = await this.buildPackage(src.gw, cleanRoots);
     const items = await this.compare(target.gw, pkg);
+    // The receiving server may run an older DHIS2 version than development: check the package against its rules.
+    const versions = { ...(src.gw.release !== undefined ? { source: src.gw.release } : {}), ...(target.gw.release !== undefined ? { target: target.gw.release } : {}) };
+    const versionProblems = target.gw.release === undefined
+      ? ['The receiving server\'s DHIS2 version could not be read, so version compatibility was not checked.']
+      : checkVersionRules(pkg as any, target.gw.release).map(f => `${f.objectType}/${f.id ?? '?'} "${safeText(f.name ?? '', 50)}": ${f.message}`);
     const id = randomUUID();
     const dir = path.join(this.deps.baseDir(), 'transfers', id);
     fs.mkdirSync(dir, { recursive: true });
     const t: Transfer = {
       id, owner: { ...src.who }, description, roots: cleanRoots, sourceOrigin: new URL(src.gw.baseURL).origin,
       target: { profile: target.profile, environment: target.environment, origin: target.origin },
-      createdAt: this.now().toISOString(), state: 'prepared', packageHash: sha256(pkg), items, notTransferred, dir,
+      createdAt: this.now().toISOString(), state: 'prepared', packageHash: sha256(pkg), items, notTransferred, versions, versionProblems, dir,
       files: { package: path.join(dir, 'package.json'), review: path.join(dir, 'review.md') },
       pkg: deepFreeze(pkg),
     };
@@ -294,6 +310,9 @@ export class TransferEngine {
     }
     const c = this.counts(t.items);
     if (c.conflict) throw new TransferError('conflicts', `${c.conflict} conflict(s) must be resolved before approval (see ${t.files.review}).`);
+    if (t.versionProblems.length) {
+      throw new TransferError('version_incompatible', `The package uses things the receiving server's DHIS2 version does not support (${t.versionProblems.length}); change them on development and prepare again:\n- ${t.versionProblems.slice(0, 10).join('\n- ')}`);
+    }
     const message = [
       `Approve moving this package from the development server to ${t.target.environment} (${t.target.origin})?`,
       `In short: ${c.new} new, ${c.changed} updated, ${c.identical} already identical${c.unknown ? `, ${c.unknown} not checked` : ''}. Nothing is deleted; sharing is not copied.`,
@@ -380,6 +399,8 @@ export function describeTransfer(t: Transfer): string {
     `Objects: ${t.items.length} — ${Object.entries(c).map(([k, n]) => `${n} ${PLAIN[k] ?? k}`).join(', ')}`,
     ...(Object.keys(v).length ? [`Production check: ${Object.entries(v).map(([k, n]) => `${n} ${k}`).join(', ')}`] : []),
     `Not transferred: ${t.notTransferred.map(n => `${n.what} (${n.count})`).join('; ')}`,
+    `DHIS2 versions: development ${t.versions.source !== undefined ? `2.${t.versions.source}` : 'unknown'}, receiving ${t.versions.target !== undefined ? `2.${t.versions.target}` : 'unknown'}`,
+    ...(t.versionProblems.length ? [`Version problems (${t.versionProblems.length}), must be fixed on development before approval:`, ...t.versionProblems.slice(0, 10).map(p => `  - ${p}`)] : []),
     `Package: ${t.files.package}`, `Review: ${t.files.review}`,
     ...(t.files.adminInstructions ? [`Instructions for the production administrator: ${t.files.adminInstructions}`] : []),
     ...(t.items.some(i => i.status === 'conflict') ? ['Conflicts (same code/name, different id) must be resolved before approval:',

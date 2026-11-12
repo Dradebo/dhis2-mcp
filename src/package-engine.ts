@@ -20,7 +20,7 @@ import {
   FORBIDDEN_FIELDS, canonicalJson, deepFreeze, describeValue, diffFields, isUid, mergeUpdate,
   mismatchedFields, safeText, sha256,
 } from './security/plans.js';
-import { checkDesign, Finding } from './design-check.js';
+import { checkDesign, checkVersionRules, Finding } from './design-check.js';
 import { toSafeErrorMessage } from './security/safe-errors.js';
 import type { ApprovalResult, ConnectionIdentity } from './change-engine.js';
 
@@ -79,7 +79,8 @@ function forbiddenIn(obj: Record<string, unknown>): string[] {
   return Object.keys(obj).filter(k => k !== 'id' && FORBIDDEN_FIELDS.has(k));
 }
 
-export function checkPackageOffline(input: unknown): OfflineReport {
+/** release: the server's DHIS2 release (e.g. 41); undefined = unknown, version rules skipped. */
+export function checkPackageOffline(input: unknown, release?: number): OfflineReport {
   const problems: string[] = [];
   const counts: OfflineReport['counts'] = {};
   const bump = (t: string, k: 'create' | 'update') => { (counts[t] ??= { create: 0, update: 0 })[k]++; };
@@ -147,7 +148,13 @@ export function checkPackageOffline(input: unknown): OfflineReport {
 
   // Design checks run on what the creates + the update sets describe (updates are partial, so
   // only creates get the full rule set).
-  const findings = checkDesign(cleanCreates as any);
+  const findings = checkDesign(cleanCreates as any, release);
+  if (release !== undefined) {
+    // Update sets can introduce version-dependent fields too.
+    const asObjects: Record<string, Array<Record<string, unknown>>> = {};
+    for (const u of cleanUpdates) (asObjects[u.objectType] ??= []).push({ id: u.id, ...u.set });
+    findings.push(...checkVersionRules(asObjects as any, release));
+  }
   const ok = problems.length === 0 && !findings.some(f => f.severity === 'error');
   return { ok, problems, findings, counts, externalRefs, ...(problems.length ? {} : { normalized: { description, creates: cleanCreates, updates: cleanUpdates } }) };
 }
@@ -159,6 +166,8 @@ export interface PackageGateway {
   getOwnerObject(objectType: string, id: string): Promise<Record<string, unknown> | null>;
   identifiableObjectExists(id: string): Promise<boolean>;
   postMetadata(payload: Record<string, unknown[]>, mode: 'VALIDATE' | 'COMMIT'): Promise<{ httpStatus: number; report: any }>;
+  /** DHIS2 release of the server (e.g. 41); absent when unknown. */
+  readonly release?: number | undefined;
 }
 
 export type PackageState = 'validated' | 'invalid' | 'applying' | 'verified' | 'partial' | 'not-applied' | 'failed'
@@ -270,7 +279,7 @@ export class PackageEngine {
   }
 
   async plan(input: unknown): Promise<{ pkg?: ChangePackage; offline: OfflineReport }> {
-    const offline = checkPackageOffline(input);
+    const offline = checkPackageOffline(input, this.deps.gateway()?.release);
     if (!offline.ok || !offline.normalized) return { offline };
     const { gw, who } = this.conn();
     const { description, creates, updates } = offline.normalized;
@@ -497,6 +506,7 @@ export function approvalMessage(p: ChangePackage): string {
   const warn = p.findings.filter(f => f.severity === 'warning').length;
   return [
     `Allow the assistant to apply this package to the ${safeText(p.owner.environment ?? 'connected', 20)} server ${p.owner.origin}?`,
+    ...(p.owner.version ? [`Server: ${safeText(p.owner.version, 250)}.`] : []),
     `In short: ${c} new and ${u} updated object(s). Nothing will be deleted and no sharing will change.`,
     `By type: ${countsByType(p.targets)}.`,
     `Purpose given by the assistant (unverified): "${safeText(p.description, 200)}"`,

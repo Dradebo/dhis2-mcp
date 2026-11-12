@@ -39,6 +39,7 @@ const server = https.createServer({ key: fs.readFileSync(keyFile), cert: fs.read
   // Hostile server behaviour: echo credentials and "patient" text in error bodies.
   const hostileError = () => json(500, { httpStatus: 'Internal Server Error', message: `echo ${auth} patient Jane Doe`, headers: req.headers });
   const isBroken = auth.includes(b64(`broken:${CANARY_BROKEN}`));
+  if (url.pathname === '/api/system/info') return json(200, { version: '2.41.10', revision: 'abc1234' });
   if (url.pathname === '/api/me') {
     if (isBroken && url.searchParams.has('fields')) return hostileError();
     return json(200, user);
@@ -98,7 +99,7 @@ try {
   let r = await call('dhis2_list_data_elements', {});
   check('B1 hidden instance tool denied when called directly (not_connected)', denied(r, 'not_connected'), r.text.slice(0, 120));
   r = await call('dhis2_create_data_element', { name: 'x', shortName: 'x', valueType: 'NUMBER', domainType: 'AGGREGATE', aggregationType: 'SUM', confirmed: true });
-  check('C1 fabricated confirmed:true write denied before connection', denied(r, 'writes_disabled'));
+  check('C1 removed direct-write tool with fabricated confirmed:true is denied before connection', denied(r, 'unknown_tool'));
   r = await call('dhis2_shadow_tool', { anything: 1 });
   check('D1 unknown tool denied', denied(r, 'unknown_tool'));
   check('B2 no HTTP request made by denied calls', requests.length === 0, `requests=${requests.length}`);
@@ -129,7 +130,7 @@ try {
   check('G4 allowed read reaches DHIS2', !r.isError && countReq(q => q.path === '/api/dataElements') === 1, r.text.slice(0, 120));
   const before = requests.length;
   r = await call('dhis2_create_data_element', { name: 'x', shortName: 'x', valueType: 'NUMBER', domainType: 'AGGREGATE', aggregationType: 'SUM', confirmed: true });
-  check('G5 fabricated confirmed:true write denied for superuser', denied(r, 'writes_disabled'));
+  check('G5 removed direct-write tool with fabricated confirmed:true is denied for a superuser', denied(r, 'unknown_tool'));
   r = await call('dhis2_list_events', { program: 'p1' });
   check('G6 record-level read needs the person\'s permission; a host that cannot ask is refused', r.isError && /cannot ask/.test(r.text) && countReq(q => /events|tracker/.test(q.path)) === 0, r.text.slice(0, 160));
   r = await call('dhis2_manage_datastore_key', { operation: 'update', namespace: 'ns', key: 'k', value: { a: 1 }, encrypt: true });
@@ -138,7 +139,7 @@ try {
   check('G9 server never received a non-GET request', countReq(q => q.method !== 'GET') === 0);
 
   // H. hostile server error bodies do not leak
-  r = await call('dhis2_get_system_info', {});
+  r = await call('dhis2_list_programs', {});
   check('H1 server error mapped to status-only message', r.isError && /DHIS2 request failed: HTTP 500/.test(r.text) && !/Jane|echo/.test(r.text), r.text.slice(0, 160));
 
   // L. completion surface respects policy (RT-05)

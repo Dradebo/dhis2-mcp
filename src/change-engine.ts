@@ -36,6 +36,8 @@ export interface ConnectionIdentity {
   profile: string;
   origin: string;
   environment?: string;
+  /** Plain description of the server's DHIS2 version, shown in approval prompts. */
+  version?: string;
 }
 
 interface Precondition { objectType: string; id: string; kind: 'absent' | 'hash'; hash?: string }

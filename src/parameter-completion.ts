@@ -274,14 +274,14 @@ export class ParameterCompletion {
   // Tool-specific completions
   async getToolSpecificCompletion(toolName: string, argumentName: string, context: Record<string, any>): Promise<CompletionResult> {
     switch (toolName) {
-      case 'dhis2_create_data_value':
+      case 'dhis2_plan_data':
         if (argumentName === 'categoryOptionCombo' && context.dataElement) {
           // Get category combos specific to the data element
           return await this.getCategoryComboForDataElement(context.dataElement);
         }
         break;
         
-      case 'dhis2_create_event':
+      case 'dhis2_list_events':
         if (argumentName === 'orgUnit' && context.program) {
           // Get org units assigned to the program
           return await this.getOrgUnitsForProgram(context.program);

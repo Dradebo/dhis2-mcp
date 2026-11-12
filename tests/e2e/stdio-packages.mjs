@@ -52,6 +52,7 @@ const server = https.createServer(tls, (req, res) => {
   let body = '';
   req.on('data', c => { body += c; });
   req.on('end', () => {
+    if (url.pathname === '/api/system/info') return json(200, { version: '2.41.10', revision: 'abc1234' });
     if (url.pathname === '/api/me') return json(200, user);
     if (req.method === 'POST' && url.pathname === '/api/metadata') {
       const payload = JSON.parse(body || '{}');
@@ -140,7 +141,7 @@ try {
   let r = await call('dhis2_generate_uids', { count: 5 });
   check('K4 UIDs generated offline', r.text.split('\n').filter(x => /^[A-Za-z][A-Za-z0-9]{10}$/.test(x)).length === 5);
   r = await call('dhis2_check_design', { creates: fixture.packages[0].creates });
-  check('K5 design check passes the synthetic package without a connection', !r.isError && /Offline checks passed/.test(r.text) && !log.some(l => l.path !== '/api/me'), r.text.slice(0, 200));
+  check('K5 design check passes the synthetic package without a connection', !r.isError && /Offline checks passed/.test(r.text) && !log.some(l => !['/api/me', '/api/system/info'].includes(l.path)), r.text.slice(0, 200));
   r = await call('dhis2_check_design', { creates: { dashboards: [{ id: 'dbAAAAAAAA1', name: 'D', dashboardItems: [{ id: 'diAAAAAAAA1', w: 5, h: 5 }] }] } });
   check('K6 design check reports a known silent failure', r.isError && /dashboard-item-size/.test(r.text));
 

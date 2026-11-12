@@ -194,6 +194,7 @@ export class OperationEngine<G> {
   approvalMessage(op: Operation): string {
     return [
       `Allow the assistant to ${this.kind(op).plain} on the ${safeText(op.owner.environment ?? 'development', 20)} server ${op.owner.origin}?`,
+      ...(op.owner.version ? [`Server: ${safeText(op.owner.version, 250)}.`] : []),
       `In short: ${op.summary}`,
       `Purpose given by the assistant (unverified): "${safeText(op.description, 200)}"`,
       ...op.warnings.map(w => `⚠ ${safeText(w, 300)}`),

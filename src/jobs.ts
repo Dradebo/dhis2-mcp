@@ -68,6 +68,7 @@ export class JobEngine {
     try {
       answer = await this.deps.approve([
         `Allow the assistant to rebuild the analytics tables on the ${safeText(who.environment ?? 'development', 20)} server ${who.origin}?`,
+        ...(who.version ? [`Server: ${safeText(who.version, 250)}.`] : []),
         'This makes newly entered data and new indicators visible in dashboards and reports. Nothing is created, changed or deleted in your data.',
         'It can take from minutes to hours and slows the server while it runs.',
         `Scope: ${scope}.`,

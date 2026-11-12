@@ -20,7 +20,9 @@ finished work reaches it only through dhis2_prepare_transfer.
 - Note the reporting grain the documents imply: who/what is counted, where (org unit level), how often (period), by whom (data entry role).
 
 ## 2. Instance discovery and reuse
-- dhis2_get_system_info: version decides what is possible (e.g. program-indicator disaggregation needs 2.42).
+- The server's DHIS2 version is shown when connecting. Read dhis2://guides/version-differences: it lists what
+  differs on that version and the workaround where a feature is missing. The person usually cannot change the
+  server version: never make an upgrade the fix. dhis2_check_design applies that version's rules.
 - Search for existing objects before designing new ones (dhis2_find_reusable): option sets, data elements,
   category combos, legend sets, indicators, programs, dashboards. Reuse semantically equivalent objects;
   create new ones only for a genuinely different definition, and say why for each.
@@ -73,7 +75,8 @@ open questions and known gaps, and how to move it to production (dhis2_prepare_t
 dhis2_verify_transfer). Do not claim checks that were not run.
 `;
 
-const MODELLING = `# DHIS2 modelling rules that prevent silent failures (verified on 2.41)
+const MODELLING = `# DHIS2 modelling rules that prevent silent failures (observed on 2.41; version-specific differences
+# are in dhis2://guides/version-differences and are checked by dhis2_check_design)
 
 ## Option sets and value types
 - Stored values and indicator expressions use option CODES, not names. For numeric scores make the option set and
@@ -105,7 +108,8 @@ const MODELLING = `# DHIS2 modelling rules that prevent silent failures (verifie
 - Percentages use an indicator type with factor 100; a mean of values that are already percentages uses factor 1.
 - Decide and write down what counts in the denominator: answered only, or including blanks/N/A. Blank can mean
   "not applicable" or "not captured"; check the data before choosing.
-- Program indicators have no category disaggregation before 2.42.
+- Program-indicator disaggregation exists only from 2.42; on older servers use one indicator per category option
+  (see dhis2://guides/version-differences).
 
 ## Category model
 - New attribute category combos get no category option combos on import: run
@@ -118,7 +122,7 @@ const MODELLING = `# DHIS2 modelling rules that prevent silent failures (verifie
   Put full source wording in the description.
 `;
 
-const DASHBOARDS = `# Analytics and dashboards (2.41)
+const DASHBOARDS = `# Analytics and dashboards (observed on 2.41; see dhis2://guides/version-differences)
 
 - Design from the instrument's own structure: map every item to its section/component, check coverage is exact,
   then one block per section. Do not flatten two semantic dimensions into one mixed axis.
@@ -152,8 +156,8 @@ const VERIFICATION = `# Verification and handover checklist
 
 export const GUIDES: GuideResource[] = [
   { uri: 'dhis2://guides/customise-from-documents', name: 'Customising DHIS2 from documents', description: 'The staged procedure from documents to verified configuration and handover.', text: WORKFLOW },
-  { uri: 'dhis2://guides/modelling-rules', name: 'DHIS2 modelling rules', description: 'Design rules that prevent silent import, Capture and analytics failures (2.41).', text: MODELLING },
-  { uri: 'dhis2://guides/analytics-dashboards', name: 'Analytics and dashboards', description: 'Dashboard and visualization rules for 2.41.', text: DASHBOARDS },
+  { uri: 'dhis2://guides/modelling-rules', name: 'DHIS2 modelling rules', description: 'Design rules that prevent silent import, Capture and analytics failures.', text: MODELLING },
+  { uri: 'dhis2://guides/analytics-dashboards', name: 'Analytics and dashboards', description: 'Dashboard and visualization rules.', text: DASHBOARDS },
   { uri: 'dhis2://guides/verification-handover', name: 'Verification and handover', description: 'What must be checked before work is called done.', text: VERIFICATION },
 ];
 

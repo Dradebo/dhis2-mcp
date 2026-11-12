@@ -87,36 +87,25 @@ export class PermissionSystem {
     
     // Metadata operations - Data Elements
     ['dhis2_list_data_elements', 'canViewMetadata'],
-    ['dhis2_create_data_element', 'canCreateMetadata'],
-    ['dhis2_update_data_element', 'canUpdateMetadata'],
-    ['dhis2_delete_data_element', 'canDeleteMetadata'],
     
     // Metadata operations - Data Sets
     ['dhis2_list_data_sets', 'canViewMetadata'],
-    ['dhis2_create_data_set', 'canCreateMetadata'],
     
     // Metadata operations - Categories
     ['dhis2_list_categories', 'canViewMetadata'],
-    ['dhis2_create_category', 'canCreateMetadata'],
     ['dhis2_list_category_options', 'canViewMetadata'],
-    ['dhis2_create_category_option', 'canCreateMetadata'],
     ['dhis2_list_category_combos', 'canViewMetadata'],
-    ['dhis2_create_category_combo', 'canCreateMetadata'],
     ['dhis2_list_category_option_combos', 'canViewMetadata'],
     
     // Organisation Units
     ['dhis2_list_org_units', 'canViewMetadata'],
     ['dhis2_list_org_unit_groups', 'canViewMetadata'],
-    ['dhis2_create_org_unit_group', 'canCreateMetadata'],
     
     // Validation Rules
     ['dhis2_list_validation_rules', 'canViewMetadata'],
-    ['dhis2_create_validation_rule', 'canCreateMetadata'],
-    ['dhis2_run_validation', ['canViewData', 'canRunAnalytics']],
     
     // Data Values
     ['dhis2_get_data_values', 'canViewData'],
-    ['dhis2_bulk_import_data_values', 'canImportData'],
     
     // Analytics
     ['dhis2_get_analytics', 'canRunAnalytics'],
@@ -124,32 +113,21 @@ export class PermissionSystem {
     
     // Programs (Tracker)
     ['dhis2_list_programs', 'canViewMetadata'],
-    ['dhis2_create_program', 'canManagePrograms'],
     ['dhis2_list_tracked_entity_types', 'canViewMetadata'],
-    ['dhis2_create_tracked_entity_type', 'canManagePrograms'],
     ['dhis2_list_tracked_entity_attributes', 'canViewMetadata'],
-    ['dhis2_create_tracked_entity_attribute', 'canManagePrograms'],
     ['dhis2_list_program_stages', 'canViewMetadata'],
-    ['dhis2_create_program_stage', 'canManagePrograms'],
     ['dhis2_list_program_rules', 'canViewMetadata'],
-    ['dhis2_create_program_rule', 'canManagePrograms'],
     
     // Tracker Data
-    ['dhis2_list_tracked_entity_instances', 'canViewTEI'],
-    ['dhis2_create_tracked_entity_instance', 'canEnrollTEI'],
+    ['dhis2_list_tracked_entities', 'canViewTEI'],
     ['dhis2_list_enrollments', 'canViewTEI'],
-    ['dhis2_create_enrollment', 'canEnrollTEI'],
     ['dhis2_list_events', 'canViewTEI'],
-    ['dhis2_create_event', 'canManageTrackerData'],
-    ['dhis2_bulk_import_events', 'canImportData'],
     ['dhis2_get_event_analytics', 'canRunAnalytics'],
     ['dhis2_get_enrollment_analytics', 'canRunAnalytics'],
     
     // Dashboards and Visualizations
     ['dhis2_list_dashboards', 'canViewData'],
-    ['dhis2_create_dashboard', 'canManageDashboards'],
     ['dhis2_list_visualizations', 'canViewData'],
-    ['dhis2_create_visualization', 'canManageDashboards'],
     ['dhis2_list_reports', 'canViewData'],
     ['dhis2_generate_report', 'canExportData'],
     
@@ -159,7 +137,6 @@ export class PermissionSystem {
     ['dhis2_configure_build_system', 'canConfigureApps'],
     ['dhis2_setup_dev_environment', 'canConfigureApps'],
     ['dhis2_generate_app_runtime_config', 'canConfigureApps'],
-    ['dhis2_create_datastore_namespace', 'canConfigureApps'],
     ['dhis2_manage_datastore_key', 'canConfigureApps'],
     ['dhis2_setup_authentication_patterns', 'canConfigureApps'],
     ['dhis2_create_ui_components', 'canUseUITools'],

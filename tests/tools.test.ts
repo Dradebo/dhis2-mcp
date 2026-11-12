@@ -20,9 +20,11 @@ describe('DHIS2 Tools', () => {
         'dhis2_configure',
         'dhis2_get_system_info',
         'dhis2_list_data_elements',
-        'dhis2_create_data_element',
         'dhis2_list_programs',
-        'dhis2_create_program',
+        'dhis2_plan_package',
+        'dhis2_apply_package',
+        'dhis2_plan_data',
+        'dhis2_apply_operation',
         'dhis2_get_analytics',
         'dhis2_get_event_analytics'
       ];
@@ -101,26 +103,8 @@ describe('DHIS2 Tools', () => {
   });
 
   describe('data element tools', () => {
-    let createTool: any;
-    let listTool: any;
-
-    beforeAll(() => {
-      createTool = tools.find(tool => tool.name === 'dhis2_create_data_element');
-      listTool = tools.find(tool => tool.name === 'dhis2_list_data_elements');
-    });
-
-    it('should have create data element tool with proper schema', () => {
-      expect(createTool).toBeDefined();
-      expect(createTool.inputSchema.properties).toHaveProperty('name');
-      expect(createTool.inputSchema.properties).toHaveProperty('valueType');
-      expect(createTool.inputSchema.properties).toHaveProperty('domainType');
-      expect(createTool.inputSchema.properties.valueType.enum).toContain('NUMBER');
-      expect(createTool.inputSchema.properties.valueType.enum).toContain('TEXT');
-      expect(createTool.inputSchema.properties.domainType.enum).toContain('AGGREGATE');
-      expect(createTool.inputSchema.properties.domainType.enum).toContain('TRACKER');
-    });
-
     it('should have list data elements tool with optional filters', () => {
+      const listTool: any = tools.find(tool => tool.name === 'dhis2_list_data_elements');
       expect(listTool).toBeDefined();
       expect(listTool.inputSchema.properties).toHaveProperty('filter');
       expect(listTool.inputSchema.properties).toHaveProperty('pageSize');
@@ -129,22 +113,8 @@ describe('DHIS2 Tools', () => {
   });
 
   describe('program tools', () => {
-    let createTool: any;
-    let listTool: any;
-
-    beforeAll(() => {
-      createTool = tools.find(tool => tool.name === 'dhis2_create_program');
-      listTool = tools.find(tool => tool.name === 'dhis2_list_programs');
-    });
-
-    it('should have create program tool with program type validation', () => {
-      expect(createTool).toBeDefined();
-      expect(createTool.inputSchema.properties).toHaveProperty('programType');
-      expect(createTool.inputSchema.properties.programType.enum).toContain('WITH_REGISTRATION');
-      expect(createTool.inputSchema.properties.programType.enum).toContain('WITHOUT_REGISTRATION');
-    });
-
     it('should have list programs tool', () => {
+      const listTool: any = tools.find(tool => tool.name === 'dhis2_list_programs');
       expect(listTool).toBeDefined();
       expect(listTool.inputSchema.type).toBe('object');
     });
@@ -175,51 +145,22 @@ describe('DHIS2 Tools', () => {
     });
   });
 
-  describe('validation tools', () => {
-    let validationTool: any;
-    let runValidationTool: any;
-
-    beforeAll(() => {
-      validationTool = tools.find(tool => tool.name === 'dhis2_create_validation_rule');
-      runValidationTool = tools.find(tool => tool.name === 'dhis2_run_validation');
+  describe('changes only through approved plans', () => {
+    it('data imports are planned (aggregate dataValues or tracker records) and applied with approval', () => {
+      const plan: any = tools.find(tool => tool.name === 'dhis2_plan_data');
+      expect(plan).toBeDefined();
+      expect(plan.inputSchema.properties.dataValues.type).toBe('array');
+      expect(plan.inputSchema.properties).toHaveProperty('events');
+      expect(plan.inputSchema.properties).toHaveProperty('trackedEntities');
+      expect(tools.find(tool => tool.name === 'dhis2_apply_operation')).toBeDefined();
     });
-
-    it('should have validation rule creation tool', () => {
-      expect(validationTool).toBeDefined();
-      expect(validationTool.inputSchema.properties).toHaveProperty('importance');
-      expect(validationTool.inputSchema.properties).toHaveProperty('operator');
-      expect(validationTool.inputSchema.properties.importance.enum).toContain('HIGH');
-      expect(validationTool.inputSchema.properties.importance.enum).toContain('MEDIUM');
-      expect(validationTool.inputSchema.properties.importance.enum).toContain('LOW');
-    });
-
-    it('should have run validation tool', () => {
-      expect(runValidationTool).toBeDefined();
-      expect(runValidationTool.inputSchema.required).toContain('startDate');
-      expect(runValidationTool.inputSchema.required).toContain('endDate');
-      expect(runValidationTool.inputSchema.required).toContain('organisationUnits');
-    });
-  });
-
-  describe('bulk operations', () => {
-    let bulkDataValuesTool: any;
-    let bulkEventsTool: any;
-
-    beforeAll(() => {
-      bulkDataValuesTool = tools.find(tool => tool.name === 'dhis2_bulk_import_data_values');
-      bulkEventsTool = tools.find(tool => tool.name === 'dhis2_bulk_import_events');
-    });
-
-    it('should have bulk data values import tool', () => {
-      expect(bulkDataValuesTool).toBeDefined();
-      expect(bulkDataValuesTool.inputSchema.properties).toHaveProperty('dataValues');
-      expect(bulkDataValuesTool.inputSchema.properties.dataValues.type).toBe('array');
-    });
-
-    it('should have bulk events import tool', () => {
-      expect(bulkEventsTool).toBeDefined();
-      expect(bulkEventsTool.inputSchema.properties).toHaveProperty('events');
-      expect(bulkEventsTool.inputSchema.properties.events.type).toBe('array');
+    it('tracker record lists go through the tracker API and need a program for events and enrollments', () => {
+      for (const name of ['dhis2_list_events', 'dhis2_list_enrollments']) {
+        const t: any = tools.find(tool => tool.name === name);
+        expect(t.inputSchema.required).toEqual(['program']);
+      }
+      expect(tools.find(tool => tool.name === 'dhis2_list_tracked_entities')).toBeDefined();
+      expect(tools.find(tool => tool.name === 'dhis2_list_tracked_entity_instances')).toBeUndefined();
     });
   });
 

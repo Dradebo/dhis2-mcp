@@ -43,6 +43,7 @@ const server = https.createServer({ key: fs.readFileSync(keyFile), cert: fs.read
   req.on('end', () => {
     const json = (status, data) => { res.writeHead(status, { 'content-type': 'application/json' }); res.end(JSON.stringify(data)); };
     log.push({ method: req.method, path: url.pathname, mode: url.searchParams.get('importMode') });
+    if (url.pathname === '/api/system/info') return json(200, { version: '2.41.10', revision: 'abc1234' });
     if (url.pathname === '/api/me') return json(200, user);
     const m = /^\/api\/(\w+)\/(\w{11})$/.exec(url.pathname);
     if (req.method === 'GET' && m) {
@@ -114,7 +115,7 @@ const allText = [];
     check('P2 legacy direct write tools still hidden', !names.includes('dhis2_create_data_element') && !names.includes('dhis2_bulk_import_data_values'));
 
     let r = await h.call('dhis2_create_data_element', { name: 'x', shortName: 'x', valueType: 'NUMBER', domainType: 'AGGREGATE', aggregationType: 'SUM', confirmed: true });
-    check('P3 legacy write still denied with confirmed:true', r.isError && r.text.includes('writes_disabled'));
+    check('P3 removed direct-write tool is denied even with confirmed:true', r.isError && r.text.includes('unknown_tool'));
 
     r = await h.call('dhis2_plan_metadata_change', rename('ANC 1st visit'));
     const plan1 = planIdOf(r.text);

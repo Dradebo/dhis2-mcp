@@ -17,6 +17,8 @@ import { PackageEngine, PackageError, describePackage, checkPackageOffline, PACK
 import { summariseFindings } from './design-check.js';
 import { generateUid } from './security/plans.js';
 import { GUIDES, PROMPTS, getPrompt } from './workflow.js';
+const VERSION_GUIDE = { uri: 'dhis2://guides/version-differences', name: 'DHIS2 version differences',
+  description: 'What differs on the connected DHIS2 version, and the workaround where a feature is missing (never "upgrade the server").' };
 import { DHIS2Client } from './dhis2-client.js';
 import { createDevelopmentTools, createAPITools } from './tools/index.js';
 import { auditLogger } from './audit-logger.js';
@@ -25,6 +27,7 @@ import { resolveProfile, listConfiguredProfiles, profileEnvironments, Connection
 import { toSafeErrorMessage } from './security/safe-errors.js';
 import { ChangeEngine, ChangeEngineError, describePlan, ApprovalResult, ConnectionIdentity } from './change-engine.js';
 import { TransferEngine, TransferError, describeTransfer } from './transfer.js';
+import { DhisVersion, describeVersion, effectiveRelease, parseVersion, versionGuide, versionStatus } from './versions.js';
 import { ProjectEngine, ProjectError, describeProject } from './project.js';
 import { OperationEngine, OperationError, describeOperation, OpKindName } from './operations.js';
 import { aggregateKind } from './ops/aggregate.js';
@@ -128,6 +131,13 @@ let multiServerComposition: MultiServerComposition = new MultiServerComposition(
 let connectionVerified = false;
 let activeProfile: string | null = null;
 let activeEnvironment: string | null = null;
+let activeVersion: DhisVersion | null = null;
+/** Why the active connection may not change anything (production, or a DHIS2 version older than supported). */
+function readOnlyReason(): string | null {
+  if (activeEnvironment === 'production') return 'production';
+  if (versionStatus(activeVersion) === 'too-old') return 'unsupported-version';
+  return null;
+}
 const sessionConsents = new Set<ConsentCategory>();
 
 // Operator capabilities come only from the launch environment, never from tool arguments.
@@ -147,6 +157,7 @@ function connectionIdentity(): ConnectionIdentity | null {
     profile: activeProfile,
     origin: new URL(dhis2Client.baseURL).origin,
     ...(activeEnvironment ? { environment: activeEnvironment } : {}),
+    version: describeVersion(activeVersion),
   };
 }
 
@@ -206,9 +217,13 @@ function offlineText(r: ReturnType<typeof checkPackageOffline>): string {
 server.setRequestHandler(ListPromptsRequestSchema, async () => ({ prompts: PROMPTS }));
 server.setRequestHandler(GetPromptRequestSchema, async (request) => getPrompt(request.params.name, request.params.arguments as Record<string, string> | undefined));
 server.setRequestHandler(ListResourcesRequestSchema, async () => ({
-  resources: GUIDES.map(g => ({ uri: g.uri, name: g.name, description: g.description, mimeType: 'text/markdown' })),
+  resources: [...GUIDES, VERSION_GUIDE].map(g => ({ uri: g.uri, name: g.name, description: g.description, mimeType: 'text/markdown' })),
 }));
 server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+  // Generated for the connected server's version (all supported versions when not connected).
+  if (request.params.uri === VERSION_GUIDE.uri) {
+    return { contents: [{ uri: VERSION_GUIDE.uri, mimeType: 'text/markdown', text: versionGuide(connectionVerified ? activeVersion : null) }] };
+  }
   const g = GUIDES.find(x => x.uri === request.params.uri);
   if (!g) throw new Error(`Unknown resource: ${request.params.uri}`);
   return { contents: [{ uri: g.uri, mimeType: 'text/markdown', text: g.text }] };
@@ -230,12 +245,19 @@ async function connectProfile(requestedProfile: unknown): Promise<ConnectionProf
   currentUser = null;
   activeProfile = null;
   activeEnvironment = null;
+  activeVersion = null;
   userPermissions = PermissionSystem.createDefaultPermissions();
   parameterCompletion = new ParameterCompletion(null);
 
-  // Production connections get a transport that refuses every non-GET request.
-  const candidate = new DHIS2Client(profile.baseUrl, profile.auth, undefined, { readOnly: profile.environment === 'production' });
-  await candidate.testConnection();
+  // The version is read first (through a read-only client): it decides request shapes and
+  // whether this server may be changed at all (older than the supported range: read-only).
+  const probe = new DHIS2Client(profile.baseUrl, profile.auth, undefined, { readOnly: true });
+  await probe.testConnection();
+  const version = await probe.detectVersion();
+  // Production, and versions older than supported, get a transport that refuses every non-GET request.
+  const candidate = new DHIS2Client(profile.baseUrl, profile.auth, undefined,
+    { readOnly: profile.environment === 'production' || versionStatus(version) === 'too-old' });
+  candidate.version = version;
   const candidateUser = await candidate.getCurrentUser();
   if (!candidateUser || typeof candidateUser !== 'object' || !candidateUser.id) {
     throw new Error('DHIS2 user could not be verified; connection not activated.');
@@ -252,6 +274,7 @@ async function connectProfile(requestedProfile: unknown): Promise<ConnectionProf
   userPermissions = candidatePermissions;
   activeProfile = profile.name;
   activeEnvironment = profile.environment;
+  activeVersion = version;
   connectionVerified = true;
   parameterCompletion = new ParameterCompletion(dhis2Client);
   return profile;
@@ -290,6 +313,7 @@ const transferEngine = new TransferEngine({
     // Always read-only, whatever the target's environment: the assistant never imports.
     const client = new DHIS2Client(target.baseUrl, target.auth, undefined, { readOnly: true });
     await client.testConnection();
+    await client.detectVersion();
     return { gw: client, profile: target.name, environment: target.environment, origin: new URL(target.baseUrl).origin };
   },
   approve: requestHostApproval,
@@ -346,6 +370,7 @@ function policyContext(): PolicyContext {
     connectionAvailable,
     consents: sessionConsents,
     environment: connectionVerified ? activeEnvironment : null,
+    readOnly: connectionVerified ? readOnlyReason() : null,
     permissions: connectionVerified ? userPermissions : null,
     capabilities: parsedCapabilities.capabilities,
   };
@@ -484,12 +509,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 📝 ${permissionSummary.description}
 
 🔑 Profile: ${profile.name} (${profile.environment} server, ${profile.source === 'store' ? 'saved login' : 'operator environment'})
+🏷️ ${describeVersion(activeVersion)}
 🛠️ Tools permitted by MCP policy: ${filterDiscoverableTools(tools, policyContext()).length} of ${tools.length}
    • Reading metadata and aggregate data needs no permission.
    • Individual records, app storage and exports ask the person once per connection.
    • ${profile.environment === 'production'
       ? 'PRODUCTION: read-only. Nothing can be created or changed here; customise on development and use dhis2_prepare_transfer.'
-      : 'Changes go through dhis2_plan_metadata_change → dhis2_apply_plan; the person approves each plan.'}
+      : readOnlyReason() === 'unsupported-version'
+        ? 'READ-ONLY: this DHIS2 version is older than the assistant supports, so nothing is created or changed.'
+        : 'Changes go through packages, data and sharing plans; the person approves each one.'}
 
 ✅ Allowed Operations:
 ${permissionSummary.allowedOperations.map(op => `  • ${op}`).join('\n')}
@@ -596,9 +624,16 @@ Local MCP policy is not DHIS2 authorisation; the server still enforces its own s
 
       case 'dhis2_check_design': {
         try {
-          const a = packageArgs((args ?? {}) as Record<string, unknown>);
-          const r = checkPackageOffline({ ...a, description: typeof a.description === 'string' && a.description.trim() ? a.description : 'design check' });
-          return { content: [{ type: 'text', text: offlineText(r) }], isError: !r.ok };
+          const raw = (args ?? {}) as Record<string, unknown>;
+          const { version: requested, ...rest } = raw;
+          const a = packageArgs(rest);
+          const asked = requested !== undefined ? parseVersion(String(requested)) : null;
+          if (requested !== undefined && !asked) return { content: [{ type: 'text', text: '⛔ version must look like "2.40" or "2.41.10".' }], isError: true };
+          const release = asked ? effectiveRelease(asked) : connectionVerified && activeVersion ? effectiveRelease(activeVersion) : undefined;
+          const r = checkPackageOffline({ ...a, description: typeof a.description === 'string' && a.description.trim() ? a.description : 'design check' }, release);
+          const note = release === undefined ? 'DHIS2 version not known: version-specific rules were skipped (give version, or connect first).'
+            : `Checked against DHIS2 2.${release} rules.`;
+          return { content: [{ type: 'text', text: `${offlineText(r)}\n${note}` }], isError: !r.ok };
         } catch (e) {
           if (!(e instanceof PackageError)) throw e;
           return { content: [{ type: 'text', text: `⛔ ${e.code}: ${e.message}` }], isError: true };
@@ -759,43 +794,6 @@ Local MCP policy is not DHIS2 authorisation; the server still enforces its own s
           ],
         };
 
-      case 'dhis2_create_data_element':
-        const newDataElement = args as any;
-        const createdDE = await dhis2Client!.createDataElement(newDataElement);
-        logSuccessfulOperation(name, newDataElement, createdDE, startTime, [createdDE.response?.uid || 'unknown']);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(createdDE, null, 2),
-            },
-          ],
-        };
-
-      case 'dhis2_update_data_element':
-        const { id: deId, ...deUpdateData } = args as any;
-        const updatedDE = await dhis2Client!.updateDataElement(deId, deUpdateData);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(updatedDE, null, 2),
-            },
-          ],
-        };
-
-      case 'dhis2_delete_data_element':
-        const { id: deDeleteId } = args as { id: string };
-        const deletedDE = await dhis2Client!.deleteDataElement(deDeleteId);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(deletedDE, null, 2),
-            },
-          ],
-        };
-
       case 'dhis2_list_data_sets':
         const { filter: dsFilter, pageSize: dsPageSize } = args as {
           filter?: string;
@@ -807,18 +805,6 @@ Local MCP policy is not DHIS2 authorisation; the server still enforces its own s
             {
               type: 'text',
               text: JSON.stringify(dataSets, null, 2),
-            },
-          ],
-        };
-
-      case 'dhis2_create_data_set':
-        const newDataSet = args as any;
-        const createdDS = await dhis2Client!.createDataSet(newDataSet);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(createdDS, null, 2),
             },
           ],
         };
@@ -838,18 +824,6 @@ Local MCP policy is not DHIS2 authorisation; the server still enforces its own s
           ],
         };
 
-      case 'dhis2_create_category':
-        const newCategory = args as any;
-        const createdCat = await dhis2Client!.createCategory(newCategory);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(createdCat, null, 2),
-            },
-          ],
-        };
-
       case 'dhis2_list_category_options':
         const { filter: coFilter, pageSize: coPageSize } = args as {
           filter?: string;
@@ -865,18 +839,6 @@ Local MCP policy is not DHIS2 authorisation; the server still enforces its own s
           ],
         };
 
-      case 'dhis2_create_category_option':
-        const newCategoryOption = args as any;
-        const createdCO = await dhis2Client!.createCategoryOption(newCategoryOption);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(createdCO, null, 2),
-            },
-          ],
-        };
-
       case 'dhis2_list_category_combos':
         const { filter: ccFilter, pageSize: ccPageSize } = args as {
           filter?: string;
@@ -888,18 +850,6 @@ Local MCP policy is not DHIS2 authorisation; the server still enforces its own s
             {
               type: 'text',
               text: JSON.stringify(categoryCombos, null, 2),
-            },
-          ],
-        };
-
-      case 'dhis2_create_category_combo':
-        const newCategoryCombo = args as any;
-        const createdCC = await dhis2Client!.createCategoryCombo(newCategoryCombo);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(createdCC, null, 2),
             },
           ],
         };
@@ -949,18 +899,6 @@ Local MCP policy is not DHIS2 authorisation; the server still enforces its own s
           ],
         };
 
-      case 'dhis2_create_org_unit_group':
-        const newOrgUnitGroup = args as any;
-        const createdOUG = await dhis2Client!.createOrganisationUnitGroup(newOrgUnitGroup);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(createdOUG, null, 2),
-            },
-          ],
-        };
-
       case 'dhis2_list_validation_rules':
         const { filter: vrFilter, pageSize: vrPageSize } = args as {
           filter?: string;
@@ -976,41 +914,6 @@ Local MCP policy is not DHIS2 authorisation; the server still enforces its own s
           ],
         };
 
-      case 'dhis2_create_validation_rule':
-        const { leftSideExpression, rightSideExpression, ...vrData } = args as any;
-        const validationRule = {
-          ...vrData,
-          leftSide: {
-            expression: leftSideExpression,
-            missingValueStrategy: 'SKIP_IF_ANY_VALUE_MISSING',
-          },
-          rightSide: {
-            expression: rightSideExpression,
-            missingValueStrategy: 'SKIP_IF_ANY_VALUE_MISSING',
-          },
-        };
-        const createdVR = await dhis2Client!.createValidationRule(validationRule);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(createdVR, null, 2),
-            },
-          ],
-        };
-
-      case 'dhis2_run_validation':
-        const validationParams = args as any;
-        const validationResults = await dhis2Client!.runValidation(validationParams);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(validationResults, null, 2),
-            },
-          ],
-        };
-
       case 'dhis2_get_data_values':
         const dataValueParams = args as any;
         const dataValues = await dhis2Client!.getDataValues(dataValueParams);
@@ -1019,18 +922,6 @@ Local MCP policy is not DHIS2 authorisation; the server still enforces its own s
             {
               type: 'text',
               text: JSON.stringify(dataValues, null, 2),
-            },
-          ],
-        };
-
-      case 'dhis2_bulk_import_data_values':
-        const { dataValues: valuesToImport } = args as { dataValues: any[] };
-        const importResult = await dhis2Client!.bulkImportDataValues(valuesToImport);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(importResult, null, 2),
             },
           ],
         };
@@ -1062,18 +953,6 @@ Local MCP policy is not DHIS2 authorisation; the server still enforces its own s
           ],
         };
 
-      case 'dhis2_create_program':
-        const newProgram = args as any;
-        const createdProg = await dhis2Client!.createProgram(newProgram);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(createdProg, null, 2),
-            },
-          ],
-        };
-
       case 'dhis2_list_tracked_entity_types':
         const { filter: tetFilter, pageSize: tetPageSize } = args as {
           filter?: string;
@@ -1085,18 +964,6 @@ Local MCP policy is not DHIS2 authorisation; the server still enforces its own s
             {
               type: 'text',
               text: JSON.stringify(trackedEntityTypes, null, 2),
-            },
-          ],
-        };
-
-      case 'dhis2_create_tracked_entity_type':
-        const newTET = args as any;
-        const createdTET = await dhis2Client!.createTrackedEntityType(newTET);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(createdTET, null, 2),
             },
           ],
         };
@@ -1116,18 +983,6 @@ Local MCP policy is not DHIS2 authorisation; the server still enforces its own s
           ],
         };
 
-      case 'dhis2_create_tracked_entity_attribute':
-        const newTEA = args as any;
-        const createdTEA = await dhis2Client!.createTrackedEntityAttribute(newTEA);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(createdTEA, null, 2),
-            },
-          ],
-        };
-
       case 'dhis2_list_program_stages':
         const { filter: psFilter, pageSize: psPageSize } = args as {
           filter?: string;
@@ -1139,18 +994,6 @@ Local MCP policy is not DHIS2 authorisation; the server still enforces its own s
             {
               type: 'text',
               text: JSON.stringify(programStages, null, 2),
-            },
-          ],
-        };
-
-      case 'dhis2_create_program_stage':
-        const newPS = args as any;
-        const createdPS = await dhis2Client!.createProgramStage(newPS);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(createdPS, null, 2),
             },
           ],
         };
@@ -1170,101 +1013,13 @@ Local MCP policy is not DHIS2 authorisation; the server still enforces its own s
           ],
         };
 
-      case 'dhis2_create_program_rule':
-        const newPR = args as any;
-        const createdPR = await dhis2Client!.createProgramRule(newPR);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(createdPR, null, 2),
-            },
-          ],
-        };
-
-      case 'dhis2_list_tracked_entity_instances':
-        const teiParams = args as any;
-        const trackedEntityInstances = await dhis2Client!.getTrackedEntityInstances(teiParams);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(trackedEntityInstances, null, 2),
-            },
-          ],
-        };
-
-      case 'dhis2_create_tracked_entity_instance':
-        const newTEI = args as any;
-        const createdTEI = await dhis2Client!.createTrackedEntityInstance(newTEI);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(createdTEI, null, 2),
-            },
-          ],
-        };
-
+      case 'dhis2_list_tracked_entities':
       case 'dhis2_list_enrollments':
-        const enrollmentParams = args as any;
-        const enrollments = await dhis2Client!.getEnrollments(enrollmentParams);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(enrollments, null, 2),
-            },
-          ],
-        };
-
-      case 'dhis2_create_enrollment':
-        const newEnrollment = args as any;
-        const createdEnrollment = await dhis2Client!.createEnrollment(newEnrollment);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(createdEnrollment, null, 2),
-            },
-          ],
-        };
-
-      case 'dhis2_list_events':
-        const eventParams = args as any;
-        const events = await dhis2Client!.getEvents(eventParams);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(events, null, 2),
-            },
-          ],
-        };
-
-      case 'dhis2_create_event':
-        const newEvent = args as any;
-        const createdEvent = await dhis2Client!.createEvent(newEvent);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(createdEvent, null, 2),
-            },
-          ],
-        };
-
-      case 'dhis2_bulk_import_events':
-        const { events: eventsToImport } = args as { events: any[] };
-        const eventImportResult = await dhis2Client!.bulkImportEvents(eventsToImport);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(eventImportResult, null, 2),
-            },
-          ],
-        };
+      case 'dhis2_list_events': {
+        const entity = name === 'dhis2_list_tracked_entities' ? 'trackedEntities' : name === 'dhis2_list_enrollments' ? 'enrollments' : 'events';
+        const r = await dhis2Client!.queryTracker(entity, (args ?? {}) as any);
+        return { content: [{ type: 'text', text: JSON.stringify({ [entity]: r.records, page: r.page, pageSize: r.pageSize, returned: r.records.length }, null, 2) }] };
+      }
 
       case 'dhis2_get_event_analytics':
         const eventAnalyticsParams = args as any;
@@ -1316,18 +1071,6 @@ Local MCP policy is not DHIS2 authorisation; the server still enforces its own s
           ],
         };
 
-      case 'dhis2_create_dashboard':
-        const newDashboard = args as any;
-        const createdDashboard = await dhis2Client!.createDashboard(newDashboard);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(createdDashboard, null, 2),
-            },
-          ],
-        };
-
       case 'dhis2_list_visualizations':
         const { filter: vizFilter, pageSize: vizPageSize } = args as {
           filter?: string;
@@ -1339,18 +1082,6 @@ Local MCP policy is not DHIS2 authorisation; the server still enforces its own s
             {
               type: 'text',
               text: JSON.stringify(visualizations, null, 2),
-            },
-          ],
-        };
-
-      case 'dhis2_create_visualization':
-        const newVisualization = args as any;
-        const createdVisualization = await dhis2Client!.createVisualization(newVisualization);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(createdVisualization, null, 2),
             },
           ],
         };
@@ -1439,18 +1170,6 @@ Local MCP policy is not DHIS2 authorisation; the server still enforces its own s
             {
               type: 'text',
               text: runtimeConfig,
-            },
-          ],
-        };
-
-      case 'dhis2_create_datastore_namespace':
-        const datastoreNsArgs = args as any;
-        const result = await dhis2Client!.createDataStoreNamespace(datastoreNsArgs.namespace, datastoreNsArgs);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `DataStore namespace '${datastoreNsArgs.namespace}' configured successfully`,
             },
           ],
         };

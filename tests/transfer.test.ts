@@ -17,6 +17,7 @@ const OS1 = 'osAAAAAAAA1';
 
 class Dev implements SourceGateway {
   baseURL = 'https://dev.example.org';
+  release = 41;
   exports = 0;
   store: Record<string, any[]> = {
     programs: [{ id: PR, name: 'Facility assessment', organisationUnits: [{ id: 'ouDEV000001' }, { id: 'ouDEV000002' }],
@@ -41,6 +42,7 @@ class Dev implements SourceGateway {
 class Prod implements TargetGateway {
   baseURL = 'https://prod.example.org';
   readOnly = true;
+  release: number | undefined = 41;
   writes = 0;
   objects = new Map<string, Record<string, unknown>>([
     [`dataElements/${DE2}`, { id: DE2, name: 'Staff count', code: 'STAFF', valueType: 'INTEGER', lastUpdated: 'old' }],          // identical
@@ -159,6 +161,36 @@ describe('approve', () => {
     const { engine } = setup();
     expect(await code(engine.approve('00000000-0000-4000-8000-000000000000'))).toBe('unknown_transfer');
     expect(await code(engine.approve('../../etc'))).toBe('unknown_transfer');
+  });
+});
+
+describe('DHIS2 versions of the two servers', () => {
+  it('blocks a package that uses a feature the receiving version lacks, before approval', async () => {
+    const { engine, dev, prod, prompts } = setup();
+    dev.release = 42;
+    prod.release = 41;
+    dev.store.programIndicators = [{ id: 'piAAAAAAAA1', name: 'Visits by sex', program: { id: PR }, categoryCombo: { id: 'ccAAAAAAAA1' } }];
+    const t = await engine.prepare(req);
+    expect(t.versions).toEqual({ source: 42, target: 41 });
+    expect(t.versionProblems[0]).toMatch(/programIndicators\/piAAAAAAAA1.*needs DHIS2 2.42 or later; this server is 2.41.*one program indicator per category option/);
+    expect(fs.readFileSync(t.files.review, 'utf8')).toContain('Will not work on the receiving version');
+    expect(await code(engine.approve(t.id))).toBe('version_incompatible');
+    expect(prompts).toEqual([]);
+  });
+  it('the same package is fine when the receiving server is 2.42', async () => {
+    const { engine, dev, prod } = setup();
+    dev.release = 42; prod.release = 42;
+    dev.store.programIndicators = [{ id: 'piAAAAAAAA1', name: 'Visits by sex', program: { id: PR }, categoryCombo: { id: 'ccAAAAAAAA1' } }];
+    const t = await engine.prepare(req);
+    expect(t.versionProblems).toEqual([]);
+    expect((await engine.approve(t.id)).state).toBe('approved');
+  });
+  it('an unreadable receiving version blocks approval rather than being assumed compatible', async () => {
+    const { engine, prod } = setup();
+    prod.release = undefined;
+    const t = await engine.prepare(req);
+    expect(t.versionProblems[0]).toMatch(/could not be read/);
+    expect(await code(engine.approve(t.id))).toBe('version_incompatible');
   });
 });
 

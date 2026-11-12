@@ -1,6 +1,7 @@
 import { toSafeHttpError, SafeError } from './security/safe-errors.js';
 import type { AggValue, SharingObject } from './ops/gateway.js';
 import type { TaskNotification } from './jobs.js';
+import { DhisVersion, effectiveRelease, meFields, parseVersion, trackerList, trackerOrgUnitParams, trackerProgramRequired, TrackerEntity } from './versions.js';
 import type { DHIS2Auth } from './security/credentials.js';
 import axios, { AxiosInstance } from 'axios';
 
@@ -692,6 +693,15 @@ export class DHIS2Client {
    *             (legacy) a username followed by `password`.
    */
   readonly readOnly: boolean;
+  /** Server version, read at connect (detectVersion); decides request and response shapes. */
+  version: DhisVersion | null = null;
+  get release(): number { return effectiveRelease(this.version); }
+
+  async detectVersion(): Promise<DhisVersion | null> {
+    const r = await this.client.get('/system/info', { params: { fields: 'version,revision,buildTime' }, validateStatus: (st: number) => st === 200 || st === 404 });
+    this.version = r.status === 200 ? parseVersion((r.data as any)?.version) : null;
+    return this.version;
+  }
 
   constructor(baseUrl: string, auth: DHIS2Auth | string, password?: string, options: { readOnly?: boolean } = {}) {
     this.readOnly = options.readOnly === true;
@@ -896,7 +906,7 @@ export class DHIS2Client {
     const pageSize = 1000;
     for (let page = 1; records.length < max; page++) {
       const r = await this.client.get(path, { params: { ...params, page, pageSize }, timeout: 120000 });
-      const list = (r.data as any)?.instances ?? (r.data as any)?.[key] ?? [];
+      const list = trackerList(r.data, key as TrackerEntity);
       records.push(...list);
       if (list.length < pageSize) return { records, complete: true };
     }
@@ -904,13 +914,41 @@ export class DHIS2Client {
   }
 
   findEvents(q: { program: string; orgUnit: string; occurredAfter: string; occurredBefore: string }, max: number) {
-    return this.pagedTracker('/tracker/events', { ...q, orgUnitMode: 'SELECTED',
+    return this.pagedTracker('/tracker/events', { program: q.program, occurredAfter: q.occurredAfter, occurredBefore: q.occurredBefore,
+      ...trackerOrgUnitParams(this.release, 'events', q.orgUnit, 'SELECTED'),
       fields: 'event,program,programStage,orgUnit,occurredAt,dataValues[dataElement,value]' }, 'events', max);
   }
 
   findTrackedEntities(q: { trackedEntityType: string; orgUnit: string }, max: number) {
-    return this.pagedTracker('/tracker/trackedEntities', { trackedEntityType: q.trackedEntityType, orgUnits: q.orgUnit, orgUnitMode: 'SELECTED',
+    return this.pagedTracker('/tracker/trackedEntities', { trackedEntityType: q.trackedEntityType,
+      ...trackerOrgUnitParams(this.release, 'trackedEntities', q.orgUnit, 'SELECTED'),
       fields: 'trackedEntity,trackedEntityType,orgUnit,attributes[attribute,value]' }, 'trackedEntities', max);
+  }
+
+  /**
+   * One page of tracker records (/api/tracker, every supported version), with the
+   * parameter names and list key of the connected version.
+   */
+  async queryTracker(entity: TrackerEntity, q: {
+    program?: string; programStage?: string; trackedEntityType?: string; orgUnit?: string; orgUnitMode?: string;
+    status?: string; occurredAfter?: string; occurredBefore?: string; updatedAfter?: string; filter?: string; page?: number; pageSize?: number;
+  }): Promise<{ records: Array<Record<string, any>>; page: number; pageSize: number }> {
+    if (trackerProgramRequired(this.release, entity) && !q.program) throw new Error(`On this DHIS2 version, listing ${entity} needs a program.`);
+    if (entity === 'trackedEntities' && !q.program && !q.trackedEntityType) throw new Error('Give a program or a trackedEntityType.');
+    const uid = /^[A-Za-z][A-Za-z0-9]{10}$/;
+    for (const k of ['program', 'programStage', 'trackedEntityType', 'orgUnit'] as const) if (q[k] !== undefined && !uid.test(q[k]!)) throw new Error(`${k} must be an 11-character id.`);
+    const page = Math.max(1, Math.floor(q.page ?? 1));
+    const pageSize = Math.min(200, Math.max(1, Math.floor(q.pageSize ?? 50)));
+    const fields = { events: 'event,program,programStage,orgUnit,occurredAt,status,enrollment,dataValues[dataElement,value]',
+      enrollments: 'enrollment,program,orgUnit,enrolledAt,occurredAt,status,trackedEntity',
+      trackedEntities: 'trackedEntity,trackedEntityType,orgUnit,attributes[attribute,value]' }[entity];
+    const params: Record<string, unknown> = { fields, page, pageSize,
+      ...trackerOrgUnitParams(this.release, entity, q.orgUnit, q.orgUnitMode ?? (q.orgUnit ? 'SELECTED' : 'ACCESSIBLE')) };
+    for (const k of ['program', 'programStage', 'trackedEntityType', 'status', 'occurredAfter', 'occurredBefore', 'updatedAfter', 'filter'] as const) {
+      if (q[k] !== undefined) params[k] = q[k];
+    }
+    const r = await this.client.get(`/tracker/${entity}`, { params, timeout: 120000 });
+    return { records: trackerList(r.data, entity), page, pageSize };
   }
 
   async getSharing(type: string, id: string): Promise<SharingObject | null> {
@@ -968,7 +1006,7 @@ export class DHIS2Client {
   async getCurrentUser(): Promise<any> {
     const response = await this.client.get('/me', {
       params: {
-        fields: 'id,displayName,username,userCredentials[username,userRoles[id,name,authorities]],userGroups[id,name],organisationUnits[id,name,level],authorities'
+        fields: meFields(this.release)
       }
     });
     return response.data;
@@ -1050,33 +1088,6 @@ export class DHIS2Client {
     }
   }
 
-  async updateDataElement(id: string, dataElement: Partial<DataElement>): Promise<any> {
-    try {
-      const response = await this.client.put(`/dataElements/${id}`, dataElement);
-      return response.data;
-    } catch (error) {
-      throw new Error(`Failed to update data element: ${error}`);
-    }
-  }
-
-  async deleteDataElement(id: string): Promise<any> {
-    try {
-      const response = await this.client.delete(`/dataElements/${id}`);
-      return response.data;
-    } catch (error) {
-      throw new Error(`Failed to delete data element: ${error}`);
-    }
-  }
-
-  async createDataValue(dataValue: Partial<DataValue>): Promise<any> {
-    try {
-      const response = await this.client.post('/dataValues', dataValue);
-      return response.data;
-    } catch (error) {
-      throw new Error(`Failed to create data value: ${error}`);
-    }
-  }
-
   async getDataSets(params?: {
     fields?: string;
     filter?: string;
@@ -1095,24 +1106,6 @@ export class DHIS2Client {
       return response.data;
     } catch (error) {
       throw new Error(`Failed to get data sets: ${error}`);
-    }
-  }
-
-  async createDataSet(dataSet: Partial<DataSet>): Promise<any> {
-    try {
-      const response = await this.client.post('/dataSets', dataSet);
-      return response.data;
-    } catch (error) {
-      throw new Error(`Failed to create data set: ${error}`);
-    }
-  }
-
-  async updateDataSet(id: string, dataSet: Partial<DataSet>): Promise<any> {
-    try {
-      const response = await this.client.put(`/dataSets/${id}`, dataSet);
-      return response.data;
-    } catch (error) {
-      throw new Error(`Failed to update data set: ${error}`);
     }
   }
 
@@ -1137,15 +1130,6 @@ export class DHIS2Client {
     }
   }
 
-  async createCategory(category: Partial<Category>): Promise<any> {
-    try {
-      const response = await this.client.post('/categories', category);
-      return response.data;
-    } catch (error) {
-      throw new Error(`Failed to create category: ${error}`);
-    }
-  }
-
   async getCategoryOptions(params?: {
     fields?: string;
     filter?: string;
@@ -1167,15 +1151,6 @@ export class DHIS2Client {
     }
   }
 
-  async createCategoryOption(categoryOption: Partial<CategoryOption>): Promise<any> {
-    try {
-      const response = await this.client.post('/categoryOptions', categoryOption);
-      return response.data;
-    } catch (error) {
-      throw new Error(`Failed to create category option: ${error}`);
-    }
-  }
-
   async getCategoryCombos(params?: {
     fields?: string;
     filter?: string;
@@ -1194,15 +1169,6 @@ export class DHIS2Client {
       return response.data;
     } catch (error) {
       throw new Error(`Failed to get category combos: ${error}`);
-    }
-  }
-
-  async createCategoryCombo(categoryCombo: Partial<CategoryCombo>): Promise<any> {
-    try {
-      const response = await this.client.post('/categoryCombos', categoryCombo);
-      return response.data;
-    } catch (error) {
-      throw new Error(`Failed to create category combo: ${error}`);
     }
   }
 
@@ -1248,15 +1214,6 @@ export class DHIS2Client {
     }
   }
 
-  async createOrganisationUnitGroup(orgUnitGroup: Partial<OrganisationUnitGroup>): Promise<any> {
-    try {
-      const response = await this.client.post('/organisationUnitGroups', orgUnitGroup);
-      return response.data;
-    } catch (error) {
-      throw new Error(`Failed to create organisation unit group: ${error}`);
-    }
-  }
-
   async getValidationRules(params?: {
     fields?: string;
     filter?: string;
@@ -1275,30 +1232,6 @@ export class DHIS2Client {
       return response.data;
     } catch (error) {
       throw new Error(`Failed to get validation rules: ${error}`);
-    }
-  }
-
-  async createValidationRule(validationRule: Partial<ValidationRule>): Promise<any> {
-    try {
-      const response = await this.client.post('/validationRules', validationRule);
-      return response.data;
-    } catch (error) {
-      throw new Error(`Failed to create validation rule: ${error}`);
-    }
-  }
-
-  async runValidation(params: {
-    startDate: string;
-    endDate: string;
-    organisationUnits: string[];
-    validationRuleGroups?: string[];
-    sendNotifications?: boolean;
-  }): Promise<{ validationResults: ValidationResult[] }> {
-    try {
-      const response = await this.client.post('/validation', params);
-      return response.data;
-    } catch (error) {
-      throw new Error(`Failed to run validation: ${error}`);
     }
   }
 
@@ -1337,34 +1270,6 @@ export class DHIS2Client {
     }
   }
 
-  async bulkImportDataValues(dataValues: DataValue[]): Promise<any> {
-    try {
-      const payload = {
-        dataValues,
-      };
-
-      const response = await this.client.post('/dataValues', payload);
-      return response.data;
-    } catch (error) {
-      throw new Error(`Failed to bulk import data values: ${error}`);
-    }
-  }
-
-  async deleteDataValue(params: {
-    dataElement: string;
-    period: string;
-    orgUnit: string;
-    categoryOptionCombo?: string;
-    attributeOptionCombo?: string;
-  }): Promise<any> {
-    try {
-      const response = await this.client.delete('/dataValues', { params });
-      return response.data;
-    } catch (error) {
-      throw new Error(`Failed to delete data value: ${error}`);
-    }
-  }
-
   async getPrograms(params?: {
     fields?: string;
     filter?: string;
@@ -1383,24 +1288,6 @@ export class DHIS2Client {
       return response.data;
     } catch (error) {
       throw new Error(`Failed to get programs: ${error}`);
-    }
-  }
-
-  async createProgram(program: Partial<Program>): Promise<any> {
-    try {
-      const response = await this.client.post('/programs', program);
-      return response.data;
-    } catch (error) {
-      throw new Error(`Failed to create program: ${error}`);
-    }
-  }
-
-  async updateProgram(id: string, program: Partial<Program>): Promise<any> {
-    try {
-      const response = await this.client.put(`/programs/${id}`, program);
-      return response.data;
-    } catch (error) {
-      throw new Error(`Failed to update program: ${error}`);
     }
   }
 
@@ -1425,15 +1312,6 @@ export class DHIS2Client {
     }
   }
 
-  async createTrackedEntityType(trackedEntityType: Partial<TrackedEntityType>): Promise<any> {
-    try {
-      const response = await this.client.post('/trackedEntityTypes', trackedEntityType);
-      return response.data;
-    } catch (error) {
-      throw new Error(`Failed to create tracked entity type: ${error}`);
-    }
-  }
-
   async getTrackedEntityAttributes(params?: {
     fields?: string;
     filter?: string;
@@ -1452,15 +1330,6 @@ export class DHIS2Client {
       return response.data;
     } catch (error) {
       throw new Error(`Failed to get tracked entity attributes: ${error}`);
-    }
-  }
-
-  async createTrackedEntityAttribute(attribute: Partial<TrackedEntityAttribute>): Promise<any> {
-    try {
-      const response = await this.client.post('/trackedEntityAttributes', attribute);
-      return response.data;
-    } catch (error) {
-      throw new Error(`Failed to create tracked entity attribute: ${error}`);
     }
   }
 
@@ -1485,15 +1354,6 @@ export class DHIS2Client {
     }
   }
 
-  async createProgramStage(programStage: Partial<ProgramStage>): Promise<any> {
-    try {
-      const response = await this.client.post('/programStages', programStage);
-      return response.data;
-    } catch (error) {
-      throw new Error(`Failed to create program stage: ${error}`);
-    }
-  }
-
   async getProgramRules(params?: {
     fields?: string;
     filter?: string;
@@ -1512,200 +1372,6 @@ export class DHIS2Client {
       return response.data;
     } catch (error) {
       throw new Error(`Failed to get program rules: ${error}`);
-    }
-  }
-
-  async createProgramRule(programRule: Partial<ProgramRule>): Promise<any> {
-    try {
-      const response = await this.client.post('/programRules', programRule);
-      return response.data;
-    } catch (error) {
-      throw new Error(`Failed to create program rule: ${error}`);
-    }
-  }
-
-  async getTrackedEntityInstances(params: {
-    trackedEntityType?: string;
-    program?: string;
-    orgUnit?: string;
-    orgUnitMode?: 'SELECTED' | 'CHILDREN' | 'DESCENDANTS' | 'ACCESSIBLE';
-    query?: string;
-    attribute?: string[];
-    filter?: string[];
-    ou?: string[];
-    ouMode?: string;
-    programStartDate?: string;
-    programEndDate?: string;
-    programStatus?: 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
-    followUp?: boolean;
-    eventStartDate?: string;
-    eventEndDate?: string;
-    eventStatus?: 'ACTIVE' | 'COMPLETED' | 'VISITED' | 'SCHEDULE' | 'OVERDUE' | 'SKIPPED';
-    includeDeleted?: boolean;
-    includeAllAttributes?: boolean;
-    fields?: string;
-    page?: number;
-    pageSize?: number;
-  }): Promise<{ trackedEntityInstances: TrackedEntityInstance[] }> {
-    try {
-      const queryParams: Record<string, string | number | boolean> = {};
-      
-      Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined) {
-          if (Array.isArray(value)) {
-            queryParams[key] = value.join(',');
-          } else {
-            queryParams[key] = value;
-          }
-        }
-      });
-
-      if (!queryParams.fields) {
-        queryParams.fields = 'id,trackedEntityType,orgUnit,attributes[attribute,value,displayValue],enrollments[id,program,enrollmentDate,status,events[id,programStage,eventDate,status,dataValues[dataElement,value]]]';
-      }
-
-      const response = await this.client.get('/trackedEntityInstances', { params: queryParams });
-      return response.data;
-    } catch (error) {
-      throw new Error(`Failed to get tracked entity instances: ${error}`);
-    }
-  }
-
-  async createTrackedEntityInstance(tei: Partial<TrackedEntityInstance>): Promise<any> {
-    try {
-      const response = await this.client.post('/trackedEntityInstances', tei);
-      return response.data;
-    } catch (error) {
-      throw new Error(`Failed to create tracked entity instance: ${error}`);
-    }
-  }
-
-  async updateTrackedEntityInstance(id: string, tei: Partial<TrackedEntityInstance>): Promise<any> {
-    try {
-      const response = await this.client.put(`/trackedEntityInstances/${id}`, tei);
-      return response.data;
-    } catch (error) {
-      throw new Error(`Failed to update tracked entity instance: ${error}`);
-    }
-  }
-
-  async getEnrollments(params: {
-    program?: string;
-    trackedEntityInstance?: string;
-    orgUnit?: string;
-    orgUnitMode?: 'SELECTED' | 'CHILDREN' | 'DESCENDANTS' | 'ACCESSIBLE';
-    programStartDate?: string;
-    programEndDate?: string;
-    programStatus?: 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
-    followUp?: boolean;
-    includeDeleted?: boolean;
-    fields?: string;
-    page?: number;
-    pageSize?: number;
-  }): Promise<{ enrollments: Enrollment[] }> {
-    try {
-      const queryParams: Record<string, string | number | boolean> = {};
-      
-      Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined) {
-          queryParams[key] = value;
-        }
-      });
-
-      if (!queryParams.fields) {
-        queryParams.fields = 'id,trackedEntityInstance,program,orgUnit,enrollmentDate,incidentDate,status,followup,events[id,programStage,eventDate,status,dataValues[dataElement,value]]';
-      }
-
-      const response = await this.client.get('/enrollments', { params: queryParams });
-      return response.data;
-    } catch (error) {
-      throw new Error(`Failed to get enrollments: ${error}`);
-    }
-  }
-
-  async createEnrollment(enrollment: Partial<Enrollment>): Promise<any> {
-    try {
-      const response = await this.client.post('/enrollments', enrollment);
-      return response.data;
-    } catch (error) {
-      throw new Error(`Failed to create enrollment: ${error}`);
-    }
-  }
-
-  async updateEnrollment(id: string, enrollment: Partial<Enrollment>): Promise<any> {
-    try {
-      const response = await this.client.put(`/enrollments/${id}`, enrollment);
-      return response.data;
-    } catch (error) {
-      throw new Error(`Failed to update enrollment: ${error}`);
-    }
-  }
-
-  async getEvents(params: {
-    program?: string;
-    programStage?: string;
-    enrollment?: string;
-    trackedEntityInstance?: string;
-    orgUnit?: string;
-    orgUnitMode?: 'SELECTED' | 'CHILDREN' | 'DESCENDANTS' | 'ACCESSIBLE';
-    startDate?: string;
-    endDate?: string;
-    status?: 'ACTIVE' | 'COMPLETED' | 'VISITED' | 'SCHEDULE' | 'OVERDUE' | 'SKIPPED';
-    followUp?: boolean;
-    includeDeleted?: boolean;
-    fields?: string;
-    page?: number;
-    pageSize?: number;
-    order?: string;
-  }): Promise<{ events: Event[] }> {
-    try {
-      const queryParams: Record<string, string | number | boolean> = {};
-      
-      Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined) {
-          queryParams[key] = value;
-        }
-      });
-
-      if (!queryParams.fields) {
-        queryParams.fields = 'id,enrollment,program,programStage,orgUnit,trackedEntityInstance,status,eventDate,dueDate,coordinate,dataValues[dataElement,value],created,lastUpdated';
-      }
-
-      const response = await this.client.get('/events', { params: queryParams });
-      return response.data;
-    } catch (error) {
-      throw new Error(`Failed to get events: ${error}`);
-    }
-  }
-
-  async createEvent(event: Partial<Event>): Promise<any> {
-    try {
-      const response = await this.client.post('/events', event);
-      return response.data;
-    } catch (error) {
-      throw new Error(`Failed to create event: ${error}`);
-    }
-  }
-
-  async updateEvent(id: string, event: Partial<Event>): Promise<any> {
-    try {
-      const response = await this.client.put(`/events/${id}`, event);
-      return response.data;
-    } catch (error) {
-      throw new Error(`Failed to update event: ${error}`);
-    }
-  }
-
-  async bulkImportEvents(events: Event[]): Promise<any> {
-    try {
-      const payload = {
-        events,
-      };
-
-      const response = await this.client.post('/events', payload);
-      return response.data;
-    } catch (error) {
-      throw new Error(`Failed to bulk import events: ${error}`);
     }
   }
 
@@ -1807,15 +1473,6 @@ export class DHIS2Client {
     }
   }
 
-  async createDashboard(dashboard: Partial<Dashboard>): Promise<any> {
-    try {
-      const response = await this.client.post('/dashboards', dashboard);
-      return response.data;
-    } catch (error) {
-      throw new Error(`Failed to create dashboard: ${error}`);
-    }
-  }
-
   async getVisualizations(params?: {
     fields?: string;
     filter?: string;
@@ -1834,15 +1491,6 @@ export class DHIS2Client {
       return response.data;
     } catch (error) {
       throw new Error(`Failed to get visualizations: ${error}`);
-    }
-  }
-
-  async createVisualization(visualization: Partial<Visualization>): Promise<any> {
-    try {
-      const response = await this.client.post('/visualizations', visualization);
-      return response.data;
-    } catch (error) {
-      throw new Error(`Failed to create visualization: ${error}`);
     }
   }
 
@@ -1889,49 +1537,6 @@ export class DHIS2Client {
   }
 
   // DataStore operations for Web App Platform integration
-  async createDataStoreNamespace(namespace: string, options?: {
-    description?: string;
-    sharing?: any;
-    initialKeys?: Array<{ key: string; value: any }>;
-  }): Promise<any> {
-    assertDataStoreSegment(namespace, 'namespace');
-    options?.initialKeys?.forEach(({ key }) => assertDataStoreSegment(key, 'key'));
-    try {
-      // Create namespace metadata (if supported)
-      if (options?.description || options?.sharing) {
-        const namespaceConfig = {
-          description: options.description,
-          sharing: options.sharing
-        };
-        
-        try {
-          await this.client.put(`/dataStore/${namespace}/__metadata__`, namespaceConfig);
-        } catch (error) {
-          // Metadata creation is optional, continue with key creation
-          console.error('Could not create namespace metadata (continuing).');
-        }
-      }
-
-      // Create initial keys if provided
-      if (options?.initialKeys) {
-        const results = [];
-        for (const { key, value } of options.initialKeys) {
-          try {
-            const response = await this.client.post(`/dataStore/${namespace}/${key}`, value);
-            results.push({ key, status: 'created', data: response.data });
-          } catch (error) {
-            results.push({ key, status: 'error', error: String(error) });
-          }
-        }
-        return { namespace, results };
-      }
-
-      return { namespace, status: 'created' };
-    } catch (error) {
-      throw new Error(`Failed to create DataStore namespace: ${error}`);
-    }
-  }
-
   async manageDataStoreKey(params: {
     operation: 'create' | 'read' | 'update' | 'delete' | 'list';
     namespace: string;

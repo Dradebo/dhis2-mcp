@@ -1,12 +1,14 @@
 /**
  * Offline design checks for a proposed metadata payload ({collection: objects[]}).
  * Pure: no instance access. Each rule encodes a failure seen in real DHIS2 work
- * (2.41) that otherwise surfaces only after import, in Capture, or in analytics.
+ * (mostly on 2.41) that otherwise surfaces only after import, in Capture, or in analytics.
+ * Rules that depend on the server version are in checkVersionRules (see versions.ts).
  *
  * Severity: "error" = would fail import or silently break collection/analytics;
  * "warning" = likely problem that needs a human/agent decision.
  */
 import { isUid } from './security/plans.js';
+import { VERSION_NOTES } from './versions.js';
 
 export interface Finding {
   severity: 'error' | 'warning';
@@ -43,7 +45,7 @@ const UNIQUE_NAME = new Set(['dataElements', 'indicators', 'programIndicators', 
 function label(o: Obj): string { return String(o?.name ?? o?.displayName ?? o?.code ?? o?.id ?? ''); }
 const ref = (v: any): string | undefined => (v && typeof v === 'object' && isUid(v.id) ? v.id : undefined);
 
-export function checkDesign(payload: Payload): Finding[] {
+export function checkDesign(payload: Payload, release?: number): Finding[] {
   const out: Finding[] = [];
   const add = (severity: Finding['severity'], rule: string, objectType: string, o: Obj | undefined, message: string) =>
     out.push({ severity, rule, objectType, ...(o?.id ? { id: String(o.id) } : {}), ...(o ? { name: label(o).slice(0, 80) } : {}), message });
@@ -255,6 +257,53 @@ export function checkDesign(payload: Payload): Finding[] {
   for (const d of payload.dashboards ?? []) {
     for (const item of Array.isArray(d.dashboardItems) ? d.dashboardItems : []) {
       if ('w' in item || 'h' in item) add('error', 'dashboard-item-size', 'dashboards', d, 'Dashboard items use width/height; w/h are silently ignored and items render at default size.');
+    }
+  }
+  if (release !== undefined) out.push(...checkVersionRules(payload, release));
+  return out;
+}
+
+/**
+ * Rules that depend on the server's DHIS2 version (rule ids start with "version-").
+ * Each points to the version note that explains it and, where a feature is missing,
+ * the workaround for that version. Also run on partial update sets.
+ */
+export function checkVersionRules(payload: Payload, release: number): Finding[] {
+  const out: Finding[] = [];
+  const note = (id: string) => VERSION_NOTES.find(n => n.id === id)!;
+  const add = (rule: string, objectType: string, o: Obj | undefined, message: string) =>
+    out.push({ severity: 'error', rule, objectType, ...(o?.id ? { id: String(o.id) } : {}), ...(o ? { name: label(o).slice(0, 80) } : {}), message });
+  const nonEmpty = (v: unknown) => (Array.isArray(v) ? v.length > 0 : v !== undefined && v !== null && v !== '');
+
+  if (release < 42) {
+    const w = note('pi-disaggregation').workaround;
+    for (const pi of payload.programIndicators ?? []) {
+      const used = ['categoryCombo', 'attributeCombo', 'categoryMappingIds'].filter(f => nonEmpty(pi?.[f]));
+      if (used.length) add('version-pi-disaggregation', 'programIndicators', pi, `Program indicator disaggregation (${used.join(', ')}) needs DHIS2 2.42 or later; this server is 2.${release}. ${w}`);
+    }
+    for (const p of payload.programs ?? []) {
+      if (nonEmpty(p?.categoryMappings)) add('version-pi-disaggregation', 'programs', p, `Program category mappings need DHIS2 2.42 or later; this server is 2.${release}. ${w}`);
+    }
+  }
+  if (release >= 41) {
+    for (const t of ['eventReports', 'eventCharts']) {
+      for (const o of payload[t] ?? []) add('version-event-visualizations', t, o, `${t} reached end of support in 2.41; this server is 2.${release}. Create an eventVisualizations object instead (Line Listing / Data Visualizer).`);
+    }
+  }
+  if (release >= 42) {
+    const cats = new Map<string, Obj>((payload.categories ?? []).filter(c => isUid(c?.id)).map(c => [c.id, c]));
+    for (const c of payload.categories ?? []) {
+      const n = Array.isArray(c?.categoryOptions) ? c.categoryOptions.length : 0;
+      if (n > 50) add('version-category-limits', 'categories', c, `${n} options; DHIS2 2.42+ allows at most 50 per category by default (31 on 42.0). ${note('category-limits').workaround}`);
+    }
+    for (const cc of payload.categoryCombos ?? []) {
+      const list = Array.isArray(cc?.categories) ? cc.categories : [];
+      if (list.length > 5) add('version-category-limits', 'categoryCombos', cc, `${list.length} categories; DHIS2 2.42+ allows at most 5 per category combination by default.`);
+      const sizes = list.map((r: any) => cats.get(r?.id)?.categoryOptions?.length);
+      if (sizes.length && sizes.every((x: unknown) => typeof x === 'number')) {
+        const combos = (sizes as number[]).reduce((a, b) => a * b, 1);
+        if (combos > 500) add('version-category-limits', 'categoryCombos', cc, `${combos} option combinations; DHIS2 2.42+ allows at most 500 by default. ${note('category-limits').workaround}`);
+      }
     }
   }
   return out;

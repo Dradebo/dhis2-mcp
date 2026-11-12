@@ -37,15 +37,26 @@ describe('policy registry', () => {
 });
 
 describe('§9.1 self-approval is impossible', () => {
-  const writeTools = ['dhis2_create_data_element', 'dhis2_update_data_element', 'dhis2_delete_data_element',
+  // The direct-write tools were removed (decision 2026-11-12): changes go only through approved plans.
+  const removedWriteTools = ['dhis2_create_data_element', 'dhis2_update_data_element', 'dhis2_delete_data_element',
     'dhis2_bulk_import_data_values', 'dhis2_bulk_import_events', 'dhis2_create_dashboard',
-    'dhis2_run_validation', 'dhis2_create_datastore_namespace', 'dhis2_clear_audit_log'];
-  it.each(writeTools)('%s is denied even for a superuser with confirmed:true', name => {
+    'dhis2_run_validation', 'dhis2_create_datastore_namespace', 'dhis2_create_program', 'dhis2_create_event'];
+  it.each(removedWriteTools)('%s no longer exists and is denied as unknown, even for a superuser with confirmed:true', name => {
+    expect(createDHIS2Tools().some(t => t.name === name)).toBe(false);
     for (const args of [{}, { confirmed: true }, { confirmed: 'true', approval: 'yes' }]) {
       const d = authorize(name, args, connected(['record-read', 'datastore-read', 'audit-export', 'composition-export']));
       expect(d.allowed).toBe(false);
-      if (!d.allowed) expect(d.code).toBe('writes_disabled');
+      if (!d.allowed) expect(d.code).toBe('unknown_tool');
     }
+  });
+  it('no declared tool is a direct instance write: every change goes through an approved plan', () => {
+    const direct = createDHIS2Tools().map(t => t.name)
+      .filter(n => /^dhis2_(create|update|delete|bulk_import)_/.test(n) && !['dhis2_create_ui_components'].includes(n));
+    expect(direct).toEqual([]);
+  });
+  it('the audit log cannot be cleared by the assistant', () => {
+    const d = authorize('dhis2_clear_audit_log', { confirmed: true }, connected(['record-read', 'datastore-read', 'audit-export', 'composition-export']));
+    expect(d.allowed).toBe(false);
   });
   it('datastore writes are denied while reads depend on the operator capability', () => {
     const caps = connected(['datastore-read']);
@@ -96,7 +107,7 @@ describe('§9.2 fail closed', () => {
     }
   });
   it('record-level reads need the person\'s consent (or an admin pre-consent)', () => {
-    for (const name of ['dhis2_list_events', 'dhis2_list_tracked_entity_instances', 'dhis2_get_event_analytics']) {
+    for (const name of ['dhis2_list_events', 'dhis2_list_tracked_entities', 'dhis2_get_event_analytics']) {
       expect(authorize(name, {}, connected())).toMatchObject({ allowed: false, code: 'consent_required', consent: 'record-read' });
       expect(authorize(name, {}, { ...connected(), consents: new Set(['record-read'] as const) }).allowed).toBe(true);
       expect(authorize(name, {}, connected(['record-read'])).allowed).toBe(true);

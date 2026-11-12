@@ -90,6 +90,35 @@ Packages are refused on production, both in the engine and by the policy and the
 
 The MCP prompt `customise_from_documents` and four resources (`dhis2://guides/...`) carry the documents → customisation procedure, the modelling rules, the dashboard rules and the verification checklist. Every MCP host gets them. They are static text, with no instance data.
 
+## DHIS2 versions (2.39 to 2.43)
+
+The person using the assistant usually cannot change the server version, so the assistant adapts to the version it finds. It never makes an upgrade the fix.
+
+- **Version detection.** On connecting, `/api/system/info` is read through a read-only client. The version is shown when connecting and in every approval prompt.
+- **Version table.** `src/versions.ts` holds every behaviour that differs between versions, each with its source. The client and the design checks ask it; nothing else hard-codes a version. Examples:
+  - tracker query parameter names (`orgUnit`/`ouMode` up to 2.40, `orgUnits`/`orgUnitMode` from 2.41; the old names were removed in 2.42);
+  - the tracker list key (`instances` up to 2.40, the plural entity key from 2.41);
+  - `program` is required on event and enrollment searches from 2.43;
+  - `userCredentials` was removed in 2.42.
+- **Older than 2.39.** The connection is read-only: the policy refuses every change (`version_read_only`) and the transport refuses every non-GET request, exactly as for production.
+- **Newer than 2.43.** The 2.43 behaviour is used and the server is flagged as untested. Every change still has to pass DHIS2's own dry run before the person is asked, and the plan reads exercise the same read endpoints. No write is ever retried with a fallback.
+- **Version-specific design rules.** `dhis2_check_design` and package planning apply the rules of the server's version, for example:
+  - program-indicator disaggregation only from 2.42;
+  - event reports and charts reached end of support in 2.41;
+  - category limits apply from 2.42.
+
+  Where a feature is missing, the message gives that version's workaround. The resource `dhis2://guides/version-differences` is generated for the connected version.
+- **Transfers.** The package is checked against the receiving server's version. Anything that would not work there blocks approval (`version_incompatible`). An unreadable version also blocks rather than being assumed compatible.
+
+## No direct-write tools
+
+The 23 legacy tools that created, updated, deleted or bulk-imported directly were removed (decision of 2026-11-12). Every change now goes through a plan the person approves, with read-back afterwards:
+- metadata: plans and packages;
+- data and sharing: operations;
+- analytics: jobs.
+
+Tracker record lists use `/api/tracker` on every version. The old tracker endpoints were removed in 2.42.
+
 ## Data imports, sharing changes and analytics runs (development only)
 
 All three are refused on production, by both the policy and the read-only transport.

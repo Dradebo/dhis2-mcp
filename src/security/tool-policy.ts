@@ -102,7 +102,7 @@ const REGISTRY: ReadonlyMap<string, PolicyEntry> = new Map<string, PolicyEntry>(
   // Individual-level reads: tracker records and event/enrollment *query* analytics
   // (the client calls /analytics/events/query and /analytics/enrollments/query,
   // which return line lists, not aggregates).
-  ['dhis2_list_tracked_entity_instances', recordRead],
+  ['dhis2_list_tracked_entities', recordRead],
   ['dhis2_list_enrollments', recordRead],
   ['dhis2_list_events', recordRead],
   ['dhis2_get_event_analytics', recordRead],
@@ -149,29 +149,6 @@ const REGISTRY: ReadonlyMap<string, PolicyEntry> = new Map<string, PolicyEntry>(
 
   // Legacy direct writes, imports and server-side actions: always denied. Metadata
   // creates/updates go through dhis2_plan_metadata_change + dhis2_apply_plan.
-  ['dhis2_create_data_element', write],
-  ['dhis2_update_data_element', write],
-  ['dhis2_create_data_set', write],
-  ['dhis2_create_category', write],
-  ['dhis2_create_category_option', write],
-  ['dhis2_create_category_combo', write],
-  ['dhis2_create_org_unit_group', write],
-  ['dhis2_create_validation_rule', write],
-  ['dhis2_run_validation', write], // POST /validation; may send notifications
-  ['dhis2_bulk_import_data_values', write],
-  ['dhis2_create_program', write],
-  ['dhis2_create_tracked_entity_type', write],
-  ['dhis2_create_tracked_entity_attribute', write],
-  ['dhis2_create_program_stage', write],
-  ['dhis2_create_program_rule', write],
-  ['dhis2_create_tracked_entity_instance', write],
-  ['dhis2_create_enrollment', write],
-  ['dhis2_create_event', write],
-  ['dhis2_bulk_import_events', write],
-  ['dhis2_create_dashboard', write],
-  ['dhis2_create_visualization', write],
-  ['dhis2_create_datastore_namespace', write],
-  ['dhis2_delete_data_element', del],
   ['dhis2_manage_datastore_key', {
     classify: args => {
       const op = typeof args?.operation === 'string' ? args.operation : '';
@@ -221,6 +198,8 @@ export interface PolicyContext {
   consents?: ReadonlySet<ConsentCategory>;
   /** Environment of the active connection; 'production' is read-only. */
   environment?: string | null;
+  /** Set when the active connection must not change anything ('production' or 'unsupported-version'). */
+  readOnly?: string | null;
   /** Permissions derived from the verified DHIS2 user; null when unverified. */
   permissions: UserPermissions | null;
   capabilities: ReadonlySet<Capability>;
@@ -232,7 +211,7 @@ export type PolicyDecision =
 
 export type DenialCode =
   | 'unknown_tool' | 'writes_disabled' | 'not_connected' | 'permission_unverified'
-  | 'dhis2_authority_missing' | 'consent_required' | 'invalid_arguments' | 'production_read_only';
+  | 'dhis2_authority_missing' | 'consent_required' | 'invalid_arguments' | 'production_read_only' | 'version_read_only';
 
 function deny(operationClass: OperationClass | 'unknown', code: DenialCode, reason: string): PolicyDecision {
   return { allowed: false, operationClass, code, reason };
@@ -274,6 +253,10 @@ export function authorize(name: string, args: unknown, ctx: PolicyContext): Poli
   if (WRITE_CLASSES.has(cls) && ctx.environment === 'production') {
     return deny(cls, 'production_read_only',
       'This is a production server: the assistant can only read here. Make changes on the development server and transfer them with dhis2_prepare_transfer.');
+  }
+  if (WRITE_CLASSES.has(cls) && ctx.readOnly === 'unsupported-version') {
+    return deny(cls, 'version_read_only',
+      'This DHIS2 version is older than the assistant supports (2.39 and later), so it only reads here. Nothing can be created or changed.');
   }
   if (INSTANCE_CLASSES.has(cls)) {
     // Discovery: instance tools are listed once a profile exists; the server connects on first use.
