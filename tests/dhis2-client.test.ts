@@ -106,7 +106,9 @@ describe('DHIS2Client', () => {
         params: {
           fields: 'id,name,displayName,shortName,code,valueType,domainType',
           filter: undefined,
-          paging: false,
+          // Always paged: DHIS2 ignores pageSize when paging=false (live 2.41 finding).
+          paging: true,
+          page: 1,
           pageSize: 50,
         },
       });
@@ -126,7 +128,7 @@ describe('DHIS2Client', () => {
       await client.getDataElements(params);
 
       expect(mockedAxios.get).toHaveBeenCalledWith('/dataElements', {
-        params,
+        params: { fields: 'id,name', filter: 'name:ilike:test', paging: true, page: 1, pageSize: 10 },
       });
     });
   });
@@ -170,9 +172,10 @@ describe('DHIS2Client', () => {
       expect(result).toEqual(mockPrograms);
       expect(mockedAxios.get).toHaveBeenCalledWith('/programs', {
         params: {
-          fields: 'id,name,displayName,shortName,code,description,programType,trackedEntityType[id,name],programStages[id,name,sortOrder],organisationUnits[id,name]',
+          fields: 'id,name,displayName,shortName,code,description,programType,trackedEntityType[id,name],programStages[id,name,sortOrder],organisationUnits~size~rename(organisationUnitCount)',
           filter: undefined,
-          paging: false,
+          paging: true,
+          page: 1,
           pageSize: 50,
         },
       });

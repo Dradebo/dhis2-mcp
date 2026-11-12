@@ -65,10 +65,20 @@ function makeServer(name) {
         if (RELEASE >= 43 && ent !== 'trackedEntities' && !q.get('program')) return json(400, { message: 'program is required' });
         q.set('__ou', q.get(ent === 'events' || RELEASE <= 40 ? 'orgUnit' : 'orgUnits'));
       }
-      const listBody = (ent, list) => (RELEASE <= 40 ? { page: 1, pageSize: 1000, instances: list } : { pager: { page: 1, pageSize: 1000 }, page: 1, pageSize: 1000, [ent]: list });
+      const counted = q.get('totalPages') === 'true';
+      const listBody = (ent, list) => (RELEASE <= 40 ? { page: 1, pageSize: 1000, ...(counted ? { total: list.length } : {}), instances: list }
+        : { pager: { page: 1, pageSize: 1000, ...(counted ? { total: list.length } : {}) }, page: 1, pageSize: 1000, [ent]: list });
       if (p === '/api/categoryOptionCombos') return json(200, { categoryOptionCombos: [{ id: DEF }] });
+      // Real 2.41 answer when the bulk parameters are sent to the single-value endpoint.
+      if (p === '/api/dataValues' && req.method === 'GET') return json(409, { httpStatus: 'Conflict', httpStatusCode: 409, status: 'ERROR', errorCode: 'E1100', message: 'Data element not found or not accessible: `null`' });
       if (p === '/api/dataValueSets' && req.method === 'GET') {
-        const des = q.getAll('dataElement'), ous = q.getAll('orgUnit'), pes = q.getAll('period');
+        const des = q.getAll('dataElement'), ous = q.getAll('orgUnit').flatMap(x => x.split(',')), pes = q.getAll('period').flatMap(x => x.split(','));
+        if (q.get('dataSet')) {
+          if (q.get('dataSet') !== DS) return json(200, {});
+          const ym = (d) => d.replace(/-/g, '').slice(0, 6);
+          const inRange = (pe) => pes.length ? pes.includes(pe) : (!q.get('startDate') || pe >= ym(q.get('startDate'))) && (!q.get('endDate') || pe <= ym(q.get('endDate')));
+          return json(200, { dataSet: DS, dataValues: [...st.values.values()].filter(v => ous.includes(v.orgUnit) && inRange(v.period)) });
+        }
         return json(200, { dataValues: [...st.values.values()].filter(v => des.includes(v.dataElement) && ous.includes(v.orgUnit) && pes.includes(v.period)) });
       }
       if (p === '/api/dataValueSets' && req.method === 'POST') {
@@ -227,6 +237,11 @@ try {
     const te = await call('dhis2_list_tracked_entities', { trackedEntityType: TET, orgUnit: OU1 });
     const tes = te.isError ? null : JSON.parse(te.text);
     check('O16 record lists work on this version (parameter names and list key)', evs?.returned === 1 && tes?.returned === 2, `${r.text.slice(0, 150)} | ${te.text.slice(0, 150)}`);
+    r = await call('dhis2_get_data_values', { dataSet: DS, orgUnit: [OU1], startDate: '2025-01-01', endDate: '2026-12-31' });
+    const wantValues = [...dev.values.values()].filter(v => v.orgUnit === OU1).length;
+    check('O19 aggregate values are read through /dataValueSets', !r.isError && wantValues > 0 && JSON.parse(r.text).dataValues?.length === wantValues, `${wantValues} | ${r.text.slice(0, 200)}`);
+    r = await call('dhis2_list_events', { program: EVPR, orgUnit: OU1, countOnly: true });
+    check('O18 counting returns the total in this version\'s reply shape, without records', !r.isError && JSON.parse(r.text).total === 1 && !r.text.includes('dataValues'), r.text.slice(0, 200));
     check('O17 the removed old tracker endpoints are never called', !dev.oldTracker && !prod.oldTracker, String(dev.oldTracker));
 
     // --- production ---------------------------------------------------------------------

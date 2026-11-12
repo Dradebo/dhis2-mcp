@@ -19,6 +19,7 @@ export interface UserPermissions {
   canManageSystem: boolean;
   canViewSystemInfo: boolean;
   canRunAnalytics: boolean;
+  canRunAnalyticsTables: boolean;
   canManageDashboards: boolean;
   
   // Program permissions
@@ -79,7 +80,7 @@ export class PermissionSystem {
     ['dhis2_apply_operation', 'canViewMetadata'],
     ['dhis2_get_operation', 'canViewMetadata'],
     ['dhis2_cancel_operation', 'canViewMetadata'],
-    ['dhis2_run_analytics', 'canViewMetadata'],
+    ['dhis2_run_analytics', 'canRunAnalyticsTables'],
     ['dhis2_get_job', 'canViewMetadata'],
     ['dhis2_get_schema', 'canViewMetadata'],
     ['dhis2_find_reusable', 'canViewMetadata'],
@@ -191,37 +192,41 @@ export class PermissionSystem {
       canCreateMetadata: authorities.has('F_DATAELEMENT_PUBLIC_ADD') || authorities.has('ALL'),
       canUpdateMetadata: authorities.has('F_DATAELEMENT_PRIVATE_ADD') || authorities.has('ALL'),
       canDeleteMetadata: authorities.has('F_DATAELEMENT_DELETE') || authorities.has('ALL'),
-      canViewMetadata: authorities.has('F_METADATA_READ') || authorities.has('ALL'),
+      // Reading is governed by DHIS2 sharing, not by an authority (there is no "read metadata",
+      // "read data values" or "read analytics" authority in DHIS2 2.39-2.43). Any signed-in user may
+      // ask; the server returns only what sharing allows and 403 otherwise.
+      canViewMetadata: true,
       
       // Data permissions
       canEnterData: authorities.has('F_DATAVALUE_ADD') || authorities.has('ALL'),
-      canViewData: authorities.has('F_DATAVALUE_READ') || authorities.has('ALL'),
-      canImportData: authorities.has('F_IMPORT_DATA') || authorities.has('ALL'),
+      canViewData: true,
+      canImportData: authorities.has('F_DATAVALUE_ADD') || authorities.has('ALL'),
       canExportData: authorities.has('F_EXPORT_DATA') || authorities.has('ALL'),
-      canDeleteData: authorities.has('F_DATAVALUE_DELETE') || authorities.has('ALL'),
+      canDeleteData: authorities.has('ALL'), // no delete tool exists; superuser only
       
       // System permissions
       canManageUsers: authorities.has('F_USER_ADD') || authorities.has('ALL'),
       canManageSystem: authorities.has('F_SYSTEM_SETTING') || authorities.has('ALL'),
       canViewSystemInfo: true, // Basic permission for connection
-      canRunAnalytics: authorities.has('F_ANALYTICS_READ') || authorities.has('ALL'),
+      canRunAnalytics: true, // reading analytics follows sharing
+      canRunAnalyticsTables: authorities.has('F_PERFORM_MAINTENANCE') || authorities.has('ALL'), // DHIS2's authority for /api/resourceTables/analytics
       canManageDashboards: authorities.has('F_DASHBOARD_PUBLIC_ADD') || authorities.has('ALL'),
       
       // Program permissions
       canManagePrograms: authorities.has('F_PROGRAM_PUBLIC_ADD') || authorities.has('ALL'),
-      canEnrollTEI: authorities.has('F_TEI_CASCADE_DELETE') || authorities.has('F_TRACKED_ENTITY_INSTANCE_ADD') || authorities.has('ALL'),
-      canViewTEI: authorities.has('F_TRACKED_ENTITY_INSTANCE_SEARCH') || authorities.has('ALL'),
+      canEnrollTEI: true, // tracker writes follow program sharing; DHIS2's dry run checks before approval
+      canViewTEI: true, // follows program sharing and the user's search org units
       canManageTrackerData: authorities.has('F_PROGRAMSTAGE_ADD') || authorities.has('ALL'),
       
       // Development permissions (more permissive for development tools)
-      canUseMobileFeatures: !authorities.has('RESTRICT_MOBILE'),
-      canConfigureMobile: authorities.has('F_MOBILE_SETTINGS') || authorities.has('ALL'),
+      canUseMobileFeatures: true, // DHIS2 has no authority that restricts mobile use
+      canConfigureMobile: authorities.has('M_androidsettingsapp') || authorities.has('ALL'),
       canUseUITools: true, // UI tools are generally safe
-      canConfigureApps: authorities.has('F_APP_MANAGEMENT') || authorities.has('ALL'),
+      canConfigureApps: authorities.has('M_dhis-web-app-management') || authorities.has('ALL'),
       canDebugApplications: authorities.has('F_SYSTEM_SETTING') || authorities.has('ALL'),
       
       // Special flags
-      isReadOnly: authorities.has('READONLY_MODE'),
+      isReadOnly: false, // read-only comes from the environment (production) and version policy, not an authority
       authorities: Array.from(authorities)
     };
   }
@@ -246,6 +251,7 @@ export class PermissionSystem {
       canManageSystem: false,
       canViewSystemInfo: false,
       canRunAnalytics: false,
+      canRunAnalyticsTables: false,
       canManageDashboards: false,
       canManagePrograms: false,
       canEnrollTEI: false,

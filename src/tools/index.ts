@@ -439,7 +439,11 @@ export function createDHIS2Tools(): Tool[] {
           },
           pageSize: {
             type: 'number',
-            description: 'Number of results to return (default: 50)',
+            description: 'Results per page (default 50, maximum 200). The reply includes a pager with the total.',
+          },
+          page: {
+            type: 'number',
+            description: 'Page number, starting at 1 (default 1).',
           },
         },
       },
@@ -456,7 +460,11 @@ export function createDHIS2Tools(): Tool[] {
           },
           pageSize: {
             type: 'number',
-            description: 'Number of results to return (default: 50)',
+            description: 'Results per page (default 50, maximum 200). The reply includes a pager with the total.',
+          },
+          page: {
+            type: 'number',
+            description: 'Page number, starting at 1 (default 1).',
           },
         },
       },
@@ -498,7 +506,11 @@ export function createDHIS2Tools(): Tool[] {
           },
           pageSize: {
             type: 'number',
-            description: 'Number of results to return (default: 50)',
+            description: 'Results per page (default 50, maximum 200). The reply includes a pager with the total.',
+          },
+          page: {
+            type: 'number',
+            description: 'Page number, starting at 1 (default 1).',
           },
         },
       },
@@ -515,7 +527,11 @@ export function createDHIS2Tools(): Tool[] {
           },
           pageSize: {
             type: 'number',
-            description: 'Number of results to return (default: 50)',
+            description: 'Results per page (default 50, maximum 200). The reply includes a pager with the total.',
+          },
+          page: {
+            type: 'number',
+            description: 'Page number, starting at 1 (default 1).',
           },
         },
       },
@@ -532,7 +548,11 @@ export function createDHIS2Tools(): Tool[] {
           },
           pageSize: {
             type: 'number',
-            description: 'Number of results to return (default: 50)',
+            description: 'Results per page (default 50, maximum 200). The reply includes a pager with the total.',
+          },
+          page: {
+            type: 'number',
+            description: 'Page number, starting at 1 (default 1).',
           },
         },
       },
@@ -549,7 +569,11 @@ export function createDHIS2Tools(): Tool[] {
           },
           pageSize: {
             type: 'number',
-            description: 'Number of results to return (default: 50)',
+            description: 'Results per page (default 50, maximum 200). The reply includes a pager with the total.',
+          },
+          page: {
+            type: 'number',
+            description: 'Page number, starting at 1 (default 1).',
           },
         },
       },
@@ -566,7 +590,11 @@ export function createDHIS2Tools(): Tool[] {
           },
           pageSize: {
             type: 'number',
-            description: 'Number of results to return (default: 50)',
+            description: 'Results per page (default 50, maximum 200). The reply includes a pager with the total.',
+          },
+          page: {
+            type: 'number',
+            description: 'Page number, starting at 1 (default 1).',
           },
         },
       },
@@ -583,7 +611,11 @@ export function createDHIS2Tools(): Tool[] {
           },
           pageSize: {
             type: 'number',
-            description: 'Number of results to return (default: 50)',
+            description: 'Results per page (default 50, maximum 200). The reply includes a pager with the total.',
+          },
+          page: {
+            type: 'number',
+            description: 'Page number, starting at 1 (default 1).',
           },
         },
       },
@@ -600,7 +632,11 @@ export function createDHIS2Tools(): Tool[] {
           },
           pageSize: {
             type: 'number',
-            description: 'Number of results to return (default: 50)',
+            description: 'Results per page (default 50, maximum 200). The reply includes a pager with the total.',
+          },
+          page: {
+            type: 'number',
+            description: 'Page number, starting at 1 (default 1).',
           },
         },
       },
@@ -669,7 +705,11 @@ export function createDHIS2Tools(): Tool[] {
           },
           pageSize: {
             type: 'number',
-            description: 'Number of results to return (default: 50)',
+            description: 'Results per page (default 50, maximum 200). The reply includes a pager with the total.',
+          },
+          page: {
+            type: 'number',
+            description: 'Page number, starting at 1 (default 1).',
           },
         },
       },
@@ -686,7 +726,11 @@ export function createDHIS2Tools(): Tool[] {
           },
           pageSize: {
             type: 'number',
-            description: 'Number of results to return (default: 50)',
+            description: 'Results per page (default 50, maximum 200). The reply includes a pager with the total.',
+          },
+          page: {
+            type: 'number',
+            description: 'Page number, starting at 1 (default 1).',
           },
         },
       },
@@ -703,7 +747,11 @@ export function createDHIS2Tools(): Tool[] {
           },
           pageSize: {
             type: 'number',
-            description: 'Number of results to return (default: 50)',
+            description: 'Results per page (default 50, maximum 200). The reply includes a pager with the total.',
+          },
+          page: {
+            type: 'number',
+            description: 'Page number, starting at 1 (default 1).',
           },
         },
       },
@@ -720,7 +768,11 @@ export function createDHIS2Tools(): Tool[] {
           },
           pageSize: {
             type: 'number',
-            description: 'Number of results to return (default: 50)',
+            description: 'Results per page (default 50, maximum 200). The reply includes a pager with the total.',
+          },
+          page: {
+            type: 'number',
+            description: 'Page number, starting at 1 (default 1).',
           },
         },
       },
@@ -737,7 +789,11 @@ export function createDHIS2Tools(): Tool[] {
           },
           pageSize: {
             type: 'number',
-            description: 'Number of results to return (default: 50)',
+            description: 'Results per page (default 50, maximum 200). The reply includes a pager with the total.',
+          },
+          page: {
+            type: 'number',
+            description: 'Page number, starting at 1 (default 1).',
           },
         },
       },
@@ -749,7 +805,8 @@ export function createDHIS2Tools(): Tool[] {
         program: { type: 'string' }, trackedEntityType: { type: 'string', description: 'Needed when no program is given.' },
         orgUnit: { type: 'string' }, orgUnitMode: { type: 'string', enum: ['SELECTED', 'CHILDREN', 'DESCENDANTS', 'ACCESSIBLE', 'CAPTURE'] },
         filter: { type: 'string', description: 'Attribute filter, e.g. "attrUid:eq:value".' }, updatedAfter: { type: 'string' },
-        page: { type: 'number' }, pageSize: { type: 'number', maximum: 200 } }, additionalProperties: false },
+        page: { type: 'number' }, pageSize: { type: 'number', maximum: 200 },
+        countOnly: { type: 'boolean', description: 'Return only the number of matching records, without their contents. Use this to count.' } }, additionalProperties: false },
       annotations: { readOnlyHint: true },
     },
     {
@@ -758,7 +815,8 @@ export function createDHIS2Tools(): Tool[] {
       inputSchema: { type: 'object', properties: {
         program: { type: 'string' }, orgUnit: { type: 'string' }, orgUnitMode: { type: 'string', enum: ['SELECTED', 'CHILDREN', 'DESCENDANTS', 'ACCESSIBLE', 'CAPTURE'] },
         status: { type: 'string', enum: ['ACTIVE', 'COMPLETED', 'CANCELLED'] }, updatedAfter: { type: 'string' },
-        page: { type: 'number' }, pageSize: { type: 'number', maximum: 200 } }, required: ['program'], additionalProperties: false },
+        page: { type: 'number' }, pageSize: { type: 'number', maximum: 200 },
+        countOnly: { type: 'boolean', description: 'Return only the number of matching records, without their contents. Use this to count.' } }, required: ['program'], additionalProperties: false },
       annotations: { readOnlyHint: true },
     },
     {
@@ -769,7 +827,8 @@ export function createDHIS2Tools(): Tool[] {
         orgUnitMode: { type: 'string', enum: ['SELECTED', 'CHILDREN', 'DESCENDANTS', 'ACCESSIBLE', 'CAPTURE'] },
         status: { type: 'string', enum: ['ACTIVE', 'COMPLETED', 'VISITED', 'SCHEDULE', 'OVERDUE', 'SKIPPED'] },
         occurredAfter: { type: 'string' }, occurredBefore: { type: 'string' }, updatedAfter: { type: 'string' },
-        page: { type: 'number' }, pageSize: { type: 'number', maximum: 200 } }, required: ['program'], additionalProperties: false },
+        page: { type: 'number' }, pageSize: { type: 'number', maximum: 200 },
+        countOnly: { type: 'boolean', description: 'Return only the number of matching records, without their contents. Use this to count.' } }, required: ['program'], additionalProperties: false },
       annotations: { readOnlyHint: true },
     },
     {
@@ -893,7 +952,11 @@ export function createDHIS2Tools(): Tool[] {
           },
           pageSize: {
             type: 'number',
-            description: 'Number of results to return (default: 50)',
+            description: 'Results per page (default 50, maximum 200). The reply includes a pager with the total.',
+          },
+          page: {
+            type: 'number',
+            description: 'Page number, starting at 1 (default 1).',
           },
         },
       },
@@ -910,7 +973,11 @@ export function createDHIS2Tools(): Tool[] {
           },
           pageSize: {
             type: 'number',
-            description: 'Number of results to return (default: 50)',
+            description: 'Results per page (default 50, maximum 200). The reply includes a pager with the total.',
+          },
+          page: {
+            type: 'number',
+            description: 'Page number, starting at 1 (default 1).',
           },
         },
       },
@@ -927,7 +994,11 @@ export function createDHIS2Tools(): Tool[] {
           },
           pageSize: {
             type: 'number',
-            description: 'Number of results to return (default: 50)',
+            description: 'Results per page (default 50, maximum 200). The reply includes a pager with the total.',
+          },
+          page: {
+            type: 'number',
+            description: 'Page number, starting at 1 (default 1).',
           },
         },
       },

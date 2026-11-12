@@ -1,7 +1,7 @@
 import { toSafeHttpError, SafeError } from './security/safe-errors.js';
 import type { AggValue, SharingObject } from './ops/gateway.js';
 import type { TaskNotification } from './jobs.js';
-import { DhisVersion, effectiveRelease, meFields, parseVersion, trackerList, trackerOrgUnitParams, trackerProgramRequired, TrackerEntity } from './versions.js';
+import { DhisVersion, effectiveRelease, meFields, parseVersion, trackerList, trackerOrgUnitParams, trackerTotal, trackerProgramRequired, TrackerEntity } from './versions.js';
 import type { DHIS2Auth } from './security/credentials.js';
 import axios, { AxiosInstance } from 'axios';
 
@@ -684,6 +684,14 @@ export function assertDataStoreSegment(value: unknown, label: string): void {
   }
 }
 
+/** Paged list requests: DHIS2 ignores pageSize when paging=false and returns everything (live finding:
+ *  18 MB for 49 category combos), so lists always page. Default 50, maximum 200 per page. */
+export function listPaging(p?: { pageSize?: number; page?: number }): { paging: true; page: number; pageSize: number } {
+  const size = Math.floor(Number(p?.pageSize ?? 50));
+  const page = Math.floor(Number(p?.page ?? 1));
+  return { paging: true, page: Number.isFinite(page) && page > 0 ? page : 1, pageSize: Number.isFinite(size) ? Math.min(200, Math.max(1, size)) : 50 };
+}
+
 export class DHIS2Client {
   private client: AxiosInstance;
   private baseUrl: string;
@@ -932,23 +940,26 @@ export class DHIS2Client {
   async queryTracker(entity: TrackerEntity, q: {
     program?: string; programStage?: string; trackedEntityType?: string; orgUnit?: string; orgUnitMode?: string;
     status?: string; occurredAfter?: string; occurredBefore?: string; updatedAfter?: string; filter?: string; page?: number; pageSize?: number;
-  }): Promise<{ records: Array<Record<string, any>>; page: number; pageSize: number }> {
+    countOnly?: boolean;
+  }): Promise<{ records: Array<Record<string, any>>; page: number; pageSize: number; total?: number }> {
     if (trackerProgramRequired(this.release, entity) && !q.program) throw new Error(`On this DHIS2 version, listing ${entity} needs a program.`);
     if (entity === 'trackedEntities' && !q.program && !q.trackedEntityType) throw new Error('Give a program or a trackedEntityType.');
     const uid = /^[A-Za-z][A-Za-z0-9]{10}$/;
     for (const k of ['program', 'programStage', 'trackedEntityType', 'orgUnit'] as const) if (q[k] !== undefined && !uid.test(q[k]!)) throw new Error(`${k} must be an 11-character id.`);
     const page = Math.max(1, Math.floor(q.page ?? 1));
-    const pageSize = Math.min(200, Math.max(1, Math.floor(q.pageSize ?? 50)));
+    const pageSize = q.countOnly ? 1 : Math.min(200, Math.max(1, Math.floor(q.pageSize ?? 50)));
     const fields = { events: 'event,program,programStage,orgUnit,occurredAt,status,enrollment,dataValues[dataElement,value]',
       enrollments: 'enrollment,program,orgUnit,enrolledAt,occurredAt,status,trackedEntity',
       trackedEntities: 'trackedEntity,trackedEntityType,orgUnit,attributes[attribute,value]' }[entity];
-    const params: Record<string, unknown> = { fields, page, pageSize,
+    const params: Record<string, unknown> = { fields: q.countOnly ? ({ events: 'event', enrollments: 'enrollment', trackedEntities: 'trackedEntity' } as const)[entity] : fields,
+      page: q.countOnly ? 1 : page, pageSize, totalPages: true,
       ...trackerOrgUnitParams(this.release, entity, q.orgUnit, q.orgUnitMode ?? (q.orgUnit ? 'SELECTED' : 'ACCESSIBLE')) };
     for (const k of ['program', 'programStage', 'trackedEntityType', 'status', 'occurredAfter', 'occurredBefore', 'updatedAfter', 'filter'] as const) {
       if (q[k] !== undefined) params[k] = q[k];
     }
     const r = await this.client.get(`/tracker/${entity}`, { params, timeout: 120000 });
-    return { records: trackerList(r.data, entity), page, pageSize };
+    const total = trackerTotal(r.data);
+    return { records: q.countOnly ? [] : trackerList(r.data, entity), page, pageSize, ...(total !== undefined ? { total } : {}) };
   }
 
   async getSharing(type: string, id: string): Promise<SharingObject | null> {
@@ -1026,13 +1037,13 @@ export class DHIS2Client {
     filter?: string;
     paging?: boolean;
     pageSize?: number;
+    page?: number;
   }): Promise<{ dataElements: DataElement[] }> {
     try {
       const queryParams = {
         fields: params?.fields || 'id,name,displayName,shortName,code,valueType,domainType',
         filter: params?.filter,
-        paging: params?.paging ?? false,
-        pageSize: params?.pageSize || 50,
+        ...listPaging(params),
       };
 
       const response = await this.client.get('/dataElements', { params: queryParams });
@@ -1047,13 +1058,13 @@ export class DHIS2Client {
     filter?: string;
     paging?: boolean;
     pageSize?: number;
+    page?: number;
   }): Promise<{ organisationUnits: OrganisationUnit[] }> {
     try {
       const queryParams = {
         fields: params?.fields || 'id,name,displayName,shortName,code,level,path',
         filter: params?.filter,
-        paging: params?.paging ?? false,
-        pageSize: params?.pageSize || 50,
+        ...listPaging(params),
       };
 
       const response = await this.client.get('/organisationUnits', { params: queryParams });
@@ -1093,13 +1104,13 @@ export class DHIS2Client {
     filter?: string;
     paging?: boolean;
     pageSize?: number;
+    page?: number;
   }): Promise<{ dataSets: DataSet[] }> {
     try {
       const queryParams = {
-        fields: params?.fields || 'id,name,displayName,shortName,code,description,periodType,categoryCombo[id,name],dataSetElements[dataElement[id,name,valueType]],organisationUnits[id,name],sections[id,name,sortOrder],expiryDays,timelyDays,openFuturePeriods',
+        fields: params?.fields || 'id,name,displayName,shortName,code,description,periodType,categoryCombo[id,name],dataSetElements~size~rename(dataElementCount),organisationUnits~size~rename(organisationUnitCount),sections[id,name,sortOrder],expiryDays,timelyDays,openFuturePeriods',
         filter: params?.filter,
-        paging: params?.paging ?? false,
-        pageSize: params?.pageSize || 50,
+        ...listPaging(params),
       };
 
       const response = await this.client.get('/dataSets', { params: queryParams });
@@ -1114,13 +1125,13 @@ export class DHIS2Client {
     filter?: string;
     paging?: boolean;
     pageSize?: number;
+    page?: number;
   }): Promise<{ categories: Category[] }> {
     try {
       const queryParams = {
         fields: params?.fields || 'id,name,displayName,shortName,code,dataDimension,dataDimensionType,categoryOptions[id,name,displayName,code]',
         filter: params?.filter,
-        paging: params?.paging ?? false,
-        pageSize: params?.pageSize || 50,
+        ...listPaging(params),
       };
 
       const response = await this.client.get('/categories', { params: queryParams });
@@ -1135,13 +1146,13 @@ export class DHIS2Client {
     filter?: string;
     paging?: boolean;
     pageSize?: number;
+    page?: number;
   }): Promise<{ categoryOptions: CategoryOption[] }> {
     try {
       const queryParams = {
         fields: params?.fields || 'id,name,displayName,shortName,code,startDate,endDate',
         filter: params?.filter,
-        paging: params?.paging ?? false,
-        pageSize: params?.pageSize || 50,
+        ...listPaging(params),
       };
 
       const response = await this.client.get('/categoryOptions', { params: queryParams });
@@ -1156,13 +1167,13 @@ export class DHIS2Client {
     filter?: string;
     paging?: boolean;
     pageSize?: number;
+    page?: number;
   }): Promise<{ categoryCombos: CategoryCombo[] }> {
     try {
       const queryParams = {
-        fields: params?.fields || 'id,name,displayName,shortName,code,dataDimensionType,categories[id,name],categoryOptionCombos[id,name,displayName]',
+        fields: params?.fields || 'id,name,displayName,shortName,code,dataDimensionType,categories[id,name],categoryOptionCombos~size~rename(categoryOptionComboCount)',
         filter: params?.filter,
-        paging: params?.paging ?? false,
-        pageSize: params?.pageSize || 50,
+        ...listPaging(params),
       };
 
       const response = await this.client.get('/categoryCombos', { params: queryParams });
@@ -1177,13 +1188,13 @@ export class DHIS2Client {
     filter?: string;
     paging?: boolean;
     pageSize?: number;
+    page?: number;
   }): Promise<{ categoryOptionCombos: CategoryOptionCombo[] }> {
     try {
       const queryParams = {
         fields: params?.fields || 'id,name,displayName,code,categoryOptions[id,name],categoryCombo[id,name]',
         filter: params?.filter,
-        paging: params?.paging ?? false,
-        pageSize: params?.pageSize || 50,
+        ...listPaging(params),
       };
 
       const response = await this.client.get('/categoryOptionCombos', { params: queryParams });
@@ -1198,13 +1209,13 @@ export class DHIS2Client {
     filter?: string;
     paging?: boolean;
     pageSize?: number;
+    page?: number;
   }): Promise<{ organisationUnitGroups: OrganisationUnitGroup[] }> {
     try {
       const queryParams = {
-        fields: params?.fields || 'id,name,displayName,shortName,code,symbol,organisationUnits[id,name]',
+        fields: params?.fields || 'id,name,displayName,shortName,code,symbol,organisationUnits~size~rename(organisationUnitCount)',
         filter: params?.filter,
-        paging: params?.paging ?? false,
-        pageSize: params?.pageSize || 50,
+        ...listPaging(params),
       };
 
       const response = await this.client.get('/organisationUnitGroups', { params: queryParams });
@@ -1219,13 +1230,13 @@ export class DHIS2Client {
     filter?: string;
     paging?: boolean;
     pageSize?: number;
+    page?: number;
   }): Promise<{ validationRules: ValidationRule[] }> {
     try {
       const queryParams = {
         fields: params?.fields || 'id,name,displayName,description,instruction,importance,operator,leftSide[expression,description],rightSide[expression,description],periodType',
         filter: params?.filter,
-        paging: params?.paging ?? false,
-        pageSize: params?.pageSize || 50,
+        ...listPaging(params),
       };
 
       const response = await this.client.get('/validationRules', { params: queryParams });
@@ -1263,7 +1274,16 @@ export class DHIS2Client {
         }
       });
 
-      const response = await this.client.get('/dataValues', { params: queryParams });
+      // /dataValueSets is the bulk read; /dataValues reads one value (de+pe+ou) and answered 409 E1100
+      // to these parameters on a live 2.41 server. Same parameter names on 2.39-2.43.
+      if (!queryParams.period && !queryParams.startDate && !queryParams.lastUpdated && !queryParams.lastUpdatedDuration) {
+        throw new Error('Give period, or startDate and endDate, or lastUpdated.');
+      }
+      if (!queryParams.dataSet && !queryParams.dataElementGroup && !queryParams.dataElement) throw new Error('Give dataSet (or dataElement ids).');
+      if (!queryParams.orgUnit && !queryParams.orgUnitGroup) throw new Error('Give orgUnit.');
+      const response = await this.client.get('/dataValueSets', { params: queryParams, headers: { Accept: 'application/json' } });
+      if (!response.data || typeof response.data !== 'object') return { dataValues: [] };
+      return { ...response.data, dataValues: Array.isArray(response.data.dataValues) ? response.data.dataValues : [] };
       return response.data;
     } catch (error) {
       throw new Error(`Failed to get data values: ${error}`);
@@ -1275,13 +1295,13 @@ export class DHIS2Client {
     filter?: string;
     paging?: boolean;
     pageSize?: number;
+    page?: number;
   }): Promise<{ programs: Program[] }> {
     try {
       const queryParams = {
-        fields: params?.fields || 'id,name,displayName,shortName,code,description,programType,trackedEntityType[id,name],programStages[id,name,sortOrder],organisationUnits[id,name]',
+        fields: params?.fields || 'id,name,displayName,shortName,code,description,programType,trackedEntityType[id,name],programStages[id,name,sortOrder],organisationUnits~size~rename(organisationUnitCount)',
         filter: params?.filter,
-        paging: params?.paging ?? false,
-        pageSize: params?.pageSize || 50,
+        ...listPaging(params),
       };
 
       const response = await this.client.get('/programs', { params: queryParams });
@@ -1296,13 +1316,13 @@ export class DHIS2Client {
     filter?: string;
     paging?: boolean;
     pageSize?: number;
+    page?: number;
   }): Promise<{ trackedEntityTypes: TrackedEntityType[] }> {
     try {
       const queryParams = {
         fields: params?.fields || 'id,name,displayName,shortName,code,description,trackedEntityTypeAttributes[id,trackedEntityAttribute[id,name,valueType,unique],displayInList,mandatory,searchable,sortOrder]',
         filter: params?.filter,
-        paging: params?.paging ?? false,
-        pageSize: params?.pageSize || 50,
+        ...listPaging(params),
       };
 
       const response = await this.client.get('/trackedEntityTypes', { params: queryParams });
@@ -1317,13 +1337,13 @@ export class DHIS2Client {
     filter?: string;
     paging?: boolean;
     pageSize?: number;
+    page?: number;
   }): Promise<{ trackedEntityAttributes: TrackedEntityAttribute[] }> {
     try {
       const queryParams = {
-        fields: params?.fields || 'id,name,displayName,shortName,code,description,valueType,unique,inherit,pattern,confidential,optionSet[id,name,options[id,name,code]]',
+        fields: params?.fields || 'id,name,displayName,shortName,code,description,valueType,unique,inherit,pattern,confidential,optionSet[id,name,options~size~rename(optionCount)]',
         filter: params?.filter,
-        paging: params?.paging ?? false,
-        pageSize: params?.pageSize || 50,
+        ...listPaging(params),
       };
 
       const response = await this.client.get('/trackedEntityAttributes', { params: queryParams });
@@ -1338,13 +1358,13 @@ export class DHIS2Client {
     filter?: string;
     paging?: boolean;
     pageSize?: number;
+    page?: number;
   }): Promise<{ programStages: ProgramStage[] }> {
     try {
       const queryParams = {
         fields: params?.fields || 'id,name,displayName,shortName,code,description,program[id,name],sortOrder,repeatable,minDaysFromStart,programStageDataElements[id,dataElement[id,name],compulsory,sortOrder]',
         filter: params?.filter,
-        paging: params?.paging ?? false,
-        pageSize: params?.pageSize || 50,
+        ...listPaging(params),
       };
 
       const response = await this.client.get('/programStages', { params: queryParams });
@@ -1359,13 +1379,13 @@ export class DHIS2Client {
     filter?: string;
     paging?: boolean;
     pageSize?: number;
+    page?: number;
   }): Promise<{ programRules: ProgramRule[] }> {
     try {
       const queryParams = {
         fields: params?.fields || 'id,name,displayName,description,program[id,name],programStage[id,name],condition,priority,programRuleActions[id,programRuleActionType,dataElement[id,name],data,content]',
         filter: params?.filter,
-        paging: params?.paging ?? false,
-        pageSize: params?.pageSize || 50,
+        ...listPaging(params),
       };
 
       const response = await this.client.get('/programRules', { params: queryParams });
@@ -1457,13 +1477,13 @@ export class DHIS2Client {
     filter?: string;
     paging?: boolean;
     pageSize?: number;
+    page?: number;
   }): Promise<{ dashboards: Dashboard[] }> {
     try {
       const queryParams = {
-        fields: params?.fields || 'id,name,displayName,dashboardItems[id,type,visualization[id,name],map[id,name],reportTable[id,name],chart[id,name]]',
+        fields: params?.fields || 'id,name,displayName,dashboardItems[id,type,visualization[id,name],eventVisualization[id,name],map[id,name]]',
         filter: params?.filter,
-        paging: params?.paging ?? false,
-        pageSize: params?.pageSize || 50,
+        ...listPaging(params),
       };
 
       const response = await this.client.get('/dashboards', { params: queryParams });
@@ -1478,13 +1498,13 @@ export class DHIS2Client {
     filter?: string;
     paging?: boolean;
     pageSize?: number;
+    page?: number;
   }): Promise<{ visualizations: Visualization[] }> {
     try {
       const queryParams = {
         fields: params?.fields || 'id,name,displayName,type,dataDimensionItems,columns,rows,filters,organisationUnits,periods',
         filter: params?.filter,
-        paging: params?.paging ?? false,
-        pageSize: params?.pageSize || 50,
+        ...listPaging(params),
       };
 
       const response = await this.client.get('/visualizations', { params: queryParams });
@@ -1499,13 +1519,13 @@ export class DHIS2Client {
     filter?: string;
     paging?: boolean;
     pageSize?: number;
+    page?: number;
   }): Promise<{ reports: Report[] }> {
     try {
       const queryParams = {
-        fields: params?.fields || 'id,name,displayName,type,designContent',
+        fields: params?.fields || 'id,name,displayName,type,lastUpdated',
         filter: params?.filter,
-        paging: params?.paging ?? false,
-        pageSize: params?.pageSize || 50,
+        ...listPaging(params),
       };
 
       const response = await this.client.get('/reports', { params: queryParams });

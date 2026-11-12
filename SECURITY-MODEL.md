@@ -110,6 +110,24 @@ The person using the assistant usually cannot change the server version, so the 
   Where a feature is missing, the message gives that version's workaround. The resource `dhis2://guides/version-differences` is generated for the connected version.
 - **Transfers.** The package is checked against the receiving server's version. Anything that would not work there blocks approval (`version_incompatible`). An unreadable version also blocks rather than being assumed compatible.
 
+## Reading follows DHIS2 sharing; writes and jobs follow real authorities
+
+A live check on DHIS2 2.41.10.1 (2026-11-12) found that the read permission checks used authority names that do not exist in DHIS2, for example `F_METADATA_READ`, `F_DATAVALUE_READ` and `F_ANALYTICS_READ`. Only superusers (`ALL`) could read, and the fake test servers only ever used superusers.
+
+- **Reading** metadata, aggregate data, analytics and tracker lists is allowed for any signed-in user. DHIS2's own sharing decides what is returned; that is how DHIS2 itself governs reading.
+- **Personal data:** tracker lists still ask the person once per session before showing individual-level records.
+- **Changes** still need the person's approval of each plan. DHIS2's dry run checks the user's real rights before that approval is asked.
+- **Analytics table runs** need `F_PERFORM_MAINTENANCE`, the authority DHIS2 checks for that endpoint. Without it, the tool is not offered, so nobody approves a run that would be refused.
+- **Regression test:** every authority name the code checks must appear in `tests/fixtures/authorities-2.41.json`, the server's own `/api/authorities` list (`tests/authorities.test.ts`).
+
+## Reply size
+
+Lists always page: 50 per page by default, with a maximum of 200. Before this fix, `paging=false` made DHIS2 ignore `pageSize`, and one list returned 18 MB, which closed the connection.
+
+Default fields report counts instead of embedding unbounded collections, such as assigned org units and option combos. Tracker lists can return only a count (`countOnly`).
+
+Every tool reply is capped at 200,000 characters. Oversized JSON is first sent compact; anything still too large is cut, with a note telling the agent to ask for less.
+
 ## No direct-write tools
 
 The 23 legacy tools that created, updated, deleted or bulk-imported directly were removed (decision of 2026-11-12). Every change now goes through a plan the person approves, with read-back afterwards:

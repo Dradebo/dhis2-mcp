@@ -77,6 +77,16 @@ export function trackerList(body: any, entity: TrackerEntity): Array<Record<stri
   return Array.isArray(list) ? list : [];
 }
 
+/**
+ * Total matching records. `totalPages=true` asks DHIS2 to count (same parameter name 2.36-2.43).
+ * The count sits at top-level `total` up to 2.40 and in `pager.total` from 2.41 (the 2.41 response
+ * reshaping). Read both shapes; return undefined when the server did not count.
+ */
+export function trackerTotal(body: any): number | undefined {
+  const t = body?.pager?.total ?? body?.total;
+  return typeof t === 'number' && Number.isFinite(t) ? t : undefined;
+}
+
 /** 2.43 made `program` mandatory on /tracker/events and /tracker/enrollments. */
 export function trackerProgramRequired(release: number, entity: TrackerEntity): boolean {
   return release >= 43 && entity !== 'trackedEntities';

@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { withResultLimit } from './result-limit.js';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
@@ -431,7 +432,7 @@ server.setRequestHandler(CompleteRequestSchema, async (request) => {
   }
 });
 
-server.setRequestHandler(CallToolRequestSchema, async (request) => {
+server.setRequestHandler(CallToolRequestSchema, withResultLimit(async (request) => {
   const { name, arguments: args } = request.params;
   const startTime = Date.now();
 
@@ -783,7 +784,7 @@ Local MCP policy is not DHIS2 authorisation; the server still enforces its own s
           filter?: string;
           pageSize?: number;
         };
-        const dataElements = await dhis2Client!.getDataElements(filterUndefinedValues({ filter: deFilter, pageSize: dePageSize }));
+        const dataElements = await dhis2Client!.getDataElements(filterUndefinedValues({ filter: deFilter, pageSize: dePageSize, page: (args as { page?: number }).page }));
         logSuccessfulOperation(name, { filter: deFilter, pageSize: dePageSize }, dataElements, startTime);
         return {
           content: [
@@ -799,7 +800,7 @@ Local MCP policy is not DHIS2 authorisation; the server still enforces its own s
           filter?: string;
           pageSize?: number;
         };
-        const dataSets = await dhis2Client!.getDataSets(filterUndefinedValues({ filter: dsFilter, pageSize: dsPageSize }));
+        const dataSets = await dhis2Client!.getDataSets(filterUndefinedValues({ filter: dsFilter, pageSize: dsPageSize, page: (args as { page?: number }).page }));
         return {
           content: [
             {
@@ -814,7 +815,7 @@ Local MCP policy is not DHIS2 authorisation; the server still enforces its own s
           filter?: string;
           pageSize?: number;
         };
-        const categories = await dhis2Client!.getCategories(filterUndefinedValues({ filter: catFilter, pageSize: catPageSize }));
+        const categories = await dhis2Client!.getCategories(filterUndefinedValues({ filter: catFilter, pageSize: catPageSize, page: (args as { page?: number }).page }));
         return {
           content: [
             {
@@ -829,7 +830,7 @@ Local MCP policy is not DHIS2 authorisation; the server still enforces its own s
           filter?: string;
           pageSize?: number;
         };
-        const categoryOptions = await dhis2Client!.getCategoryOptions(filterUndefinedValues({ filter: coFilter, pageSize: coPageSize }));
+        const categoryOptions = await dhis2Client!.getCategoryOptions(filterUndefinedValues({ filter: coFilter, pageSize: coPageSize, page: (args as { page?: number }).page }));
         return {
           content: [
             {
@@ -844,7 +845,7 @@ Local MCP policy is not DHIS2 authorisation; the server still enforces its own s
           filter?: string;
           pageSize?: number;
         };
-        const categoryCombos = await dhis2Client!.getCategoryCombos(filterUndefinedValues({ filter: ccFilter, pageSize: ccPageSize }));
+        const categoryCombos = await dhis2Client!.getCategoryCombos(filterUndefinedValues({ filter: ccFilter, pageSize: ccPageSize, page: (args as { page?: number }).page }));
         return {
           content: [
             {
@@ -859,7 +860,7 @@ Local MCP policy is not DHIS2 authorisation; the server still enforces its own s
           filter?: string;
           pageSize?: number;
         };
-        const categoryOptionCombos = await dhis2Client!.getCategoryOptionCombos(filterUndefinedValues({ filter: cocFilter, pageSize: cocPageSize }));
+        const categoryOptionCombos = await dhis2Client!.getCategoryOptionCombos(filterUndefinedValues({ filter: cocFilter, pageSize: cocPageSize, page: (args as { page?: number }).page }));
         return {
           content: [
             {
@@ -874,7 +875,7 @@ Local MCP policy is not DHIS2 authorisation; the server still enforces its own s
           filter?: string;
           pageSize?: number;
         };
-        const orgUnits = await dhis2Client!.getOrganisationUnits(filterUndefinedValues({ filter: ouFilter, pageSize: ouPageSize }));
+        const orgUnits = await dhis2Client!.getOrganisationUnits(filterUndefinedValues({ filter: ouFilter, pageSize: ouPageSize, page: (args as { page?: number }).page }));
         return {
           content: [
             {
@@ -889,7 +890,7 @@ Local MCP policy is not DHIS2 authorisation; the server still enforces its own s
           filter?: string;
           pageSize?: number;
         };
-        const orgUnitGroups = await dhis2Client!.getOrganisationUnitGroups(filterUndefinedValues({ filter: ougFilter, pageSize: ougPageSize }));
+        const orgUnitGroups = await dhis2Client!.getOrganisationUnitGroups(filterUndefinedValues({ filter: ougFilter, pageSize: ougPageSize, page: (args as { page?: number }).page }));
         return {
           content: [
             {
@@ -904,7 +905,7 @@ Local MCP policy is not DHIS2 authorisation; the server still enforces its own s
           filter?: string;
           pageSize?: number;
         };
-        const validationRules = await dhis2Client!.getValidationRules(filterUndefinedValues({ filter: vrFilter, pageSize: vrPageSize }));
+        const validationRules = await dhis2Client!.getValidationRules(filterUndefinedValues({ filter: vrFilter, pageSize: vrPageSize, page: (args as { page?: number }).page }));
         return {
           content: [
             {
@@ -943,7 +944,7 @@ Local MCP policy is not DHIS2 authorisation; the server still enforces its own s
           filter?: string;
           pageSize?: number;
         };
-        const programs = await dhis2Client!.getPrograms(filterUndefinedValues({ filter: progFilter, pageSize: progPageSize }));
+        const programs = await dhis2Client!.getPrograms(filterUndefinedValues({ filter: progFilter, pageSize: progPageSize, page: (args as { page?: number }).page }));
         return {
           content: [
             {
@@ -958,7 +959,7 @@ Local MCP policy is not DHIS2 authorisation; the server still enforces its own s
           filter?: string;
           pageSize?: number;
         };
-        const trackedEntityTypes = await dhis2Client!.getTrackedEntityTypes(filterUndefinedValues({ filter: tetFilter, pageSize: tetPageSize }));
+        const trackedEntityTypes = await dhis2Client!.getTrackedEntityTypes(filterUndefinedValues({ filter: tetFilter, pageSize: tetPageSize, page: (args as { page?: number }).page }));
         return {
           content: [
             {
@@ -973,7 +974,7 @@ Local MCP policy is not DHIS2 authorisation; the server still enforces its own s
           filter?: string;
           pageSize?: number;
         };
-        const trackedEntityAttributes = await dhis2Client!.getTrackedEntityAttributes(filterUndefinedValues({ filter: teaFilter, pageSize: teaPageSize }));
+        const trackedEntityAttributes = await dhis2Client!.getTrackedEntityAttributes(filterUndefinedValues({ filter: teaFilter, pageSize: teaPageSize, page: (args as { page?: number }).page }));
         return {
           content: [
             {
@@ -988,7 +989,7 @@ Local MCP policy is not DHIS2 authorisation; the server still enforces its own s
           filter?: string;
           pageSize?: number;
         };
-        const programStages = await dhis2Client!.getProgramStages(filterUndefinedValues({ filter: psFilter, pageSize: psPageSize }));
+        const programStages = await dhis2Client!.getProgramStages(filterUndefinedValues({ filter: psFilter, pageSize: psPageSize, page: (args as { page?: number }).page }));
         return {
           content: [
             {
@@ -1003,7 +1004,7 @@ Local MCP policy is not DHIS2 authorisation; the server still enforces its own s
           filter?: string;
           pageSize?: number;
         };
-        const programRules = await dhis2Client!.getProgramRules(filterUndefinedValues({ filter: prFilter, pageSize: prPageSize }));
+        const programRules = await dhis2Client!.getProgramRules(filterUndefinedValues({ filter: prFilter, pageSize: prPageSize, page: (args as { page?: number }).page }));
         return {
           content: [
             {
@@ -1018,7 +1019,10 @@ Local MCP policy is not DHIS2 authorisation; the server still enforces its own s
       case 'dhis2_list_events': {
         const entity = name === 'dhis2_list_tracked_entities' ? 'trackedEntities' : name === 'dhis2_list_enrollments' ? 'enrollments' : 'events';
         const r = await dhis2Client!.queryTracker(entity, (args ?? {}) as any);
-        return { content: [{ type: 'text', text: JSON.stringify({ [entity]: r.records, page: r.page, pageSize: r.pageSize, returned: r.records.length }, null, 2) }] };
+        const countOnly = (args as { countOnly?: boolean }).countOnly === true;
+        return { content: [{ type: 'text', text: JSON.stringify(countOnly
+          ? { total: r.total ?? null, ...(r.total === undefined ? { note: 'The server did not return a count.' } : {}) }
+          : { [entity]: r.records, page: r.page, pageSize: r.pageSize, returned: r.records.length, ...(r.total !== undefined ? { total: r.total } : {}) }, null, 2) }] };
       }
 
       case 'dhis2_get_event_analytics':
@@ -1061,7 +1065,7 @@ Local MCP policy is not DHIS2 authorisation; the server still enforces its own s
           filter?: string;
           pageSize?: number;
         };
-        const dashboards = await dhis2Client!.getDashboards(filterUndefinedValues({ filter: dbFilter, pageSize: dbPageSize }));
+        const dashboards = await dhis2Client!.getDashboards(filterUndefinedValues({ filter: dbFilter, pageSize: dbPageSize, page: (args as { page?: number }).page }));
         return {
           content: [
             {
@@ -1076,7 +1080,7 @@ Local MCP policy is not DHIS2 authorisation; the server still enforces its own s
           filter?: string;
           pageSize?: number;
         };
-        const visualizations = await dhis2Client!.getVisualizations(filterUndefinedValues({ filter: vizFilter, pageSize: vizPageSize }));
+        const visualizations = await dhis2Client!.getVisualizations(filterUndefinedValues({ filter: vizFilter, pageSize: vizPageSize, page: (args as { page?: number }).page }));
         return {
           content: [
             {
@@ -1091,7 +1095,7 @@ Local MCP policy is not DHIS2 authorisation; the server still enforces its own s
           filter?: string;
           pageSize?: number;
         };
-        const reports = await dhis2Client!.getReports(filterUndefinedValues({ filter: reportFilter, pageSize: reportPageSize }));
+        const reports = await dhis2Client!.getReports(filterUndefinedValues({ filter: reportFilter, pageSize: reportPageSize, page: (args as { page?: number }).page }));
         return {
           content: [
             {
@@ -1909,7 +1913,7 @@ ${JSON.stringify(exportContext, null, 2)}
       isError: true,
     };
   }
-});
+}));
 
 async function main() {
   const transport = new StdioServerTransport();

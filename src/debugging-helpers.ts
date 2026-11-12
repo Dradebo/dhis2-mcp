@@ -2072,7 +2072,7 @@ const config = {
   // Custom authorities
   authorities: [
     'F_METADATA_IMPORT',
-    'F_DATA_VALUE_ADD'
+    'F_DATAVALUE_ADD'
   ]
 };
 

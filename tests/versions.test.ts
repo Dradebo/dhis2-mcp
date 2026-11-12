@@ -1,5 +1,5 @@
 /** Version detection, API differences and version-specific rules (sources in src/versions.ts). */
-import { parseVersion, versionStatus, effectiveRelease, describeVersion, trackerOrgUnitParams, trackerList, trackerProgramRequired, meFields, versionGuide } from '../src/versions';
+import { parseVersion, versionStatus, effectiveRelease, describeVersion, trackerOrgUnitParams, trackerList, trackerTotal, trackerProgramRequired, meFields, versionGuide } from '../src/versions';
 import { checkVersionRules } from '../src/design-check';
 import { checkPackageOffline } from '../src/package-engine';
 
@@ -87,5 +87,15 @@ describe('version guide', () => {
     const g = versionGuide(parseVersion('2.42.7'));
     expect(g).toMatch(/From 2.42 a program indicator can carry a disaggregation/);
     expect(g).not.toMatch(/What to do here:\*\* Before 2.42/);
+  });
+});
+
+describe('tracker totals', () => {
+  test('reads the count from either reply shape (top-level up to 2.40, pager from 2.41)', () => {
+    expect(trackerTotal({ page: 1, pageSize: 1, total: 89, instances: [] })).toBe(89);
+    expect(trackerTotal({ pager: { page: 1, pageSize: 1, total: 216 }, events: [] })).toBe(216);
+    expect(trackerTotal({ pager: { page: 1, pageSize: 1 }, events: [] })).toBeUndefined();
+    expect(trackerTotal({ total: 'many' })).toBeUndefined();
+    expect(trackerTotal(null)).toBeUndefined();
   });
 });
