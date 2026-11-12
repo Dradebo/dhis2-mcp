@@ -123,6 +123,12 @@ const REGISTRY: ReadonlyMap<string, PolicyEntry> = new Map<string, PolicyEntry>(
   // Change packages (build-scale changes on development; one approval per package).
   ['dhis2_generate_uids', local],
   ['dhis2_check_design', local],
+  // Requirement ledger, clarifications and handover: local files only.
+  ['dhis2_start_project', local],
+  ['dhis2_record_requirements', local],
+  ['dhis2_ask_clarifications', local],
+  ['dhis2_get_project', local],
+  ['dhis2_write_handover', local],
   ['dhis2_plan_package', { classify: 'planned-write' }],
   ['dhis2_apply_package', { classify: 'planned-write' }],
   ['dhis2_get_package', { classify: 'planned-write' }],

@@ -90,6 +90,22 @@ Packages are refused on production, both in the engine and by the policy and the
 
 The MCP prompt `customise_from_documents` and four resources (`dhis2://guides/...`) carry the documents → customisation procedure, the modelling rules, the dashboard rules and the verification checklist. Every MCP host gets them. They are static text, with no instance data.
 
+## Customisation projects: ledger, clarifications, handover (local only)
+
+The server keeps the record of a documents → configuration job, so it does not depend on the agent's chat memory:
+- **`dhis2_start_project`** registers the goal and the source documents.
+- **`dhis2_record_requirements`** adds requirements and checks.
+  - Every requirement must cite a registered document and a location.
+  - A batch is saved all or nothing.
+- **Only the person can decide.** The agent cannot mark a requirement `decided`, and cannot change one the person decided. Decisions come from one of two places:
+  - `dhis2_ask_clarifications`: one host form of up to 5 questions, each showing its source, with 2-4 options plus "Other". Answers outside the options are discarded.
+  - A chat answer relayed with the person's words quoted, labelled "relayed" in the handover.
+- **`dhis2_write_handover`** derives "verified" from the change packages' on-disk read-back receipts, not from what the agent says.
+  - A requirement is verified only if every linked package is `verified` and every linked object is in a verified read-back.
+  - Checks the agent reports are labelled as the agent's.
+  - The report says "complete" only when nothing is open.
+  - Untrusted text is flattened before it goes into the report, so it cannot add headings or table rows.
+
 ## Planned changes (safe change engine)
 
 1. `dhis2_plan_metadata_change` validates the request:

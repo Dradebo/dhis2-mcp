@@ -14,7 +14,8 @@ clarifications the documents cannot answer, and approvals for changes. Productio
 finished work reaches it only through dhis2_prepare_transfer.
 
 ## 1. Intake
-- Read every document fully. Record each one with an id, page count and what it is (form, protocol, report, dictionary).
+- Read every document fully. Register the goal and each document with dhis2_start_project (id, title, kind).
+  The server keeps the ledger, decisions and handover; keep the projectId.
 - Write down the goal in one sentence and confirm it only if it is genuinely ambiguous.
 - Note the reporting grain the documents imply: who/what is counted, where (org unit level), how often (period), by whom (data entry role).
 
@@ -25,13 +26,14 @@ finished work reaches it only through dhis2_prepare_transfer.
   create new ones only for a genuinely different definition, and say why for each.
 - dhis2_get_schema for every object type you will create: required properties, enums, length limits.
 
-## 3. Requirement ledger
-- One row per source question/requirement: source (document, page, wording), proposed DHIS2 object, value type,
-  option codes, section, skip logic, analytics use, status (mapped / reused / question / out of scope).
+## 3. Requirement ledger (dhis2_record_requirements)
+- One row per source question/requirement: source (document, location, quote), proposal (DHIS2 object, value type,
+  option codes, section, skip logic, analytics use), status (mapped / reused / question / out-of-scope with reason).
 - Do not add questions DHIS2 already captures natively: org unit (facility/district), event or enrollment date,
   reporting period. Use the native field instead.
 - Where documents disagree or are silent, write a numbered question with the options and your recommendation.
-  Batch all questions into ONE clarification round; never ask piecemeal.
+  Batch all questions into ONE clarification round with dhis2_ask_clarifications (up to 5 per form; several forms
+  only if there are more than 5). You cannot mark anything decided yourself.
 
 ## 4. Design summary (one approval)
 Present, in plain language: the program/data set structure (stages, sections, question counts), option sets,
@@ -61,7 +63,8 @@ definitions later: unresolved items stay unresolved and are reported.
   explicit approval. Never copy sharing from another server.
 
 ## 8. Handover
-A short plain-language report: what was built (with links), what was reused, every check run and its result,
+Link each requirement to its objects and packageIds, record the checks you ran (dhis2_record_requirements checks), then
+dhis2_write_handover. It derives "verified" from the packages' read-back and lists every open item. A short plain-language report: what was built (with links), what was reused, every check run and its result,
 open questions and known gaps, and how to move it to production (dhis2_prepare_transfer → administrator import →
 dhis2_verify_transfer). Do not claim checks that were not run.
 `;

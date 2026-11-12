@@ -107,7 +107,16 @@ let stderr = '';
 transport.stderr?.on('data', d => { stderr += d.toString(); });
 const prompts = [];
 const client = new Client({ name: 'e2e-packages', version: '1.0.0' }, { capabilities: { elicitation: { form: {} } } });
-client.setRequestHandler(ElicitRequestSchema, async r => { prompts.push(r.params.message); return { action: 'accept', content: {} }; });
+const forms = [];
+client.setRequestHandler(ElicitRequestSchema, async r => {
+  const props = r.params.requestedSchema?.properties ?? {};
+  if (props.q1) { // clarification form: answer q1 with its second option, leave the rest unanswered
+    forms.push(r.params);
+    return { action: 'accept', content: { q1: props.q1.enum[1] } };
+  }
+  prompts.push(r.params.message);
+  return { action: 'accept', content: {} };
+});
 await client.connect(transport);
 const protocol = [];
 const call = async (name, args) => {
@@ -146,7 +155,25 @@ try {
   // --- packages ----------------------------------------------------------------------
   r = await call('dhis2_plan_package', fixture.packages[1]);
   check('K10 package with missing references is refused before any write', r.isError && /Referenced but neither/.test(r.text) && commits === 0, r.text.slice(0, 160));
+  // --- requirement ledger and clarifications (local) ----------------------------------
+  r = await call('dhis2_start_project', { goal: 'Facility assessment program from the paper checklist', documents: [{ id: 'checklist', title: 'Facility checklist v2', kind: 'form' }] });
+  const projectId = (/Project ([0-9a-f-]{36})/.exec(r.text) || [])[1];
+  r = await call('dhis2_record_requirements', { projectId, requirements: [
+    { ref: 'R1', text: 'Assessment program with its questions', source: { document: 'checklist', location: 'all pages' }, status: 'mapped' },
+    { ref: 'R2', text: 'Visit window', source: { document: 'checklist', location: 'p2', quote: 'within the visit window' }, status: 'question' },
+    { ref: 'R3', text: 'Ownership', source: { document: 'checklist', location: 'p1' }, status: 'question' },
+  ] });
+  check('K17 project and ledger recorded locally', !r.isError && /Requirements: 3/.test(r.text), r.text.slice(0, 200));
+  r = await call('dhis2_record_requirements', { projectId, requirements: [{ ref: 'R2', status: 'decided' }] });
+  check('K18 the assistant cannot decide on the person\'s behalf', r.isError && /only the person can decide/.test(r.text), r.text.slice(0, 160));
+  r = await call('dhis2_ask_clarifications', { projectId, questions: [
+    { ref: 'R2', question: 'How long is the visit window?', options: ['7 days', '14 days'], recommended: '14 days' },
+    { ref: 'R3', question: 'Is ownership asked?', options: ['Yes', 'No'] }] });
+  check('K19 questions batched in one form; answered ones recorded, unanswered stay open', forms.length === 1 && /Answered: R2/.test(r.text) && /Still open: R3/.test(r.text)
+    && /Source: checklist, p2 "within the visit window"/.test(forms[0].message), r.text.slice(0, 200));
+
   const files = [];
+  const pkgIds = [];
   for (let i = 0; i < 3; i++) {
     let args = fixture.packages[i];
     if (i === 0) { // large package via file
@@ -156,12 +183,32 @@ try {
     const id = pkgId(r.text);
     files.push((/Review: (.+)/.exec(r.text) || [])[1]?.trim());
     if (r.isError || !id) { check(`K11.${i + 1} package ${i + 1} planned`, false, r.text.slice(0, 400)); break; }
+    pkgIds.push(id);
     r = await call('dhis2_apply_package', { packageId: id });
     check(`K11.${i + 1} package ${i + 1} applied and verified`, !r.isError && /State: verified/.test(r.text), r.text.slice(0, 300));
   }
   check('K12 the 254-object program needed exactly 3 approvals and 3 imports', prompts.length === 3 && commits === 3 && store.size === 255, `prompts ${prompts.length} commits ${commits} store ${store.size}`);
   check('K13 approval prompts are plain language and point to the review file', /^Allow the assistant to apply this package to the development server/.test(prompts[0] ?? '') && /review\.md/.test(prompts[0] ?? ''));
   check('K14 review files list every object', files.every(f => f && fs.existsSync(f)) && (fs.readFileSync(files[0], 'utf8').match(/^- \*\*create\*\*/gm) ?? []).length === 165);
+
+  // --- handover from the server's own records -----------------------------------------
+  const programs = fixture.packages.flatMap(p => p.creates?.programs ?? []);
+  // A package that is planned but never applied (cancelled): work linked to it must not count as verified.
+  r = await call('dhis2_plan_package', { description: 'Scoring constant', creates: { constants: [{ id: 'coE2E000001', name: 'E2E scoring constant', shortName: 'E2E scoring', value: 2 }] } });
+  const cancelledPkg = pkgId(r.text);
+  await call('dhis2_cancel_package', { packageId: cancelledPkg });
+  r = await call('dhis2_record_requirements', { projectId, requirements: [
+    { ref: 'R4', text: 'Scoring weight', source: { document: 'checklist', location: 'p3' }, objects: [{ objectType: 'constants', id: 'coE2E000001' }], packageIds: [cancelledPkg] },
+    { ref: 'R1', objects: programs.map(p => ({ objectType: 'programs', id: p.id })), packageIds: pkgIds },
+    { ref: 'R2', objects: programs.map(p => ({ objectType: 'programs', id: p.id })), packageIds: pkgIds.slice(-1) },
+  ], checks: [{ name: 'Skip logic exercised in Capture', result: 'not-run', evidence: 'no browser in this host' }] });
+  r = await call('dhis2_write_handover', { projectId });
+  const handoverFile = (/File: (.+)/.exec(r.text) || [])[1]?.trim();
+  const md = handoverFile && fs.existsSync(handoverFile) ? fs.readFileSync(handoverFile, 'utf8') : '';
+  check('K20 handover: R1 verified from package read-back; open question and unrun check listed; not complete',
+    /NOT complete, 4 open/.test(r.text) && /R2: built but not verified/.test(r.text) && /R4: built but not verified \(package \w{8} is cancelled\)/.test(r.text) && /R3: unanswered question/.test(r.text) && /Skip logic.*not-run/.test(r.text)
+    && /\| R1 \| Assessment program with its questions \| checklist all pages \| mapped \| verified \|/.test(md), r.text.slice(0, 400));
+  check('K21 the person\'s decision appears in the handover, labelled as theirs', /How long is the visit window\? → \*\*14 days\*\*.*Answered in the approval form/.test(md));
 
   // --- production: package tools hidden ------------------------------------------------
   await call('dhis2_configure', { profile: 'production' });

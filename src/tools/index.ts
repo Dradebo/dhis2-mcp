@@ -267,6 +267,82 @@ export function createDHIS2Tools(): Tool[] {
       annotations: { readOnlyHint: true },
     },
     {
+      name: 'dhis2_start_project',
+      description: 'Start a customisation project: register the goal and every source document. The server then keeps the requirement ledger, the person\'s decisions and the handover, so nothing depends on chat memory. Local only; no server needed.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          goal: { type: 'string', description: 'What should exist at the end, in one sentence.' },
+          documents: {
+            type: 'array', maxItems: 100, description: 'Source documents. Requirements must cite one of these ids.',
+            items: { type: 'object', properties: { id: { type: 'string', description: 'Short id, e.g. "form-A".' }, title: { type: 'string' }, kind: { type: 'string', description: 'form, protocol, report, data dictionary…' } }, required: ['id', 'title'] },
+          },
+        },
+        required: ['goal', 'documents'],
+        additionalProperties: false,
+      },
+    },
+    {
+      name: 'dhis2_record_requirements',
+      description: 'Add or update requirements in the ledger (by ref), and record checks you ran. Each requirement cites its source {document, location, quote?}. Status: mapped (new object), reused (existing object), question (needs the person), out-of-scope (with reason). You cannot mark a requirement "decided": use dhis2_ask_clarifications, or, if the host cannot show forms, relay the person\'s chat answer as decision {answer, personWords}. Link built work with objects [{objectType,id}] and packageIds; the handover checks those against the packages\' read-back. The whole batch is rejected if any item is invalid.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          projectId: { type: 'string' },
+          requirements: {
+            type: 'array', maxItems: 500,
+            items: {
+              type: 'object',
+              properties: {
+                ref: { type: 'string' }, text: { type: 'string' },
+                source: { type: 'object', properties: { document: { type: 'string' }, location: { type: 'string', description: 'Page, section, row or question number.' }, quote: { type: 'string' } }, required: ['document', 'location'] },
+                status: { type: 'string', enum: ['mapped', 'reused', 'question', 'out-of-scope'] },
+                proposal: { type: 'string', description: 'Proposed DHIS2 design for this requirement.' },
+                reason: { type: 'string' },
+                objects: { type: 'array', items: { type: 'object', properties: { objectType: { type: 'string' }, id: { type: 'string' } }, required: ['objectType', 'id'] } },
+                packageIds: { type: 'array', items: { type: 'string' } },
+                decision: { type: 'object', description: 'Only for answers the person gave in chat.', properties: { answer: { type: 'string' }, personWords: { type: 'string', description: 'Their words, quoted.' }, question: { type: 'string' } }, required: ['answer', 'personWords'] },
+              },
+              required: ['ref'],
+            },
+          },
+          checks: {
+            type: 'array', maxItems: 100,
+            items: { type: 'object', properties: { name: { type: 'string' }, result: { type: 'string', enum: ['passed', 'failed', 'not-run'] }, evidence: { type: 'string' } }, required: ['name', 'result', 'evidence'] },
+          },
+        },
+        required: ['projectId'],
+        additionalProperties: false,
+      },
+    },
+    {
+      name: 'dhis2_ask_clarifications',
+      description: 'Ask the person up to 5 questions in one form (batch them; never ask piecemeal). Each question belongs to a ledger requirement and shows its source. Give 2-4 options; "Other" with a comment is added. Answers are recorded as the person\'s decisions. Unanswered questions stay open; never guess them.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          projectId: { type: 'string' },
+          questions: {
+            type: 'array', minItems: 1, maxItems: 5,
+            items: { type: 'object', properties: { ref: { type: 'string' }, question: { type: 'string' }, options: { type: 'array', items: { type: 'string' }, minItems: 2, maxItems: 4 }, recommended: { type: 'string' } }, required: ['ref', 'question', 'options'] },
+          },
+        },
+        required: ['projectId', 'questions'],
+        additionalProperties: false,
+      },
+    },
+    {
+      name: 'dhis2_get_project',
+      description: 'Show a project\'s goal, documents, requirement counts and open questions.',
+      inputSchema: { type: 'object', properties: { projectId: { type: 'string' } }, required: ['projectId'], additionalProperties: false },
+      annotations: { readOnlyHint: true },
+    },
+    {
+      name: 'dhis2_write_handover',
+      description: 'Write the plain-language handover (handover.md) from the server\'s own records: requirements with sources, the person\'s decisions, which work was verified by reading DHIS2 back (from the change packages), checks you reported (labelled as yours), open items and the production route. Says "complete" only when nothing is open.',
+      inputSchema: { type: 'object', properties: { projectId: { type: 'string' } }, required: ['projectId'], additionalProperties: false },
+    },
+    {
       name: 'dhis2_generate_uids',
       description: 'Generate valid DHIS2 UIDs locally (no server needed), for ids that objects in one package use to reference each other.',
       inputSchema: { type: 'object', properties: { count: { type: 'number', minimum: 1, maximum: 1000 } }, required: ['count'], additionalProperties: false },

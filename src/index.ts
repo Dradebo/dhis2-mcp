@@ -25,6 +25,7 @@ import { resolveProfile, listConfiguredProfiles, profileEnvironments, Connection
 import { toSafeErrorMessage } from './security/safe-errors.js';
 import { ChangeEngine, ChangeEngineError, describePlan, ApprovalResult, ConnectionIdentity } from './change-engine.js';
 import { TransferEngine, TransferError, describeTransfer } from './transfer.js';
+import { ProjectEngine, ProjectError, describeProject } from './project.js';
 import { storeDir } from './security/credential-store.js';
 import { PermissionSystem, UserPermissions } from './permission-system.js';
 import { describePermissionEvidence } from './permission-evidence.js';
@@ -290,6 +291,15 @@ const transferEngine = new TransferEngine({
   baseDir: () => storeDir(),
 });
 
+const projectEngine = new ProjectEngine({
+  baseDir: () => storeDir(),
+  ask: async (message, requestedSchema) => {
+    if (!server.getClientCapabilities()?.elicitation?.form) return { action: 'unavailable' };
+    const r = await server.elicitInput({ mode: 'form', message, requestedSchema: requestedSchema as any }, { timeout: 30 * 60 * 1000 });
+    return { action: r.action === 'accept' ? 'accept' : r.action === 'decline' ? 'decline' : 'cancel', content: (r.content ?? {}) as Record<string, unknown> };
+  },
+});
+
 function policyContext(): PolicyContext {
   let connectionAvailable = false;
   try { connectionAvailable = listConfiguredProfiles().length > 0; } catch { connectionAvailable = false; }
@@ -473,6 +483,37 @@ Local MCP policy is not DHIS2 authorisation; the server still enforces its own s
       case 'dhis2_generate_uids': {
         const n = Math.min(1000, Math.max(1, Math.floor(Number((args as any)?.count) || 0)));
         return { content: [{ type: 'text', text: Array.from({ length: n }, generateUid).join('\n') }] };
+      }
+
+      case 'dhis2_start_project':
+      case 'dhis2_record_requirements':
+      case 'dhis2_ask_clarifications':
+      case 'dhis2_get_project':
+      case 'dhis2_write_handover': {
+        const a = (args ?? {}) as Record<string, unknown>;
+        try {
+          let text: string;
+          let isError = false;
+          if (name === 'dhis2_start_project') text = describeProject(projectEngine.start(a));
+          else if (name === 'dhis2_record_requirements') text = describeProject(projectEngine.update(a));
+          else if (name === 'dhis2_get_project') text = describeProject(projectEngine.get(a.projectId));
+          else if (name === 'dhis2_ask_clarifications') {
+            const r = await projectEngine.askClarifications(a);
+            text = [`Answered: ${r.answered.length ? r.answered.join(', ') : 'none'}`, `Still open: ${r.pending.length ? r.pending.join(', ') : 'none'}`,
+              ...(r.fallback ? [r.fallback] : []), '', describeProject(r.project)].join('\n');
+            isError = Boolean(r.fallback);
+          } else {
+            const r = projectEngine.writeHandover(a.projectId);
+            text = [r.complete ? 'Handover written: complete.' : `Handover written: NOT complete, ${r.open.length} open item(s).`,
+              ...r.open.slice(0, 30).map(o => `  - ${o}`), `File: ${r.file}`].join('\n');
+          }
+          auditLogger.log({ toolName: name, parameters: { projectId: typeof a.projectId === 'string' ? a.projectId : undefined }, outcome: isError ? 'error' : 'success', executionTime: Date.now() - startTime });
+          return { content: [{ type: 'text', text }], isError };
+        } catch (e) {
+          if (!(e instanceof ProjectError)) throw e;
+          auditLogger.log({ toolName: name, parameters: { projectId: typeof a.projectId === 'string' ? a.projectId : undefined }, outcome: 'error', error: e.code });
+          return { content: [{ type: 'text', text: `⛔ ${e.code}: ${e.message}` }], isError: true };
+        }
       }
 
       case 'dhis2_check_design': {
