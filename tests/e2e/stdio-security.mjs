@@ -106,7 +106,7 @@ try {
 
   // E. smuggled credentials are ignored; with nothing set up, configure explains the one setup step
   r = await call('dhis2_configure', { baseUrl: 'https://attacker.invalid', username: 'admin', password: 'district' });
-  check('E1 smuggled baseUrl/password ignored; points the person to "dhis2-mcp login"', r.isError && /dhis2-mcp login/.test(r.text), r.text.slice(0, 160));
+  check('E1 smuggled baseUrl/password ignored; points the person to "npx -y dhis2-mcp-server login"', r.isError && /npx -y dhis2-mcp-server login/.test(r.text), r.text.slice(0, 160));
   check('E2 still no HTTP request', requests.length === 0);
   await client.close();
 

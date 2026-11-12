@@ -100,7 +100,7 @@ export function resolveProfile(requested: unknown, env: Env = process.env): Conn
     throw new SafeError(available.length ? 'unknown_profile' : 'not_set_up',
       available.length
         ? `Connection profile "${name}" is not set up. Available: ${available.join(', ')}.`
-        : 'DHIS2 is not set up yet. Ask the person to run "npx -y dhis2-mcp login" in a terminal and type their DHIS2 address, username and password.');
+        : 'DHIS2 is not set up yet. Ask the person to run "npx -y dhis2-mcp-server login" in a terminal and type their DHIS2 address, username and password.');
   }
 
   if (envProfilesDeclared(env)) {
@@ -127,7 +127,7 @@ export function resolveProfile(requested: unknown, env: Env = process.env): Conn
   let password: string | undefined;
   try { password = readStoredSecret(name, env); } catch { password = undefined; }
   if (!password) {
-    throw new SafeError('secret_unavailable', `The saved password for "${name}" could not be read. Ask the person to run "npx -y dhis2-mcp login" again.`);
+    throw new SafeError('secret_unavailable', `The saved password for "${name}" could not be read. Ask the person to run "npx -y dhis2-mcp-server login" again.`);
   }
   registerSecret(password);
   return {

@@ -1,16 +1,19 @@
 {
-  "name": "dhis2-mcp",
-  "version": "2.0.0-alpha.1",
-  "description": "Connect an AI agent to a DHIS2 development or training instance: one login in a terminal, then the agent works and asks permission before sensitive actions or changes.",
+  "name": "dhis2-mcp-server",
+  "version": "2.0.0",
+  "description": "Let an AI assistant work with DHIS2 safely: one login in a terminal; reads data and metadata, builds on development servers with your approval, production stays read-only. DHIS2 2.39-2.43. mcprush.com-ce9450b7c0273f13ef0f1810",
   "main": "dist/index.js",
   "bin": {
+    "dhis2-mcp-server": "dist/cli.js",
     "dhis2-mcp": "dist/cli.js"
   },
   "type": "module",
   "files": [
     "dist",
     "README.md",
-    "SECURITY-MODEL.md"
+    "SECURITY-MODEL.md",
+    "docs/TOOLS.md",
+    "LICENSE"
   ],
   "scripts": {
     "build": "tsc && node -e \"['dist/index.js','dist/cli.js'].forEach(f=>require('fs').chmodSync(f,'755'))\"",
@@ -27,30 +30,29 @@
   },
   "keywords": [
     "mcp",
+    "model-context-protocol",
+    "mcp-server",
     "dhis2",
     "health-information-system",
-    "model-context-protocol",
-    "code-generator",
-    "android-development",
-    "web-development",
-    "debugging-tools",
-    "development-assistant",
-    "typescript"
+    "hmis",
+    "tracker",
+    "analytics",
+    "ai-assistant"
   ],
   "author": "Dradebo",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/yourusername/dhis2-mcp.git"
+    "url": "git+https://github.com/Dradebo/dhis2-mcp.git"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/dhis2-mcp/issues"
+    "url": "https://github.com/Dradebo/dhis2-mcp/issues"
   },
-  "homepage": "https://github.com/yourusername/dhis2-mcp#readme",
+  "homepage": "https://github.com/Dradebo/dhis2-mcp#readme",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.32.1",
+    "@modelcontextprotocol/sdk": "^1.32.2",
     "axios": "^1.20.0",
-    "zod": "^3.22.0"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",
@@ -63,6 +65,6 @@
     "typescript": "^5.0.0"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   }
 }

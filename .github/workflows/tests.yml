@@ -1,0 +1,66 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: ${{ matrix.os }} / node ${{ matrix.node }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+        node: ['22']
+        include:
+          - os: ubuntu-latest
+            node: '20'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - name: Type check
+        run: npx tsc --noEmit -p .
+      - name: Unit tests
+        run: npx jest
+      - name: Build for end-to-end tests
+        run: npx tsc --outDir build-e2e
+      - name: End-to-end (stdio, fake DHIS2 servers)
+        shell: bash
+        run: |
+          node tests/e2e/stdio-security.mjs build-e2e/index.js
+          node tests/e2e/stdio-change-engine.mjs build-e2e/index.js
+          node tests/e2e/install-and-store.mjs build-e2e
+          node tests/e2e/stdio-transfer.mjs build-e2e/index.js
+          node tests/e2e/stdio-packages.mjs build-e2e/index.js
+      - name: End-to-end on each DHIS2 version (2.38-2.43)
+        shell: bash
+        run: |
+          for v in 2.38.6 2.39.10 2.40.12 2.41.10 2.42.7 2.43.2; do
+            echo "== DHIS2 $v"; E2E_DHIS2_VERSION=$v node tests/e2e/stdio-operations.mjs build-e2e/index.js
+          done
+      - name: Real secret store (Windows DPAPI)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: EXPECT_SECRET_LOCATION='Windows (DPAPI)' node tests/e2e/os-secret-store.mjs build-e2e
+      - name: Real secret store (macOS Keychain)
+        if: runner.os == 'macOS'
+        run: EXPECT_SECRET_LOCATION='macOS Keychain' node tests/e2e/os-secret-store.mjs build-e2e
+      - name: Real secret store (Linux, no keyring -> private file)
+        if: runner.os == 'Linux'
+        run: EXPECT_SECRET_LOCATION='private file' node tests/e2e/os-secret-store.mjs build-e2e
+      - name: Real secret store (Linux Secret Service via GNOME Keyring)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq libsecret-tools gnome-keyring dbus-x11 >/dev/null
+          dbus-run-session -- bash -c 'eval "$(printf ci | gnome-keyring-daemon --unlock --replace --components=secrets)"; EXPECT_SECRET_LOCATION="system keyring" node tests/e2e/os-secret-store.mjs build-e2e'
+      - name: Package contents
+        if: runner.os == 'Linux' && matrix.node == '22'
+        run: npm pack --dry-run 2>&1 | tail -40

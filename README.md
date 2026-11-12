@@ -1,326 +1,112 @@
 # DHIS2 MCP Server
 
-[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Node.js](https://img.shields.io/badge/Node.js-43853D?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
-[![DHIS2](https://img.shields.io/badge/DHIS2-0080FF?style=for-the-badge&logo=dhis2&logoColor=white)](https://dhis2.org/)
-[![MCP](https://img.shields.io/badge/MCP-Model_Context_Protocol-purple?style=for-the-badge)](https://modelcontextprotocol.io/)
+Let your AI assistant (Claude, ChatGPT, Cursor, Codex, VS Code and other MCP hosts) work with your DHIS2 server. It reads your data and metadata, designs and builds configuration on a development server, imports data, and prepares changes for production. **Nothing changes without your approval**, and production servers are only ever read.
 
+[![npm](https://img.shields.io/npm/v/dhis2-mcp-server)](https://www.npmjs.com/package/dhis2-mcp-server)
+[![tests](https://github.com/Dradebo/dhis2-mcp/actions/workflows/tests.yml/badge.svg)](https://github.com/Dradebo/dhis2-mcp/actions/workflows/tests.yml)
 
-> **🚀 Production Ready**: A comprehensive Model Context Protocol (MCP) server for DHIS2 development and management, providing 40+ tools for complete DHIS2 Web API coverage.
+<a href="https://glama.ai/mcp/servers/@Dradebo/dhis2-mcp"><img width="380" height="200" src="https://glama.ai/mcp/servers/@Dradebo/dhis2-mcp/badge" alt="DHIS2 MCP server on Glama" /></a>
 
-<a href="https://glama.ai/mcp/servers/@Dradebo/dhis2-mcp">
-  <img width="380" height="200" src="https://glama.ai/mcp/servers/@Dradebo/dhis2-mcp/badge" alt="DHIS2 Server MCP server" />
-</a>
+## Setup: two steps
 
-## ✨ Features
+**1. Add it to your assistant.** Most hosts accept this configuration (your assistant can add it for you):
 
-### 🏗️ **Complete DHIS2 Web API Coverage**
-- **Aggregate Data Model**: Data elements, data sets, categories, validation rules
-- **Event/Tracker Data Model**: Programs, tracked entities, events, enrollments  
-- **Analytics & Reporting**: Dashboards, visualizations, event analytics
-- **Bulk Operations**: Mass data import/export with validation
-- **System Management**: Connection handling, system info, statistics
-
-### 🛡️ **Production Grade**
-- **Type Safety**: Comprehensive TypeScript interfaces with strict mode
-- **Error Handling**: Robust error management with meaningful messages
-- **Testing**: 26 automated tests ensuring reliability
-- **Code Quality**: ESLint validation and best practices
-- **Build Pipeline**: Complete development workflow
-
-### 🔧 **Developer Experience**
-- **40+ MCP Tools**: Every major DHIS2 operation covered
-- **Detailed Schemas**: Rich input validation and documentation
-- **Easy Setup**: Simple npm commands for all operations
-- **Interactive**: Perfect for API exploration and learning
-=======
-> **🔧 Development Assistant**: A Model Context Protocol (MCP) server providing 108 tools for DHIS2 development, including code generators, debugging helpers, and documentation access for web and Android app development.
-
-## ✨ What This Actually Is
-
-### 🛠️ **DHIS2 Development Assistant**
-- **Code Generators**: Creates boilerplate code for DHIS2 apps (web and Android)
-- **Configuration Helpers**: Generates build configs, manifests, and setup files
-- **Debugging Tools**: Diagnoses common DHIS2 development issues (CORS, auth, build problems)
-- **API Wrapper**: Basic DHIS2 Web API client for data operations
-- **Documentation Access**: Framework for querying local and web documentation
-
-### 📱 **Mobile Development Support**
-- **Android Project Setup**: Complete Android app scaffolding with DHIS2 SDK integration
-- **UI Code Generation**: Jetpack Compose components, RecyclerView adapters, navigation patterns
-- **Mobile-Specific Features**: Location services, camera, offline sync, notifications
-- **Architecture Patterns**: MVVM, MVP, MVI implementations
-
-### 🌐 **Web Development Support**  
-- **DHIS2 App Platform**: Project initialization and configuration
-- **UI Component Generation**: Form patterns, data display, navigation layouts using @dhis2/ui
-- **Build System Configuration**: Webpack, Vite, d2 CLI setup
-- **Testing Framework Setup**: Jest, Cypress, Playwright configurations
-
-## 🎯 **Realistic Feature Overview**
-
-### ✅ **What Works Well**
-- **108 MCP Tools**: All tools have valid schemas and integrate properly
-- **Dual-Mode Operation**: Development tools work without DHIS2 connection, API tools require connection
-- **Code Generation**: Produces actual, usable code snippets and configurations
-- **Error Handling**: Graceful handling of invalid inputs and missing dependencies
-- **Performance**: All tools load in <10ms with minimal memory usage (82KB)
-
-### ⚠️ **Current Limitations**
-- **Basic DHIS2 API Coverage**: ~30 endpoints
-- **Code Generators Only**: Outputs code templates and guides, doesn't perform actual setup
-- **Mock External Integrations**: Documentation access requires external MCP servers to be fully functional
-- **Limited Testing**: 4 test files covering basic functionality
-
-### 🔍 **What's Actually Tested**
-- **Schema Validation**: 100% of tools have valid MCP schemas
-- **Code Generation**: Android and web app generators produce proper output
-- **DHIS2 Client**: Basic API operations work with real DHIS2 instances
-- **Integration**: All components work together without conflicts
-
-
-## 🚀 Quick Start
-
-### Prerequisites
-- Node.js 18+
-- MCP client (Claude Code, Claude Desktop, etc.)
-- DHIS2 instance (optional - many tools work without it)
-
-### Installation
-
-#### Option 1: Local Development
-```bash
-# Clone and build locally
-git clone https://github.com/yourusername/dhis2-mcp.git
-cd dhis2-mcp
-npm install
-npm run build
-```
-
-#### Option 2: NPX (Recommended for MCP clients)
-```bash
-# Use directly in MCP client config
-npx dhis2-mcp
-```
-
-## 🔧 **MCP Client Configuration**
-
-> **Connect to DHIS2 in one step:** your agent adds `{"command": "npx", "args": ["-y", "dhis2-mcp"]}` to its MCP configuration (`npx -y dhis2-mcp install` prints it). Then you run `npx -y dhis2-mcp login` in a terminal and type your DHIS2 address, username and password. After that the agent works on its own and asks your permission before reading individual records or making any change. Production servers are read-only: the assistant builds on development, and finished work moves to production as an approved package that a production administrator imports. See [SECURITY-MODEL.md](SECURITY-MODEL.md).
-
-### For Claude Code (Cursor)
-Create `.claude/config.json` in your project:
 ```json
-{
-  "mcpServers": {
-    "dhis2-mcp": {
-      "command": "npx",
-      "args": ["-y", "dhis2-mcp"]
-    }
-  }
-}
+{ "mcpServers": { "dhis2": { "command": "npx", "args": ["-y", "dhis2-mcp-server"] } } }
 ```
 
-### For Claude Desktop
-Add to your MCP configuration:
-```json
-{
-  "mcpServers": {
-    "dhis2-mcp": {
-      "command": "npx",
-      "args": ["-y", "dhis2-mcp"]
-    }
-  }
-}
+For Claude Code: `claude mcp add --scope user dhis2 -- npx -y dhis2-mcp-server`
+
+**2. Sign in once, in a terminal window:**
+
+```
+npx -y dhis2-mcp-server login
 ```
 
-## 📖 Usage Examples
+It asks four things:
+- the address of your DHIS2 server;
+- whether it is a development, training or production server;
+- your username;
+- your password. The password is hidden as you type and never shown to the assistant.
 
-### 🏗️ **Initialize DHIS2 Web App**
-```typescript
-// Use the dhis2_init_webapp tool
-{
-  "appName": "health-tracker",
-  "appTitle": "Health Tracker",
-  "appType": "app",
-  "typescript": true,
-  "template": "basic"
-}
+The login is checked straight away and saved on your computer:
+
+| Your computer | Where the password is kept |
+|---|---|
+| Windows | encrypted for your Windows account |
+| macOS | the Keychain |
+| Linux | the system keyring, or a private file if there is none |
+
+Restart your assistant and it is ready. Run `login` again for each further server, for example a read-only production server alongside your development server.
+
+You need [Node.js](https://nodejs.org) 20 or newer.
+
+## What your assistant can do
+
+- **Read:** metadata, aggregate data, analytics, dashboards, and tracker records (people, enrollments, events). Before it shows individual-level records it asks you once per session. It can count records without downloading them.
+- **Build on a development or training server:**
+  - It designs data sets, programs, indicators, option sets and more.
+  - It checks the design against DHIS2's rules for your server's version.
+  - It trial-runs the change with DHIS2's own dry run, then asks you to approve it.
+  - It applies the change exactly as approved and reads it back to confirm.
+- **Import data:** aggregate values, events and tracker records, with the same plan, dry run, approve and read-back steps. Existing values are never deleted.
+- **Change sharing** (who can see or enter what), with your approval.
+- **Move finished work to production:** it prepares a reviewed package, a production administrator imports it, and the assistant then confirms production matches.
+- **Keep a project record:** requirements tied to your documents, questions for you in one batch, and a handover note of what was built and verified.
+
+The full list of tools is in [docs/TOOLS.md](docs/TOOLS.md).
+
+## What it will not do
+
+- **Change a production server.** Production connections are read-only in two independent places: the tool policy, and a connection that refuses anything but reads.
+- **Apply anything without your approval** in your assistant's approval prompt. The assistant cannot approve on your behalf.
+- **Delete data, or change users, roles or passwords.**
+- **Show your password to the assistant, or put it in any configuration file.**
+
+The details and their tests are in [SECURITY-MODEL.md](SECURITY-MODEL.md).
+
+## DHIS2 versions
+
+| Your server | What the assistant does |
+|---|---|
+| **2.39 – 2.43** | Full support. The assistant detects the version when it connects and uses that version's API, parameter names and rules. |
+| **Older than 2.39** | Read-only. |
+| **Newer than 2.43** | Treated like 2.43 and flagged as untested. Every change still has to pass DHIS2's own dry run first. |
+
+Where a feature needs a newer DHIS2 than yours, the assistant uses that version's workaround instead of asking you to upgrade. For example, program-indicator disaggregation arrived in 2.42; on 2.41 the workaround is one indicator per category option.
+
+## Other commands
+
+```
+npx -y dhis2-mcp-server status        # saved servers, and whether each login still works
+npx -y dhis2-mcp-server logout dev    # forget a saved server
+npx -y dhis2-mcp-server install       # print the host configuration (for assistants)
 ```
 
-### 📱 **Create Android App Structure**  
-```typescript
-// Use the dhis2_android_init_project tool
-{
-  "projectName": "DHIS2HealthApp",
-  "applicationId": "org.dhis2.health",
-  "language": "kotlin",
-  "architecture": "mvvm",
-  "features": ["location", "camera", "offline"]
-}
+## Also included
+
+The server also has helpers for building DHIS2 web and Android apps: project scaffolding, UI patterns, and debugging guides for CORS, authentication and builds. They need no DHIS2 connection.
+
+## Upgrading from 1.x
+
+- **Setup:** version 2 replaces environment-variable passwords and the `dhis2_configure` arguments with the one-time `login` above.
+- **Changes:** the direct create, update and delete tools are gone. Every change now goes through a plan you approve.
+
+## Development
+
+```
+npm ci
+npm test                    # unit tests
+npm run test:e2e-security   # end-to-end tests against fake DHIS2 servers
 ```
 
-### 🎨 **Generate UI Components**
-```typescript
-// Use the dhis2_generate_ui_form_patterns tool
-{
-  "componentName": "DataElementForm",
-  "includeValidation": true,
-  "includeDatePicker": true,
-  "includeMultiSelect": true
-}
-```
+The [tests workflow](.github/workflows/tests.yml) runs everything on Windows, macOS and Linux:
+- unit tests;
+- end-to-end tests against fake DHIS2 servers that behave like each version from 2.38 to 2.43;
+- a real round trip through each operating system's secret store.
 
-### 🔍 **Debug Development Issues**
-```typescript
-// Use the dhis2_diagnose_cors_issues tool
-{
-  "dhis2Instance": "https://play.dhis2.org/2.40.4",
-  "localDevelopmentUrl": "http://localhost:3000",
-  "browser": "chrome",
-  "symptoms": ["login_fails", "api_requests_blocked"]
-}
-```
+Issues and ideas: [GitHub issues](https://github.com/Dradebo/dhis2-mcp/issues), or the [DHIS2 community thread](https://community.dhis2.org/t/dhis2-mcp-server-with-100-tools-for-dhis2-development/67441).
 
-### 📚 **Access Documentation**
-```typescript
-// Use the dhis2_query_documentation tool
-{
-  "topic": "LocationManager",
-  "platform": "android", 
-  "searchType": "both",
-  "language": "kotlin"
-}
-```
+## Licence
 
-## 🛠️ Available Tool Categories
-
-### 🌐 **Web Development (23 tools)**
-- App initialization and configuration
-- UI component generation (@dhis2/ui patterns)
-- Build system setup (webpack, vite, d2)
-- Testing framework configuration
-- Authentication patterns
-
-### 📱 **Android Development (17 tools)** 
-- Project initialization with DHIS2 SDK
-- Gradle configuration and build setup
-- UI pattern generation (Compose, XML)
-- Mobile-specific features (GPS, camera, notifications)
-- Offline sync and data storage
-
-### 🔗 **DHIS2 API Integration (52 tools)**
-- Data elements, data sets, categories
-- Programs, tracked entities, events
-- Analytics and reporting
-- Bulk data operations
-- System management
-
-### 🐛 **Debugging & Troubleshooting (8 tools)**
-- CORS issue diagnosis
-- Authentication debugging
-- Build problem resolution
-- Performance optimization
-- Environment validation
-
-### 📚 **Documentation Access (9 tools)**
-- Local Android SDK documentation
-- Web documentation search
-- Integration guides generation
-- Code example extraction
-- Troubleshooting assistance
-
-## 🎯 **Use Cases**
-
-### 1. **Learning DHIS2 Development**
-Perfect for developers new to DHIS2 who need code examples and project structure guidance.
-
-### 2. **Rapid Prototyping**
-Quickly generate app scaffolding and UI components to get projects started.
-
-### 3. **Debugging Development Issues**
-Diagnose common problems like CORS issues, authentication failures, and build errors.
-
-### 4. **Code Reference**
-Generate examples of DHIS2 integration patterns and best practices.
-
-### 5. **Mobile App Development**
-Get Android-specific code and configuration for DHIS2 mobile apps.
-
-## 📊 **Project Stats**
-
-| Metric | Value |
-|--------|-------|
-| **Total MCP Tools** | 108 |
-| **Development Tools** | 47 (work without DHIS2 connection) |
-| **API Tools** | 52 (require DHIS2 connection) |
-| **Documentation Tools** | 9 (require external MCPs) |
-| **Test Files** | 4 (basic functionality testing) |
-| **TypeScript Interfaces** | ~100 (comprehensive type safety) |
-| **Tool Load Time** | <10ms (excellent performance) |
-| **Memory Usage** | ~82KB (very efficient) |
-
-## 🔄 **Realistic Roadmap**
-
-### ✅ **Current Status (v1.0)**
-- Functional MCP server with 108 tools
-- Code generation for web and Android
-- Basic DHIS2 API integration
-- Debugging and troubleshooting helpers
-
-### 🔮 **Future Improvements**
-- **Enhanced Testing**: Expand test coverage beyond basic schema validation
-- **Real Documentation Integration**: Connect to actual filesystem and web search MCPs
-- **Extended API Coverage**: Add more DHIS2 Web API endpoints
-- **Interactive Debugging**: Real-time problem diagnosis and fixes
-- **Template Library**: Pre-built project templates for common use cases
-
-## 🤝 **Contributing**
-
-This is a development tool that generates code and configurations. Contributions welcome for:
-
-1. **New Code Generators** - Additional UI patterns, project templates
-2. **Enhanced Debugging** - More diagnostic tools and solutions
-3. **API Coverage** - Additional DHIS2 endpoints and operations
-4. **Documentation** - Better examples and usage guides
-5. **Testing** - Expanded test coverage and validation
-
-```bash
-# Development setup
-git clone https://github.com/yourusername/dhis2-mcp.git
-cd dhis2-mcp
-npm install
-npm run dev      # Watch mode
-npm run test     # Run tests
-npm run lint     # Code quality
-```
-
-## ⚠️ **Important Notes**
-
-### **This is NOT:**
-- A complete DHIS2 Web API replacement
-- A production-ready backend service
-- A fully-tested enterprise solution
-- A replacement for official DHIS2 tools
-
-### **This IS:**
-- A development assistant and code generator
-- A learning tool for DHIS2 development patterns
-- A debugging helper for common development issues
-- A starting point for DHIS2 app development
-
-## 📄 License
-
-MIT License - see [LICENSE](./LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- **DHIS2 Community** - For the platform and development patterns
-- **Model Context Protocol** - For the AI-human collaboration framework
-- **TypeScript & Node.js** - For the solid foundation
-- **Open Source Community** - For tools and libraries used
-
----
-
-**Made with ❤️ as a development assistant for the DHIS2 community**
-
-*This tool is designed to help developers get started with DHIS2 development by generating code, configurations, and providing debugging assistance. It's not a replacement for official DHIS2 documentation or tools, but rather a helpful companion for development workflows.*
+MIT. See [LICENSE](LICENSE).

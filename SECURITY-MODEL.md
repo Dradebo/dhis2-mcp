@@ -4,8 +4,8 @@ The server applies one policy to tool discovery, completions and dispatch. It is
 
 ## Setup: one login, typed by a person
 
-1. The agent adds the server to its host. The host config holds no secrets: `{"command": "npx", "args": ["-y", "dhis2-mcp"]}`. `npx -y dhis2-mcp install` prints this config, plus the one human step.
-2. The person runs `npx -y dhis2-mcp login` in a terminal and types three things:
+1. The agent adds the server to its host. The host config holds no secrets: `{"command": "npx", "args": ["-y", "dhis2-mcp-server"]}`. `npx -y dhis2-mcp-server install` prints this config, plus the one human step.
+2. The person runs `npx -y dhis2-mcp-server login` in a terminal and types three things:
    - the DHIS2 address;
    - what kind of server it is: 1 development, 2 training, or 3 production;
    - their username and password.

@@ -44,7 +44,7 @@ describe('tool reply size', () => {
   });
 
   test('oversized pretty JSON is sent compact rather than cut when that fits', () => {
-    const rows = Array.from({ length: 2000 }, (_, i) => ({ dataElement: 'abcdefghijk', period: '202401', orgUnit: 'koHTTpl760i', value: String(i) }));
+    const rows = Array.from({ length: 2000 }, (_, i) => ({ dataElement: 'abcdefghijk', period: '202401', orgUnit: 'ouAAAAAAAA1', value: String(i) }));
     const pretty = JSON.stringify({ dataValues: rows }, null, 2);
     expect(pretty.length).toBeGreaterThan(MAX_TOOL_RESULT_CHARS);
     expect(JSON.stringify({ dataValues: rows }).length).toBeLessThan(MAX_TOOL_RESULT_CHARS);

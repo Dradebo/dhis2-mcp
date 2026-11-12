@@ -2,18 +2,18 @@
 /**
  * dhis2-mcp command line.
  *
- *   npx -y dhis2-mcp            MCP server over stdio (what agent hosts launch)
- *   npx -y dhis2-mcp install    Agent-friendly setup: prints the host config; in a terminal it also runs login
- *   npx -y dhis2-mcp login      Person types DHIS2 address, username and password once
- *   npx -y dhis2-mcp status     Show saved connections and check they still work
- *   npx -y dhis2-mcp logout     Remove a saved connection
+ *   npx -y dhis2-mcp-server            MCP server over stdio (what agent hosts launch)
+ *   npx -y dhis2-mcp-server install    Agent-friendly setup: prints the host config; in a terminal it also runs login
+ *   npx -y dhis2-mcp-server login      Person types DHIS2 address, username and password once
+ *   npx -y dhis2-mcp-server status     Show saved connections and check they still work
+ *   npx -y dhis2-mcp-server logout     Remove a saved connection
  */
 import { checkLogin, validateInstanceUrl } from './setup/login-check.js';
 import {
   deleteStoredProfile, listStoredProfiles, readStoredSecret, saveStoredProfile, storeDir,
 } from './security/credential-store.js';
 
-const HOST_CONFIG = { mcpServers: { dhis2: { command: 'npx', args: ['-y', 'dhis2-mcp'] } } };
+const HOST_CONFIG = { mcpServers: { dhis2: { command: 'npx', args: ['-y', 'dhis2-mcp-server'] } } };
 const argv = process.argv.slice(2);
 const command = argv[0] && !argv[0].startsWith('-') ? argv[0] : '';
 const flag = (name: string): string | undefined => {
@@ -76,7 +76,7 @@ function printHostConfig(): void {
 async function login(): Promise<number> {
   if (!process.stdin.isTTY) {
     console.error('Login must be typed by a person in a terminal window, so the password stays private.');
-    console.error('Ask the person to run:  npx -y dhis2-mcp login');
+    console.error('Ask the person to run:  npx -y dhis2-mcp-server login');
     return 2;
   }
   const profileArg = flag('profile')?.toLowerCase();
@@ -122,7 +122,7 @@ async function loginFlow(input: TerminalInput, profileArg: string | undefined): 
     process.stdout.write('Checking… ');
     const result = await checkLogin(baseUrl, username, password);
     if (result.ok) {
-      saveStoredProfile(profile, {
+      const where = saveStoredProfile(profile, {
         baseUrl, username, environment,
         ...(result.me.displayName ? { displayName: result.me.displayName } : {}),
         verifiedAt: new Date().toISOString(),
@@ -132,6 +132,9 @@ async function loginFlow(input: TerminalInput, profileArg: string | undefined): 
         ? '✔ Saved as read-only. Your assistant can look at this server but will never create or change anything on it.'
         : '✔ All set. Your assistant can now work with DHIS2. It will ask you before making any changes.');
       if (environment !== 'production') console.log('  To also let it read your production server (read-only), run this again and choose 3.');
+      console.log(where === 'private file'
+        ? '  Your password is kept in a private file only your user account can open (this computer has no system keyring available).'
+        : `  Your password is kept in the ${where}.`);
       console.log('  You can close this window.\n');
       return 0;
     }
@@ -147,7 +150,7 @@ async function status(): Promise<number> {
   const profiles = listStoredProfiles();
   const names = Object.keys(profiles);
   if (!names.length) {
-    console.log('No DHIS2 connection is saved yet. Run:  npx -y dhis2-mcp login');
+    console.log('No DHIS2 connection is saved yet. Run:  npx -y dhis2-mcp-server login');
     return 1;
   }
   let allOk = true;
@@ -172,7 +175,7 @@ async function main(): Promise<number> {
     case 'serve':
       if (command === '' && process.stdin.isTTY) {
         console.log('dhis2-mcp is an assistant connector that your AI agent starts by itself.');
-        console.log('To connect it to DHIS2, run:  npx -y dhis2-mcp login');
+        console.log('To connect it to DHIS2, run:  npx -y dhis2-mcp-server login');
         return 0;
       }
       await import('./index.js');
@@ -187,7 +190,7 @@ async function main(): Promise<number> {
       }
       printHostConfig();
       if (!process.stdin.isTTY && !Object.keys(listStoredProfiles()).length) {
-        console.log('\nNext step for the person (in a terminal window):  npx -y dhis2-mcp login');
+        console.log('\nNext step for the person (in a terminal window):  npx -y dhis2-mcp-server login');
       }
       return 0;
     case 'config':

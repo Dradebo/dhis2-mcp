@@ -224,7 +224,7 @@ describe('BASE-01 credentials never enter tool arguments', () => {
     const env = { DHIS2_MCP_HOME: home };
     const prev = process.env.DHIS2_MCP_PLAIN_SECRETS; process.env.DHIS2_MCP_PLAIN_SECRETS = '1';
     try {
-      expect(() => resolveProfile(undefined, env)).toThrow(/npx -y dhis2-mcp login/);
+      expect(() => resolveProfile(undefined, env)).toThrow(/npx -y dhis2-mcp-server login/);
       const { saveStoredProfile } = require('../src/security/credential-store');
       saveStoredProfile('default', { baseUrl: 'https://dev.example.org', username: 'fixture', environment: 'development', verifiedAt: 'x' }, CANARY, env);
       const p = resolveProfile(undefined, env);

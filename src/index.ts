@@ -306,7 +306,7 @@ const transferEngine = new TransferEngine({
       if (prod.length !== 1) {
         throw new TransferError('target_unknown', prod.length
           ? `Several production servers are set up (${prod.join(', ')}); say which one receives the transfer (targetProfile).`
-          : 'No production server is set up. Ask the person to run "npx -y dhis2-mcp login" and choose "production" for it (it will be read-only).');
+          : 'No production server is set up. Ask the person to run "npx -y dhis2-mcp-server login" and choose "production" for it (it will be read-only).');
       }
       name = prod[0];
     }

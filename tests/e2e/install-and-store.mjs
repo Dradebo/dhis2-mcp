@@ -59,8 +59,8 @@ let r = await run('install');
 let cfg = null;
 try { cfg = JSON.parse(r.stdout.slice(r.stdout.indexOf('{'), r.stdout.lastIndexOf('}') + 1)); } catch { /* checked below */ }
 check('I1 install (no terminal) exits 0 and prints a host config', r.status === 0 && cfg?.mcpServers?.dhis2?.command === 'npx', r.stdout.slice(0, 200));
-check('I2 host config contains no credentials or URLs', cfg && !/password|token|https?:/i.test(JSON.stringify(cfg)) && JSON.stringify(cfg.mcpServers.dhis2.args) === '["-y","dhis2-mcp"]');
-check('I3 install tells the agent the single human step', /npx -y dhis2-mcp login/.test(r.stdout));
+check('I2 host config contains no credentials or URLs', cfg && !/password|token|https?:/i.test(JSON.stringify(cfg)) && JSON.stringify(cfg.mcpServers.dhis2.args) === '["-y","dhis2-mcp-server"]');
+check('I3 install tells the agent the single human step', /npx -y dhis2-mcp-server login/.test(r.stdout));
 
 // 2. login refuses to run without a real terminal (password must be typed by a person)
 r = await run('login');
@@ -107,7 +107,7 @@ store.deleteStoredProfile('odd', env);
 r = await run('logout');
 check('O1 logout removes the saved connection', r.status === 0 && /Removed/.test(r.stdout) && !store.readStoredSecret('default', env));
 r = await run('status');
-check('O2 status afterwards explains how to log in', r.status === 1 && /dhis2-mcp login/.test(r.stdout));
+check('O2 status afterwards explains how to log in', r.status === 1 && /npx -y dhis2-mcp-server login/.test(r.stdout));
 
 server.close();
 fs.rmSync(dir, { recursive: true, force: true });
